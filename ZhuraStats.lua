@@ -1,5 +1,70 @@
 local ADDON_NAME = ...
-local L = NE_STATS_L or {}
+NE_STATS_LOCALES = NE_STATS_LOCALES or {}
+
+local FALLBACK_LOCALE = "enUS"
+local CLIENT_LOCALE = GetLocale() or FALLBACK_LOCALE
+local CLIENT_LANGUAGE_VALUE = "client"
+local LOCALE_DISPLAY_NAMES = {
+    deDE = "Deutsch",
+    enUS = "English (US)",
+    esES = "Espanol (EU)",
+    esMX = "Espanol (LATAM)",
+    frFR = "Francais",
+    itIT = "Italiano",
+    koKR = "한국어",
+    ptBR = "Portugues (BR)",
+    ruRU = "Русский",
+    ukUA = "Українська",
+    zhCN = "简体中文",
+    zhTW = "繁體中文",
+}
+local PRIMARY_STAT_KEY_BY_ID = {
+    [1] = "STR",
+    [2] = "AGI",
+    [4] = "INT",
+}
+local L = {}
+
+local db
+
+local function CopyLocaleEntries(source, target)
+    if type(source) ~= "table" then
+        return
+    end
+
+    for key, value in pairs(source) do
+        target[key] = value
+    end
+end
+
+local function GetConfiguredLocale()
+    if db and db.global and type(db.global.addonLocale) == "string" and db.global.addonLocale ~= "" then
+        return db.global.addonLocale
+    end
+
+    return CLIENT_LANGUAGE_VALUE
+end
+
+local function GetEffectiveLocale()
+    local configuredLocale = GetConfiguredLocale()
+    local localeCode = configuredLocale == CLIENT_LANGUAGE_VALUE and CLIENT_LOCALE or configuredLocale
+
+    if not NE_STATS_LOCALES[localeCode] then
+        localeCode = FALLBACK_LOCALE
+    end
+
+    return localeCode
+end
+
+local function ApplyLocale()
+    wipe(L)
+    CopyLocaleEntries(NE_STATS_LOCALES[FALLBACK_LOCALE], L)
+
+    local effectiveLocale = GetEffectiveLocale()
+    if effectiveLocale ~= FALLBACK_LOCALE then
+        CopyLocaleEntries(NE_STATS_LOCALES[effectiveLocale], L)
+    end
+end
 
 local function S(key, ...)
     local text = L[key] or key
@@ -8,6 +73,16 @@ local function S(key, ...)
     end
     return text
 end
+
+local function GetLocaleDisplayName(localeCode)
+    if localeCode == CLIENT_LANGUAGE_VALUE then
+        return string.format("%s (%s)", S("Client language"), LOCALE_DISPLAY_NAMES[CLIENT_LOCALE] or CLIENT_LOCALE)
+    end
+
+    return LOCALE_DISPLAY_NAMES[localeCode] or localeCode
+end
+
+ApplyLocale()
 
 local function GetDisplayProfileName(profileName)
     if profileName == "Default" then
@@ -74,6 +149,8 @@ local defaults = {
     showLabels = true,
     showValues = true,
     locked = false,
+    showLockOnHover = false,
+    preferCurrentSpecMainStat = false,
     point = "TOPLEFT",
     relativePoint = "TOPLEFT",
     x = 300,
@@ -197,6 +274,8 @@ local lastOptionsPanelError
 local statsFrame
 local statsAnchor
 local lockButton
+local isStatsFrameHovered = false
+local isLockButtonHovered = false
 local rowControls = {}
 local controlRefs = {}
 local lines = {}
@@ -206,10 +285,12 @@ local measureLine
 local BuildOptionsPanel
 local SelectRootProfile
 local InitializeProfileDropDown
-local db
+local InitializeLanguageDropDown
 local ApplyCurrentProfileState
 local RefreshStats
 local RefreshOptionRows
+local RefreshLocalizedUI
+local RefreshStaticPopupTexts
 local pendingRenameProfileName
 
 local function GetAvailableFonts()
@@ -268,6 +349,9 @@ end
 
 local aceDefaults = {
     profile = defaults,
+    global = {
+        addonLocale = CLIENT_LANGUAGE_VALUE,
+    },
 }
 
 local function GetFontInfo(fontKey)
@@ -298,6 +382,9 @@ local function EnsureDatabase()
         db = AceDB:New("ZhuraStatsDB", aceDefaults, "Default")
     end
 
+    db.global.addonLocale = db.global.addonLocale or CLIENT_LANGUAGE_VALUE
+
+    ApplyLocale()
     MigrateProfile(db.profile)
 end
 
@@ -363,6 +450,8 @@ local function MigrateProfile(profile)
     profile.showLabels = profile.showLabels ~= false
     profile.showValues = profile.showValues ~= false
     profile.locked = profile.locked or false
+    profile.showLockOnHover = profile.showLockOnHover == true
+    profile.preferCurrentSpecMainStat = profile.preferCurrentSpecMainStat == true
     profile.specProfiles = profile.specProfiles or {}
     profile.point = profile.point or defaults.point
     profile.relativePoint = profile.relativePoint or defaults.relativePoint
@@ -630,7 +719,7 @@ StaticPopupDialogs["NE_STATS_RENAME_PROFILE"] = {
             return
         end
         if status == "invalid" then
-            print("NE Stats: profile could not be renamed: " .. tostring(profileName))
+            print(S("NE Stats: profile could not be renamed: %s", tostring(profileName)))
             return
         end
         if status == "renamed" and profileName then
@@ -732,6 +821,10 @@ ApplyCurrentProfileState = function()
     if controlRefs.profileDeleteButton then
         controlRefs.profileDeleteButton:SetEnabled(CanModifyProfile(activeProfileName))
     end
+    if controlRefs.languageDropDown then
+        UIDropDownMenu_SetSelectedValue(controlRefs.languageDropDown, GetConfiguredLocale())
+        UIDropDownMenu_SetText(controlRefs.languageDropDown, GetLocaleDisplayName(GetConfiguredLocale()))
+    end
 
     if controlRefs.showPercentCheckbox then
         controlRefs.showPercentCheckbox:SetChecked(profile.showPercent)
@@ -747,6 +840,12 @@ ApplyCurrentProfileState = function()
     end
     if controlRefs.lockCheckbox then
         controlRefs.lockCheckbox:SetChecked(profile.locked)
+    end
+    if controlRefs.showLockOnHoverCheckbox then
+        controlRefs.showLockOnHoverCheckbox:SetChecked(profile.showLockOnHover)
+    end
+    if controlRefs.preferCurrentSpecMainStatCheckbox then
+        controlRefs.preferCurrentSpecMainStatCheckbox:SetChecked(profile.preferCurrentSpecMainStat)
     end
     if controlRefs.alphaSlider then
         controlRefs.alphaSlider:SetValue(profile.alpha or defaults.alpha)
@@ -778,6 +877,96 @@ ApplyCurrentProfileState = function()
     RefreshOptionRows()
 end
 
+RefreshLocalizedUI = function()
+    RefreshStaticPopupTexts()
+
+    if optionsPanel then
+        optionsPanel.name = S("NE Stats")
+    end
+
+    if controlRefs.title then
+        controlRefs.title:SetText(S("NE Stats"))
+    end
+    if controlRefs.subtitle then
+        controlRefs.subtitle:SetText(S("Profiles are shared across your account.\nYou can create multiple profiles to save different layouts, positions, and display settings."))
+    end
+    if controlRefs.profileLabel then
+        controlRefs.profileLabel:SetText(S("Profile"))
+    end
+    if controlRefs.profileCreateLabel then
+        controlRefs.profileCreateLabel:SetText(S("Create New..."))
+    end
+    if controlRefs.languageLabel then
+        controlRefs.languageLabel:SetText(S("Addon language"))
+    end
+    if controlRefs.profileCreateButton then
+        controlRefs.profileCreateButton:SetText(S("Create"))
+    end
+    if controlRefs.profileRenameButton then
+        controlRefs.profileRenameButton.tooltipText = S("Rename profile")
+    end
+    if controlRefs.profileDeleteButton then
+        controlRefs.profileDeleteButton.tooltipText = S("Delete profile")
+    end
+    if controlRefs.showPercentCheckbox then
+        controlRefs.showPercentCheckbox.label:SetText(S("Show percentages"))
+    end
+    if controlRefs.showLabelsCheckbox then
+        controlRefs.showLabelsCheckbox.label:SetText(S("Show stat names"))
+    end
+    if controlRefs.showValuesCheckbox then
+        controlRefs.showValuesCheckbox.label:SetText(S("Show values"))
+    end
+    if controlRefs.lockCheckbox then
+        controlRefs.lockCheckbox.label:SetText(S("Lock frame"))
+    end
+    if controlRefs.showLockOnHoverCheckbox then
+        controlRefs.showLockOnHoverCheckbox.label:SetText(S("Show lock icon only on hover"))
+        controlRefs.showLockOnHoverCheckbox.tooltipText = S("Shows the lock button only while the mouse is over the frame.")
+    end
+    if controlRefs.preferCurrentSpecMainStatCheckbox then
+        controlRefs.preferCurrentSpecMainStatCheckbox.label:SetText(S("Always show current specialization main stat first"))
+        controlRefs.preferCurrentSpecMainStatCheckbox.tooltipText = S("Keeps the primary stat for your current specialization at the top of the display.")
+    end
+    if controlRefs.fontLabel then
+        controlRefs.fontLabel:SetText(S("Font"))
+    end
+    if controlRefs.resetButton then
+        controlRefs.resetButton:SetText(S("Reset Position"))
+    end
+    if controlRefs.statHeader then
+        controlRefs.statHeader:SetText(S("Stats"))
+    end
+    if controlRefs.statHint then
+        controlRefs.statHint:SetText(S("Check to show, set color, move with arrows"))
+    end
+    if controlRefs.precisionSlider then
+        _G[controlRefs.precisionSlider:GetName() .. "Text"]:SetText(S("Percent Decimals"))
+    end
+    if controlRefs.alphaSlider then
+        _G[controlRefs.alphaSlider:GetName() .. "Text"]:SetText(S("Background Opacity"))
+    end
+    if controlRefs.scaleSlider then
+        _G[controlRefs.scaleSlider:GetName() .. "Text"]:SetText(S("UI Scale"))
+    end
+    if controlRefs.fontSizeSlider then
+        _G[controlRefs.fontSizeSlider:GetName() .. "Text"]:SetText(S("Font Size"))
+    end
+    if controlRefs.languageDropDown then
+        UIDropDownMenu_Initialize(controlRefs.languageDropDown, InitializeLanguageDropDown)
+        UIDropDownMenu_SetSelectedValue(controlRefs.languageDropDown, GetConfiguredLocale())
+        UIDropDownMenu_SetText(controlRefs.languageDropDown, GetLocaleDisplayName(GetConfiguredLocale()))
+    end
+
+    for _, row in ipairs(rowControls) do
+        if row.color then
+            row.color:SetText(S("Color"))
+        end
+    end
+
+    RefreshOptionRows()
+end
+
 local function StoreTopLeftPosition(profile, left, top)
     if not profile or not left or not top then
         return
@@ -802,13 +991,75 @@ local function SaveFramePosition()
 end
 
 local function GetVisibleStats()
+    local profile = GetActiveProfile()
     local visible = {}
-    for _, entry in ipairs(GetActiveProfile().stats) do
+    local mainStatKey
+    local mainStatEntry
+
+    if profile.preferCurrentSpecMainStat then
+        local activeSpecIndex = GetSpecialization and GetSpecialization()
+        if activeSpecIndex and GetSpecializationInfo then
+            local _, _, _, _, _, _, primaryStat = GetSpecializationInfo(activeSpecIndex)
+            mainStatKey = PRIMARY_STAT_KEY_BY_ID[primaryStat]
+        end
+
+        if not mainStatKey then
+            local strength = select(2, UnitStat("player", 1)) or 0
+            local agility = select(2, UnitStat("player", 2)) or 0
+            local intellect = select(2, UnitStat("player", 4)) or 0
+
+            if strength >= agility and strength >= intellect then
+                mainStatKey = "STR"
+            elseif agility >= intellect then
+                mainStatKey = "AGI"
+            else
+                mainStatKey = "INT"
+            end
+        end
+    end
+
+    for _, entry in ipairs(profile.stats) do
+        if entry.key == mainStatKey then
+            mainStatEntry = entry
+        end
+
         if entry.enabled then
             table.insert(visible, entry)
         end
     end
+
+    if mainStatEntry then
+        for index, entry in ipairs(visible) do
+            if entry.key == mainStatKey then
+                table.remove(visible, index)
+                break
+            end
+        end
+
+        table.insert(visible, 1, mainStatEntry)
+    end
+
     return visible
+end
+
+RefreshStaticPopupTexts = function()
+    if StaticPopupDialogs["NE_STATS_CREATE_PROFILE"] then
+        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].text = S("Create a new profile for this account")
+        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].button1 = S("Create")
+        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].button2 = S("Cancel")
+    end
+
+    if StaticPopupDialogs["NE_STATS_RENAME_PROFILE"] then
+        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].text = S("Rename profile %s")
+        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].button1 = S("Rename")
+        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].button2 = S("Cancel")
+    end
+
+    if StaticPopupDialogs["NE_STATS_DELETE_PROFILE"] then
+        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].text = S("Delete profile %s?")
+        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].button1 = S("Delete")
+        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].button2 = S("Cancel")
+    end
 end
 
 local function UpdateFrameLockState()
@@ -819,7 +1070,7 @@ local function UpdateFrameLockState()
     local profile = GetActiveProfile()
     local locked = profile.locked
 
-    statsAnchor:EnableMouse(not locked)
+    statsAnchor:EnableMouse(true)
     statsFrame:SetBackdropColor(0, 0, 0, 0)
     statsFrame:SetBackdropBorderColor(0, 0, 0, 0)
 
@@ -832,6 +1083,7 @@ local function UpdateFrameLockState()
             lockButton:SetPushedTexture("Interface\\BUTTONS\\LockButton-Unlocked-Down")
         end
         lockButton:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight")
+        lockButton:SetShown((not profile.showLockOnHover) or isStatsFrameHovered or isLockButtonHovered)
     end
 end
 
@@ -905,7 +1157,7 @@ end
 local function OpenAddonSettings()
     if not SafeBuildOptionsPanel() then
         if lastOptionsPanelError and lastOptionsPanelError ~= "" then
-            print(string.format("NE Stats: settings panel failed: %s", tostring(lastOptionsPanelError)))
+            print(S("NE Stats: settings panel failed: %s", tostring(lastOptionsPanelError)))
         else
             print(S("NE Stats: settings panel is not available yet."))
         end
@@ -940,6 +1192,15 @@ local function EnsureStatsFrame()
     statsAnchor:SetClampedToScreen(true)
     statsAnchor:SetMovable(true)
     statsAnchor:RegisterForDrag("LeftButton")
+    statsAnchor:EnableMouse(true)
+    statsAnchor:SetScript("OnEnter", function()
+        isStatsFrameHovered = true
+        UpdateFrameLockState()
+    end)
+    statsAnchor:SetScript("OnLeave", function()
+        isStatsFrameHovered = false
+        UpdateFrameLockState()
+    end)
 
     statsFrame = CreateFrame("Frame", "ZhuraStatsFrame", statsAnchor, "BackdropTemplate")
     statsFrame:SetBackdrop({
@@ -967,6 +1228,20 @@ local function EnsureStatsFrame()
     lockButton:SetPoint("TOPRIGHT", -6, -6)
     lockButton:SetText("")
     lockButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    lockButton:SetScript("OnEnter", function(self)
+        isLockButtonHovered = true
+        UpdateFrameLockState()
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(S("Lock button"), 1, 0.82, 0)
+        GameTooltip:AddLine(S("Left-click: lock or unlock the frame."), 1, 1, 1, true)
+        GameTooltip:AddLine(S("Right-click: open addon settings."), 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    lockButton:SetScript("OnLeave", function()
+        isLockButtonHovered = false
+        GameTooltip:Hide()
+        UpdateFrameLockState()
+    end)
     lockButton:SetScript("OnClick", function(_, button)
         if button == "RightButton" then
             OpenAddonSettings()
@@ -1104,6 +1379,17 @@ local function CreateCheckbox(parent, label, tooltip, onClick)
     checkbox.label:SetText(label)
     checkbox.tooltipText = tooltip
     checkbox:SetScript("OnClick", onClick)
+    checkbox:SetScript("OnEnter", function(self)
+        if not self.tooltipText then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(self.tooltipText, 1, 0.82, 0, true)
+        GameTooltip:Show()
+    end)
+    checkbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
     return checkbox
 end
 
@@ -1241,16 +1527,19 @@ BuildOptionsPanel = function()
     local title = content:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
     title:SetText(S("NE Stats"))
+    controlRefs.title = title
 
     local subtitle = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
     subtitle:SetWidth(660)
     subtitle:SetJustifyH("LEFT")
     subtitle:SetText(S("Profiles are shared across your account.\nYou can create multiple profiles to save different layouts, positions, and display settings."))
+    controlRefs.subtitle = subtitle
 
     local profileLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     profileLabel:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -18)
     profileLabel:SetText(S("Profile"))
+    controlRefs.profileLabel = profileLabel
 
     local profileDropDown = CreateFrame("Frame", ADDON_NAME .. "ProfileDropDown", content, "UIDropDownMenuTemplate")
     local selectedProfileName
@@ -1353,6 +1642,7 @@ BuildOptionsPanel = function()
     local profileCreateLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     profileCreateLabel:SetPoint("TOPLEFT", profileInfo, "BOTTOMLEFT", 0, -10)
     profileCreateLabel:SetText(S("Create New..."))
+    controlRefs.profileCreateLabel = profileCreateLabel
 
     local profileCreateEditBox = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
     profileCreateEditBox:SetSize(150, 24)
@@ -1373,11 +1663,54 @@ BuildOptionsPanel = function()
     end)
     controlRefs.profileCreateButton = profileCreateButton
 
+    local languageLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    languageLabel:SetPoint("TOPLEFT", profileCreateEditBox, "BOTTOMLEFT", 0, -18)
+    languageLabel:SetText(S("Addon language"))
+    controlRefs.languageLabel = languageLabel
+
+    local languageDropDown = CreateFrame("Frame", ADDON_NAME .. "LanguageDropDown", content, "UIDropDownMenuTemplate")
+    languageDropDown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", -16, -2)
+    UIDropDownMenu_SetWidth(languageDropDown, 220)
+    InitializeLanguageDropDown = function(self, level)
+        local localeOptions = {
+            CLIENT_LANGUAGE_VALUE,
+            "enUS",
+            "deDE",
+            "esES",
+            "esMX",
+            "frFR",
+            "itIT",
+            "koKR",
+            "ptBR",
+            "ruRU",
+            "ukUA",
+            "zhCN",
+            "zhTW",
+        }
+
+        for _, localeCode in ipairs(localeOptions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = GetLocaleDisplayName(localeCode)
+            info.value = localeCode
+            info.checked = GetConfiguredLocale() == localeCode
+            info.func = function()
+                db.global.addonLocale = localeCode
+                ApplyLocale()
+                RefreshLocalizedUI()
+                ApplyCurrentProfileState()
+                UpdateFrameLockState()
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+    UIDropDownMenu_Initialize(languageDropDown, InitializeLanguageDropDown)
+    controlRefs.languageDropDown = languageDropDown
+
     local showPercentCheckbox = CreateCheckbox(content, S("Show percentages"), nil, function(self)
         GetActiveProfile().showPercent = self:GetChecked()
         RefreshStats()
     end)
-    showPercentCheckbox:SetPoint("TOPLEFT", profileCreateEditBox, "BOTTOMLEFT", 0, -18)
+    showPercentCheckbox:SetPoint("TOPLEFT", languageDropDown, "BOTTOMLEFT", 16, -16)
     controlRefs.showPercentCheckbox = showPercentCheckbox
 
     local precisionSlider = CreateSlider(ADDON_NAME .. "PercentPrecisionSlider", content, S("Percent Decimals"), 0, 3, 1, function(_, value)
@@ -1413,11 +1746,35 @@ BuildOptionsPanel = function()
     lockCheckbox:SetPoint("TOPLEFT", showValuesCheckbox, "BOTTOMLEFT", 0, -8)
     controlRefs.lockCheckbox = lockCheckbox
 
+    local showLockOnHoverCheckbox = CreateCheckbox(
+        content,
+        S("Show lock icon only on hover"),
+        S("Shows the lock button only while the mouse is over the frame."),
+        function(self)
+            GetActiveProfile().showLockOnHover = self:GetChecked()
+            UpdateFrameLockState()
+        end
+    )
+    showLockOnHoverCheckbox:SetPoint("TOPLEFT", lockCheckbox, "BOTTOMLEFT", 0, -8)
+    controlRefs.showLockOnHoverCheckbox = showLockOnHoverCheckbox
+
+    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(
+        content,
+        S("Always show current specialization main stat first"),
+        S("Keeps the primary stat for your current specialization at the top of the display."),
+        function(self)
+            GetActiveProfile().preferCurrentSpecMainStat = self:GetChecked()
+            RefreshStats()
+        end
+    )
+    preferCurrentSpecMainStatCheckbox:SetPoint("TOPLEFT", showLockOnHoverCheckbox, "BOTTOMLEFT", 0, -8)
+    controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
+
     local alphaSlider = CreateSlider(ADDON_NAME .. "AlphaSlider", content, S("Background Opacity"), 0.1, 1, 0.05, function(_, value)
         GetActiveProfile().alpha = value
         ApplyFrameStyle()
     end)
-    alphaSlider:SetPoint("TOPLEFT", lockCheckbox, "BOTTOMLEFT", 6, -24)
+    alphaSlider:SetPoint("TOPLEFT", preferCurrentSpecMainStatCheckbox, "BOTTOMLEFT", 6, -24)
     controlRefs.alphaSlider = alphaSlider
 
     local scaleSlider = CreateSlider(ADDON_NAME .. "ScaleSlider", content, S("UI Scale"), 0.5, 3, 0.05, function(_, value)
@@ -1438,6 +1795,7 @@ BuildOptionsPanel = function()
     local fontLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     fontLabel:SetPoint("TOPLEFT", fontSizeSlider, "BOTTOMLEFT", -6, -26)
     fontLabel:SetText(S("Font"))
+    controlRefs.fontLabel = fontLabel
 
     local fontDropDown = CreateFrame("Frame", ADDON_NAME .. "FontDropDown", content, "UIDropDownMenuTemplate")
     fontDropDown:SetPoint("TOPLEFT", fontLabel, "BOTTOMLEFT", -16, -2)
@@ -1486,10 +1844,12 @@ BuildOptionsPanel = function()
     local statHeader = content:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     statHeader:SetPoint("TOPLEFT", 360, -150)
     statHeader:SetText(S("Stats"))
+    controlRefs.statHeader = statHeader
 
     local statHint = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     statHint:SetPoint("TOPLEFT", statHeader, "BOTTOMLEFT", 0, -4)
     statHint:SetText(S("Check to show, set color, move with arrows"))
+    controlRefs.statHint = statHint
 
     for index = 1, #STAT_KEYS do
         local row = CreateFrame("Frame", nil, content)
@@ -1570,6 +1930,7 @@ BuildOptionsPanel = function()
     end
 
     optionsPanel:SetScript("OnShow", function()
+        RefreshLocalizedUI()
         ApplyCurrentProfileState()
     end)
 

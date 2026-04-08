@@ -1,5 +1,6 @@
-NE_STATS_L = NE_STATS_L or {}
-local L = NE_STATS_L
+NE_STATS_LOCALES = NE_STATS_LOCALES or {}
+local L = NE_STATS_LOCALES["enUS"] or {}
+NE_STATS_LOCALES["enUS"] = L
 
 L["Default"] = "Default"
 L["Create a new profile for this character"] = "Create a new profile for this character"
@@ -59,3 +60,15 @@ L["Mastery"] = "Mastery"
 L["Avoidance"] = "Avoidance"
 L["Leech"] = "Leech"
 L["Speed"] = "Speed"
+L["Create a new profile for this account"] = "Create a new profile for this account"
+L["Client language"] = "Client language"
+L["Addon language"] = "Addon language"
+L["Show lock icon only on hover"] = "Show lock icon only on hover"
+L["Shows the lock button only while the mouse is over the frame."] = "Shows the lock button only while the mouse is over the frame."
+L["Always show current specialization main stat first"] = "Always show current specialization main stat first"
+L["Keeps the primary stat for your current specialization at the top of the display."] = "Keeps the primary stat for your current specialization at the top of the display."
+L["Lock button"] = "Lock button"
+L["Left-click: lock or unlock the frame."] = "Left-click: lock or unlock the frame."
+L["Right-click: open addon settings."] = "Right-click: open addon settings."
+L["NE Stats: profile could not be renamed: %s"] = "NE Stats: profile could not be renamed: %s"
+L["NE Stats: settings panel failed: %s"] = "NE Stats: settings panel failed: %s"
