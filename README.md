@@ -90,6 +90,15 @@ Main files:
 - `ZhuraStats.toc`
 - `Locales/`
 
+## Releases
+
+GitHub Actions can build a release archive automatically.
+
+- Push a tag like `v0.1.1` to trigger a release build and attach the zip to a GitHub Release
+- Or run the `Release Build` workflow manually from the Actions tab to generate an artifact without publishing a tagged release
+
+The workflow reads the addon version from `ZhuraStats.toc` and packages the addon as a CurseForge-ready zip with a top-level `ZhuraStats/` folder.
+
 ## License
 
 This project is licensed under the MIT License. See `LICENSE` for details.
