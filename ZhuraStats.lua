@@ -365,6 +365,8 @@ local function GetFontInfo(fontKey)
     return STANDARD_TEXT_FONT, "OUTLINE"
 end
 
+local MigrateProfile
+
 local function EnsureDatabase()
     local name = UnitName("player") or "Unknown"
     local realm = GetRealmName() or "UnknownRealm"
@@ -388,7 +390,7 @@ local function EnsureDatabase()
     MigrateProfile(db.profile)
 end
 
-local function MigrateProfile(profile)
+MigrateProfile = function(profile)
     if not profile.stats then
         profile.stats = DeepCopy(defaults.stats)
     end
