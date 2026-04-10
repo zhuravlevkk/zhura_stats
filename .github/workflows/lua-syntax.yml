@@ -33,10 +33,10 @@ jobs:
       - name: Install Lua 5.1 and LuaRocks
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.1 luarocks
+          sudo apt-get install -y build-essential liblua5.1-0-dev lua5.1 luarocks unzip
 
       - name: Install Luacheck
-        run: luarocks install luacheck
+        run: sudo luarocks install luacheck
 
       - name: Run Luacheck
         run: luacheck ZhuraStats.lua Locales --config .luacheckrc
