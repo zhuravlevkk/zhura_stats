@@ -302,7 +302,6 @@ local statDefinitions = {
     },
 }
 
-local characterKey
 local initialized = false
 local optionsPanel
 local optionsCategory
@@ -409,10 +408,6 @@ end
 local MigrateProfile
 
 local function EnsureDatabase()
-    local name = UnitName("player") or "Unknown"
-    local realm = GetRealmName() or "UnknownRealm"
-    characterKey = string.format("%s - %s", name, realm)
-
     if not AceDB then
         return
     end
@@ -508,10 +503,6 @@ MigrateProfile = function(profile)
     profile.useLoadoutProfiles = nil
 end
 
-local function GetCurrentCharacterProfileLabel()
-    return characterKey or "Unknown - UnknownRealm"
-end
-
 local function GetActiveRootProfile()
     if not db then
         return defaults, "Default"
@@ -545,20 +536,6 @@ end
 
 local function CanModifyProfile(profileName)
     return profileName and profileName ~= "" and profileName ~= "Default"
-end
-
-local function ResolveProfileName(displayName)
-    if not displayName or displayName == "" then
-        return nil
-    end
-
-    for _, profileName in ipairs(GetProfileNames()) do
-        if profileName == displayName or GetDisplayProfileName(profileName) == displayName then
-            return profileName
-        end
-    end
-
-    return nil
 end
 
 local function CreateProfile(profileName)
@@ -1677,10 +1654,9 @@ BuildOptionsPanel = function()
     controlRefs.profileLabel = profileLabel
 
     local profileDropDown = CreateFrame("Frame", ADDON_NAME .. "ProfileDropDown", content, "UIDropDownMenuTemplate")
-    local selectedProfileName
     profileDropDown:SetPoint("TOPLEFT", profileLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(profileDropDown, 240)
-    InitializeProfileDropDown = function(self, level)
+    InitializeProfileDropDown = function(_, level)
         for _, name in ipairs(GetProfileNames()) do
             local profileName = name
             local info = UIDropDownMenu_CreateInfo()
@@ -1696,8 +1672,7 @@ BuildOptionsPanel = function()
         end
     end
     UIDropDownMenu_Initialize(profileDropDown, InitializeProfileDropDown)
-    function profileDropDown:SetValue(newValue)
-        selectedProfileName = newValue
+    profileDropDown.SetValue = function(_, newValue)
         SetProfileDropDownSelection(profileDropDown, newValue)
     end
     local _, activeProfileName = GetActiveRootProfile()
@@ -1806,7 +1781,7 @@ BuildOptionsPanel = function()
     local languageDropDown = CreateFrame("Frame", ADDON_NAME .. "LanguageDropDown", content, "UIDropDownMenuTemplate")
     languageDropDown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(languageDropDown, 220)
-    InitializeLanguageDropDown = function(self, level)
+    InitializeLanguageDropDown = function(_, level)
         local localeOptions = {
             CLIENT_LANGUAGE_VALUE,
             "enUS",
@@ -1950,7 +1925,7 @@ BuildOptionsPanel = function()
     local fontDropDown = CreateFrame("Frame", ADDON_NAME .. "FontDropDown", content, "UIDropDownMenuTemplate")
     fontDropDown:SetPoint("TOPLEFT", fontLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(fontDropDown, 220)
-    UIDropDownMenu_Initialize(fontDropDown, function(self, level)
+    UIDropDownMenu_Initialize(fontDropDown, function(_, level)
         for _, font in ipairs(GetAvailableFonts()) do
             local info = UIDropDownMenu_CreateInfo()
             info.text = font.label
