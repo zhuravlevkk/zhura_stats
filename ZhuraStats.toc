@@ -2,7 +2,7 @@
 ## Title: NE Stats
 ## Notes: Shows configurable secondary stat priorities per character and talent setup.
 ## Author: Codex
-## Version: 0.1.0
+## Version: 0.2.0
 ## SavedVariables: ZhuraStatsDB
 ## OptionalDeps: SharedMedia
 
