@@ -134,6 +134,9 @@ local STAT_KEYS = {
     "VERS",
     "MASTERY",
     "AVOIDANCE",
+    "PARRY",
+    "DODGE",
+    "BLOCK",
     "LEECH",
     "SPEED",
 }
@@ -240,6 +243,39 @@ local statDefinitions = {
             return GetAvoidance and (GetAvoidance() or 0) or 0
         end,
     },
+    PARRY = {
+        label = "Parry",
+        color = { 0.94, 0.64, 0.24 },
+        suffix = "%",
+        rating = function()
+            return GetCombatRating and (GetCombatRating(CR_PARRY) or 0) or 0
+        end,
+        value = function()
+            return GetParryChance and (GetParryChance() or 0) or 0
+        end,
+    },
+    DODGE = {
+        label = "Dodge",
+        color = { 0.95, 0.80, 0.26 },
+        suffix = "%",
+        rating = function()
+            return GetCombatRating and (GetCombatRating(CR_DODGE) or 0) or 0
+        end,
+        value = function()
+            return GetDodgeChance and (GetDodgeChance() or 0) or 0
+        end,
+    },
+    BLOCK = {
+        label = "Block",
+        color = { 0.87, 0.73, 0.42 },
+        suffix = "%",
+        rating = function()
+            return GetCombatRating and (GetCombatRating(CR_BLOCK) or 0) or 0
+        end,
+        value = function()
+            return GetBlockChance and (GetBlockChance() or 0) or 0
+        end,
+    },
     LEECH = {
         label = "Leech",
         color = { 0.10, 1.00, 0.55 },
@@ -339,6 +375,9 @@ defaults.stats = {
     { key = "VERS", enabled = true, color = DeepCopy(statDefinitions.VERS.color) },
     { key = "MASTERY", enabled = true, color = DeepCopy(statDefinitions.MASTERY.color) },
     { key = "AVOIDANCE", enabled = false, color = DeepCopy(statDefinitions.AVOIDANCE.color) },
+    { key = "PARRY", enabled = false, color = DeepCopy(statDefinitions.PARRY.color) },
+    { key = "DODGE", enabled = false, color = DeepCopy(statDefinitions.DODGE.color) },
+    { key = "BLOCK", enabled = false, color = DeepCopy(statDefinitions.BLOCK.color) },
     { key = "LEECH", enabled = false, color = DeepCopy(statDefinitions.LEECH.color) },
     { key = "SPEED", enabled = false, color = DeepCopy(statDefinitions.SPEED.color) },
 }
