@@ -1,0 +1,76 @@
+std = "lua51"
+max_line_length = false
+
+globals = {
+   "NE_STATS_LOCALES",
+}
+
+files["Locales/*.lua"] = {
+   globals = {
+      "NE_STATS_LOCALES",
+   },
+}
+
+files["ZhuraStats.lua"] = {
+   globals = {
+      "ColorPickerFrame",
+      "NE_STATS_LOCALES",
+      "SlashCmdList",
+      "StaticPopupDialogs",
+      "ZhuraStatsDB",
+      "SLASH_ZHURASTATS1",
+      "SLASH_ZHURASTATS2",
+   },
+   read_globals = {
+      "C_ClassTalents",
+      "C_Timer",
+      "CloseDropDownMenus",
+      "CreateFrame",
+      "CR_AVOIDANCE",
+      "CR_BLOCK",
+      "CR_CRIT_MELEE",
+      "CR_DODGE",
+      "CR_HASTE_MELEE",
+      "CR_LIFESTEAL",
+      "CR_MASTERY",
+      "CR_PARRY",
+      "CR_SPEED",
+      "CR_VERSATILITY_DAMAGE_DONE",
+      "GameTooltip",
+      "GetAvoidance",
+      "GetBlockChance",
+      "GetCombatRating",
+      "GetCombatRatingBonus",
+      "GetCritChance",
+      "GetDodgeChance",
+      "GetHaste",
+      "GetLifesteal",
+      "GetLocale",
+      "GetMasteryEffect",
+      "GetParryChance",
+      "GetRealmName",
+      "GetSpecialization",
+      "GetSpecializationInfo",
+      "GetSpeed",
+      "InterfaceOptions_AddCategory",
+      "InterfaceOptionsFrame_OpenToCategory",
+      "LibStub",
+      "Settings",
+      "STANDARD_TEXT_FONT",
+      "STATICPOPUP_NUMDIALOGS",
+      "StaticPopup_Show",
+      "UIDropDownMenu_AddButton",
+      "UIDropDownMenu_CreateInfo",
+      "UIDropDownMenu_Initialize",
+      "UIDropDownMenu_Refresh",
+      "UIDropDownMenu_SetSelectedName",
+      "UIDropDownMenu_SetSelectedValue",
+      "UIDropDownMenu_SetText",
+      "UIDropDownMenu_SetWidth",
+      "UIParent",
+      "UnitName",
+      "UnitStat",
+      "strtrim",
+      "wipe",
+   },
+}

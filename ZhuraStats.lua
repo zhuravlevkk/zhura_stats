@@ -134,6 +134,9 @@ local STAT_KEYS = {
     "VERS",
     "MASTERY",
     "AVOIDANCE",
+    "PARRY",
+    "DODGE",
+    "BLOCK",
     "LEECH",
     "SPEED",
 }
@@ -144,6 +147,8 @@ local defaults = {
     alpha = 1,
     fontSize = 18,
     fontKey = "Friz Quadrata TT",
+    columnCount = 1,
+    rowsPerColumn = 0,
     showPercent = true,
     percentPrecision = 2,
     showLabels = true,
@@ -240,6 +245,39 @@ local statDefinitions = {
             return GetAvoidance and (GetAvoidance() or 0) or 0
         end,
     },
+    PARRY = {
+        label = "Parry",
+        color = { 0.94, 0.64, 0.24 },
+        suffix = "%",
+        rating = function()
+            return GetCombatRating and (GetCombatRating(CR_PARRY) or 0) or 0
+        end,
+        value = function()
+            return GetParryChance and (GetParryChance() or 0) or 0
+        end,
+    },
+    DODGE = {
+        label = "Dodge",
+        color = { 0.95, 0.80, 0.26 },
+        suffix = "%",
+        rating = function()
+            return GetCombatRating and (GetCombatRating(CR_DODGE) or 0) or 0
+        end,
+        value = function()
+            return GetDodgeChance and (GetDodgeChance() or 0) or 0
+        end,
+    },
+    BLOCK = {
+        label = "Block",
+        color = { 0.87, 0.73, 0.42 },
+        suffix = "%",
+        rating = function()
+            return GetCombatRating and (GetCombatRating(CR_BLOCK) or 0) or 0
+        end,
+        value = function()
+            return GetBlockChance and (GetBlockChance() or 0) or 0
+        end,
+    },
     LEECH = {
         label = "Leech",
         color = { 0.10, 1.00, 0.55 },
@@ -264,7 +302,6 @@ local statDefinitions = {
     },
 }
 
-local characterKey
 local initialized = false
 local optionsPanel
 local optionsCategory
@@ -339,6 +376,9 @@ defaults.stats = {
     { key = "VERS", enabled = true, color = DeepCopy(statDefinitions.VERS.color) },
     { key = "MASTERY", enabled = true, color = DeepCopy(statDefinitions.MASTERY.color) },
     { key = "AVOIDANCE", enabled = false, color = DeepCopy(statDefinitions.AVOIDANCE.color) },
+    { key = "PARRY", enabled = false, color = DeepCopy(statDefinitions.PARRY.color) },
+    { key = "DODGE", enabled = false, color = DeepCopy(statDefinitions.DODGE.color) },
+    { key = "BLOCK", enabled = false, color = DeepCopy(statDefinitions.BLOCK.color) },
     { key = "LEECH", enabled = false, color = DeepCopy(statDefinitions.LEECH.color) },
     { key = "SPEED", enabled = false, color = DeepCopy(statDefinitions.SPEED.color) },
 }
@@ -365,11 +405,9 @@ local function GetFontInfo(fontKey)
     return STANDARD_TEXT_FONT, "OUTLINE"
 end
 
-local function EnsureDatabase()
-    local name = UnitName("player") or "Unknown"
-    local realm = GetRealmName() or "UnknownRealm"
-    characterKey = string.format("%s - %s", name, realm)
+local MigrateProfile
 
+local function EnsureDatabase()
     if not AceDB then
         return
     end
@@ -388,7 +426,7 @@ local function EnsureDatabase()
     MigrateProfile(db.profile)
 end
 
-local function MigrateProfile(profile)
+MigrateProfile = function(profile)
     if not profile.stats then
         profile.stats = DeepCopy(defaults.stats)
     end
@@ -443,6 +481,8 @@ local function MigrateProfile(profile)
     profile.scale = profile.scale or defaults.scale
     profile.fontSize = profile.fontSize or defaults.fontSize
     profile.fontKey = profile.fontKey or defaults.fontKey
+    profile.columnCount = math.max(1, math.floor(profile.columnCount or defaults.columnCount))
+    profile.rowsPerColumn = math.max(0, math.floor(profile.rowsPerColumn or defaults.rowsPerColumn))
     profile.showPercent = profile.showPercent ~= false
     profile.percentPrecision = profile.percentPrecision
         or profile.decimalPrecision
@@ -461,10 +501,6 @@ local function MigrateProfile(profile)
     profile.height = profile.height or defaults.height
     profile.useSpecProfiles = false
     profile.useLoadoutProfiles = nil
-end
-
-local function GetCurrentCharacterProfileLabel()
-    return characterKey or "Unknown - UnknownRealm"
 end
 
 local function GetActiveRootProfile()
@@ -500,20 +536,6 @@ end
 
 local function CanModifyProfile(profileName)
     return profileName and profileName ~= "" and profileName ~= "Default"
-end
-
-local function ResolveProfileName(displayName)
-    if not displayName or displayName == "" then
-        return nil
-    end
-
-    for _, profileName in ipairs(GetProfileNames()) do
-        if profileName == displayName or GetDisplayProfileName(profileName) == displayName then
-            return profileName
-        end
-    end
-
-    return nil
 end
 
 local function CreateProfile(profileName)
@@ -856,6 +878,12 @@ ApplyCurrentProfileState = function()
     if controlRefs.fontSizeSlider then
         controlRefs.fontSizeSlider:SetValue(profile.fontSize or defaults.fontSize)
     end
+    if controlRefs.columnCountSlider then
+        controlRefs.columnCountSlider:SetValue(profile.columnCount or defaults.columnCount)
+    end
+    if controlRefs.rowsPerColumnSlider then
+        controlRefs.rowsPerColumnSlider:SetValue(profile.rowsPerColumn or defaults.rowsPerColumn)
+    end
 
     if controlRefs.fontDropDown or controlRefs.fontPreview then
         for _, font in ipairs(GetAvailableFonts()) do
@@ -952,6 +980,13 @@ RefreshLocalizedUI = function()
     if controlRefs.fontSizeSlider then
         _G[controlRefs.fontSizeSlider:GetName() .. "Text"]:SetText(S("Font Size"))
     end
+    if controlRefs.columnCountSlider then
+        _G[controlRefs.columnCountSlider:GetName() .. "Text"]:SetText(S("Columns"))
+    end
+    if controlRefs.rowsPerColumnSlider then
+        _G[controlRefs.rowsPerColumnSlider:GetName() .. "Text"]:SetText(S("Max Rows per Column"))
+        _G[controlRefs.rowsPerColumnSlider:GetName() .. "Low"]:SetText(S("Auto"))
+    end
     if controlRefs.languageDropDown then
         UIDropDownMenu_Initialize(controlRefs.languageDropDown, InitializeLanguageDropDown)
         UIDropDownMenu_SetSelectedValue(controlRefs.languageDropDown, GetConfiguredLocale())
@@ -1040,6 +1075,32 @@ local function GetVisibleStats()
     end
 
     return visible
+end
+
+local function GetDisplayLayout(profile, visibleCount)
+    if visibleCount <= 0 then
+        return 1, { 0 }
+    end
+
+    local preferredColumns = math.max(1, math.floor(profile.columnCount or defaults.columnCount or 1))
+    preferredColumns = math.min(preferredColumns, visibleCount)
+
+    local rowsPerColumn = math.max(0, math.floor(profile.rowsPerColumn or defaults.rowsPerColumn or 0))
+    local actualColumns = preferredColumns
+    if rowsPerColumn > 0 then
+        actualColumns = math.max(actualColumns, math.ceil(visibleCount / rowsPerColumn))
+    end
+
+    actualColumns = math.min(actualColumns, visibleCount)
+
+    local columnItemCounts = {}
+    local baseCount = math.floor(visibleCount / actualColumns)
+    local extraCount = visibleCount % actualColumns
+    for index = 1, actualColumns do
+        columnItemCounts[index] = baseCount + (index <= extraCount and 1 or 0)
+    end
+
+    return actualColumns, columnItemCounts
 end
 
 RefreshStaticPopupTexts = function()
@@ -1319,40 +1380,91 @@ RefreshStats = function()
     local rightPadding = 28
     local topPadding = 8
     local bottomPadding = 4
-    local currentYOffset = topPadding
-    local contentWidth = 0
+    local columnGap = 20
+    local rowGap = 2
+    local measuredStats = {}
+    local maxLineHeight = 0
 
-    for index, line in ipairs(lines) do
-        local entry = visibleStats[index]
-        if entry then
-            local def = statDefinitions[entry.key]
-            local value = def.value()
-            local text = FormatStatLine(def, profile, value)
+    measureLine:SetFont(fontPath, fontSize, fontFlags)
+    for index, entry in ipairs(visibleStats) do
+        local def = statDefinitions[entry.key]
+        local value = def.value()
+        local text = FormatStatLine(def, profile, value)
 
-            measureLine:SetFont(fontPath, fontSize, fontFlags)
-            measureLine:SetText(text)
-            local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
-            local textHeight = measureLine:GetStringHeight()
-            contentWidth = math.max(contentWidth, textWidth)
+        measureLine:SetText(text)
+        local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
+        local textHeight = measureLine:GetStringHeight()
+        measuredStats[index] = {
+            entry = entry,
+            text = text,
+            textWidth = textWidth,
+            textHeight = textHeight,
+        }
+        maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
+    end
 
-            line:ClearAllPoints()
-            line:SetFont(fontPath, fontSize, fontFlags)
-            line:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", leftPadding, -currentYOffset)
-            line:SetWidth(math.max(textWidth + 4, 40))
-            line:SetWordWrap(false)
-            line:SetMaxLines(1)
-            line:SetTextColor(entry.color[1], entry.color[2], entry.color[3], 1)
-            line:SetText(text)
-            line:Show()
-
-            currentYOffset = currentYOffset + math.ceil(textHeight) + 2
-        else
-            line:Hide()
+    local actualColumns, columnItemCounts = GetDisplayLayout(profile, #measuredStats)
+    local columnWidths = {}
+    local maxRows = 0
+    local itemIndex = 1
+    for columnIndex = 1, actualColumns do
+        local columnWidth = 0
+        local rowCount = columnItemCounts[columnIndex] or 0
+        maxRows = math.max(maxRows, rowCount)
+        for _ = 1, rowCount do
+            local measured = measuredStats[itemIndex]
+            if measured then
+                columnWidth = math.max(columnWidth, measured.textWidth)
+            end
+            itemIndex = itemIndex + 1
         end
+        columnWidths[columnIndex] = columnWidth
+    end
+
+    maxLineHeight = math.max(maxLineHeight, fontSize)
+    itemIndex = 1
+    local currentXOffset = leftPadding
+    for columnIndex = 1, actualColumns do
+        local rowCount = columnItemCounts[columnIndex] or 0
+        for rowIndex = 1, rowCount do
+            local measured = measuredStats[itemIndex]
+            local line = lines[itemIndex]
+            if measured and line then
+                local currentYOffset = topPadding + (rowIndex - 1) * (maxLineHeight + rowGap)
+                line:ClearAllPoints()
+                line:SetFont(fontPath, fontSize, fontFlags)
+                line:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", currentXOffset, -currentYOffset)
+                line:SetWidth(math.max(columnWidths[columnIndex] + 4, 40))
+                line:SetWordWrap(false)
+                line:SetMaxLines(1)
+                line:SetTextColor(measured.entry.color[1], measured.entry.color[2], measured.entry.color[3], 1)
+                line:SetText(measured.text)
+                line:Show()
+            end
+            itemIndex = itemIndex + 1
+        end
+        currentXOffset = currentXOffset + columnWidths[columnIndex] + columnGap
+    end
+
+    for index = #measuredStats + 1, #lines do
+        lines[index]:Hide()
+    end
+
+    local contentWidth = 0
+    for columnIndex = 1, actualColumns do
+        contentWidth = contentWidth + (columnWidths[columnIndex] or 0)
+    end
+    if actualColumns > 1 then
+        contentWidth = contentWidth + (actualColumns - 1) * columnGap
+    end
+
+    local contentHeight = 0
+    if maxRows > 0 then
+        contentHeight = maxRows * maxLineHeight + math.max(0, maxRows - 1) * rowGap
     end
 
     local frameWidth = math.max(24, math.ceil(contentWidth) + leftPadding + rightPadding)
-    local frameHeight = math.max(24, math.ceil(currentYOffset + bottomPadding - 2))
+    local frameHeight = math.max(24, math.ceil(topPadding + contentHeight + bottomPadding))
     statsFrame:SetSize(frameWidth, frameHeight)
     if statsAnchor then
         local scale = profile.scale or defaults.scale
@@ -1519,7 +1631,7 @@ BuildOptionsPanel = function()
     scrollFrame:SetPoint("BOTTOMRIGHT", -32, 12)
 
     local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(720, 900)
+    content:SetSize(720, 980)
     scrollFrame:SetScrollChild(content)
     controlRefs.scrollFrame = scrollFrame
     controlRefs.scrollContent = content
@@ -1542,10 +1654,9 @@ BuildOptionsPanel = function()
     controlRefs.profileLabel = profileLabel
 
     local profileDropDown = CreateFrame("Frame", ADDON_NAME .. "ProfileDropDown", content, "UIDropDownMenuTemplate")
-    local selectedProfileName
     profileDropDown:SetPoint("TOPLEFT", profileLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(profileDropDown, 240)
-    InitializeProfileDropDown = function(self, level)
+    InitializeProfileDropDown = function(_, level)
         for _, name in ipairs(GetProfileNames()) do
             local profileName = name
             local info = UIDropDownMenu_CreateInfo()
@@ -1561,8 +1672,7 @@ BuildOptionsPanel = function()
         end
     end
     UIDropDownMenu_Initialize(profileDropDown, InitializeProfileDropDown)
-    function profileDropDown:SetValue(newValue)
-        selectedProfileName = newValue
+    profileDropDown.SetValue = function(_, newValue)
         SetProfileDropDownSelection(profileDropDown, newValue)
     end
     local _, activeProfileName = GetActiveRootProfile()
@@ -1671,7 +1781,7 @@ BuildOptionsPanel = function()
     local languageDropDown = CreateFrame("Frame", ADDON_NAME .. "LanguageDropDown", content, "UIDropDownMenuTemplate")
     languageDropDown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(languageDropDown, 220)
-    InitializeLanguageDropDown = function(self, level)
+    InitializeLanguageDropDown = function(_, level)
         local localeOptions = {
             CLIENT_LANGUAGE_VALUE,
             "enUS",
@@ -1792,15 +1902,30 @@ BuildOptionsPanel = function()
     fontSizeSlider:SetPoint("TOPLEFT", scaleSlider, "BOTTOMLEFT", 0, -36)
     controlRefs.fontSizeSlider = fontSizeSlider
 
+    local columnCountSlider = CreateSlider(ADDON_NAME .. "ColumnCountSlider", content, S("Columns"), 1, #STAT_KEYS, 1, function(_, value)
+        GetActiveProfile().columnCount = math.max(1, math.floor(value + 0.5))
+        RefreshStats()
+    end)
+    columnCountSlider:SetPoint("TOPLEFT", fontSizeSlider, "BOTTOMLEFT", 0, -36)
+    controlRefs.columnCountSlider = columnCountSlider
+
+    local rowsPerColumnSlider = CreateSlider(ADDON_NAME .. "RowsPerColumnSlider", content, S("Max Rows per Column"), 0, #STAT_KEYS, 1, function(_, value)
+        GetActiveProfile().rowsPerColumn = math.max(0, math.floor(value + 0.5))
+        RefreshStats()
+    end)
+    rowsPerColumnSlider:SetPoint("TOPLEFT", columnCountSlider, "BOTTOMLEFT", 0, -36)
+    _G[rowsPerColumnSlider:GetName() .. "Low"]:SetText(S("Auto"))
+    controlRefs.rowsPerColumnSlider = rowsPerColumnSlider
+
     local fontLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    fontLabel:SetPoint("TOPLEFT", fontSizeSlider, "BOTTOMLEFT", -6, -26)
+    fontLabel:SetPoint("TOPLEFT", rowsPerColumnSlider, "BOTTOMLEFT", -6, -26)
     fontLabel:SetText(S("Font"))
     controlRefs.fontLabel = fontLabel
 
     local fontDropDown = CreateFrame("Frame", ADDON_NAME .. "FontDropDown", content, "UIDropDownMenuTemplate")
     fontDropDown:SetPoint("TOPLEFT", fontLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(fontDropDown, 220)
-    UIDropDownMenu_Initialize(fontDropDown, function(self, level)
+    UIDropDownMenu_Initialize(fontDropDown, function(_, level)
         for _, font in ipairs(GetAvailableFonts()) do
             local info = UIDropDownMenu_CreateInfo()
             info.text = font.label

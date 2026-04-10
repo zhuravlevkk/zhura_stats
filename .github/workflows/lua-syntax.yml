@@ -1,0 +1,42 @@
+name: Lua Checks
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  syntax-check:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Lua 5.1
+        shell: pwsh
+        run: choco install lua -y --no-progress
+
+      - name: Validate Lua syntax
+        shell: pwsh
+        run: .\scripts\check-lua-syntax.ps1
+
+  luacheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Lua 5.1 and LuaRocks
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential liblua5.1-0-dev lua5.1 luarocks unzip
+
+      - name: Install Luacheck
+        run: sudo luarocks install luacheck
+
+      - name: Run Luacheck
+        run: luacheck ZhuraStats.lua Locales --config .luacheckrc
