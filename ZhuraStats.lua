@@ -23,6 +23,89 @@ local PRIMARY_STAT_KEY_BY_ID = {
     [2] = "AGI",
     [4] = "INT",
 }
+local PRIMARY_STAT_KEY_BY_CLASS_FILE = {
+    DEATHKNIGHT = "STR",
+    DEMONHUNTER = "AGI",
+    DRUID = "AGI",
+    EVOKER = "INT",
+    HUNTER = "AGI",
+    MAGE = "INT",
+    MONK = "AGI",
+    PALADIN = "STR",
+    PRIEST = "INT",
+    ROGUE = "AGI",
+    SHAMAN = "INT",
+    WARLOCK = "INT",
+    WARRIOR = "STR",
+}
+local PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC = {
+    DEATHKNIGHT = {
+        [1] = "STR", -- Blood
+        [2] = "STR", -- Frost
+        [3] = "STR", -- Unholy
+    },
+    DEMONHUNTER = {
+        [1] = "AGI", -- Havoc
+        [2] = "AGI", -- Vengeance
+        [3] = "INT", -- Devourer
+    },
+    DRUID = {
+        [1] = "INT", -- Balance
+        [2] = "AGI", -- Feral
+        [3] = "AGI", -- Guardian
+        [4] = "INT", -- Restoration
+    },
+    EVOKER = {
+        [1] = "INT", -- Devastation
+        [2] = "INT", -- Preservation
+        [3] = "INT", -- Augmentation
+    },
+    HUNTER = {
+        [1] = "AGI", -- Beast Mastery
+        [2] = "AGI", -- Marksmanship
+        [3] = "AGI", -- Survival
+    },
+    MAGE = {
+        [1] = "INT", -- Arcane
+        [2] = "INT", -- Fire
+        [3] = "INT", -- Frost
+    },
+    MONK = {
+        [1] = "AGI", -- Brewmaster
+        [2] = "INT", -- Mistweaver
+        [3] = "AGI", -- Windwalker
+    },
+    PALADIN = {
+        [1] = "INT", -- Holy
+        [2] = "STR", -- Protection
+        [3] = "STR", -- Retribution
+    },
+    SHAMAN = {
+        [1] = "INT", -- Elemental
+        [2] = "AGI", -- Enhancement
+        [3] = "INT", -- Restoration
+    },
+    PRIEST = {
+        [1] = "INT", -- Discipline
+        [2] = "INT", -- Holy
+        [3] = "INT", -- Shadow
+    },
+    ROGUE = {
+        [1] = "AGI", -- Assassination
+        [2] = "AGI", -- Outlaw
+        [3] = "AGI", -- Subtlety
+    },
+    WARLOCK = {
+        [1] = "INT", -- Affliction
+        [2] = "INT", -- Demonology
+        [3] = "INT", -- Destruction
+    },
+    WARRIOR = {
+        [1] = "STR", -- Arms
+        [2] = "STR", -- Fury
+        [3] = "STR", -- Protection
+    },
+}
 local L = {}
 
 local db
@@ -82,6 +165,35 @@ local function GetLocaleDisplayName(localeCode)
     return LOCALE_DISPLAY_NAMES[localeCode] or localeCode
 end
 
+local function GetTextAlignDisplayName(value)
+    if value == "CENTER" then
+        return S("Center")
+    end
+    if value == "RIGHT" then
+        return S("Right")
+    end
+    return S("Left")
+end
+
+local function GetGoldSeparatorDisplayName(value)
+    if value == " " then
+        return S("Space")
+    end
+    if value == "," then
+        return S("Comma")
+    end
+    if value == "." then
+        return S("Dot")
+    end
+    if value == "'" then
+        return S("Apostrophe")
+    end
+    if value == "_" then
+        return S("Underscore")
+    end
+    return tostring(value or " ")
+end
+
 ApplyLocale()
 
 local function GetDisplayProfileName(profileName)
@@ -115,6 +227,7 @@ addon:RegisterEvent("UNIT_AURA")
 addon:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
 addon:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 addon:RegisterEvent("TRAIT_CONFIG_UPDATED")
+addon:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
 local AceDB = LibStub and LibStub("AceDB-3.0", true)
@@ -139,6 +252,21 @@ local STAT_KEYS = {
     "BLOCK",
     "LEECH",
     "SPEED",
+    "DURA",
+    "ILVL",
+    "GOLD",
+}
+local TEXT_ALIGN_OPTIONS = {
+    "LEFT",
+    "CENTER",
+    "RIGHT",
+}
+local GOLD_SEPARATOR_OPTIONS = {
+    " ",
+    ",",
+    ".",
+    "'",
+    "_",
 }
 
 local defaults = {
@@ -153,6 +281,9 @@ local defaults = {
     percentPrecision = 2,
     showLabels = true,
     showValues = true,
+    textAlign = "LEFT",
+    goldUseSeparator = true,
+    goldSeparator = " ",
     locked = false,
     showLockOnHover = false,
     preferCurrentSpecMainStat = false,
@@ -220,7 +351,9 @@ local statDefinitions = {
             return GetCombatRating and (GetCombatRating(CR_VERSATILITY_DAMAGE_DONE) or 0) or 0
         end,
         value = function()
-            return GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE) or 0
+            local ratingBonus = (GetCombatRatingBonus and GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)) or 0
+            local baseBonus = (GetVersatilityBonus and GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)) or 0
+            return ratingBonus + baseBonus
         end,
     },
     MASTERY = {
@@ -300,6 +433,65 @@ local statDefinitions = {
             return GetSpeed and (GetSpeed() or 0) or 0
         end,
     },
+    DURA = {
+        label = "Durability",
+        color = { 0.42, 1.00, 0.42 },
+        suffix = "%",
+        value = function()
+            local totalCurrent = 0
+            local totalMaximum = 0
+            for slot = 1, 17 do
+                local current, maximum = GetInventoryItemDurability(slot)
+                if current and maximum and maximum > 0 then
+                    totalCurrent = totalCurrent + current
+                    totalMaximum = totalMaximum + maximum
+                end
+            end
+            if totalMaximum <= 0 then
+                return 0
+            end
+            return (totalCurrent / totalMaximum) * 100
+        end,
+    },
+    ILVL = {
+        label = "Item Level",
+        color = { 0.60, 0.82, 1.00 },
+        suffix = "",
+        value = function()
+            local _, equippedLevel = GetAverageItemLevel()
+            return equippedLevel or 0
+        end,
+    },
+    GOLD = {
+        label = "Gold",
+        color = { 1.00, 0.84, 0.00 },
+        suffix = "",
+        value = function()
+            return math.floor((GetMoney() or 0) / 10000)
+        end,
+        formatValue = function(value, profile)
+            local rounded = math.floor((value or 0) + 0.5)
+            if not profile.goldUseSeparator then
+                return tostring(rounded)
+            end
+
+            local separator = profile.goldSeparator or defaults.goldSeparator or " "
+            local digits = tostring(rounded)
+            local sign = ""
+            if string.sub(digits, 1, 1) == "-" then
+                sign = "-"
+                digits = string.sub(digits, 2)
+            end
+
+            local chunks = {}
+            while string.len(digits) > 3 do
+                table.insert(chunks, 1, string.sub(digits, -3))
+                digits = string.sub(digits, 1, -4)
+            end
+            table.insert(chunks, 1, digits)
+            return sign .. table.concat(chunks, separator)
+        end,
+    },
 }
 
 local initialized = false
@@ -319,6 +511,9 @@ local lines = {}
 local defaultStatsByKey = {}
 local MIN_DYNAMIC_FONT_SIZE = 8
 local measureLine
+local pendingOptionRowsAfterCombat = false
+local lastRefreshErrorAt = 0
+local lastRefreshErrorMessage = ""
 local BuildOptionsPanel
 local SelectRootProfile
 local InitializeProfileDropDown
@@ -381,6 +576,9 @@ defaults.stats = {
     { key = "BLOCK", enabled = false, color = DeepCopy(statDefinitions.BLOCK.color) },
     { key = "LEECH", enabled = false, color = DeepCopy(statDefinitions.LEECH.color) },
     { key = "SPEED", enabled = false, color = DeepCopy(statDefinitions.SPEED.color) },
+    { key = "DURA", enabled = true, color = DeepCopy(statDefinitions.DURA.color) },
+    { key = "ILVL", enabled = true, color = DeepCopy(statDefinitions.ILVL.color) },
+    { key = "GOLD", enabled = true, color = DeepCopy(statDefinitions.GOLD.color) },
 }
 
 for _, entry in ipairs(defaults.stats) do
@@ -489,6 +687,15 @@ MigrateProfile = function(profile)
         or defaults.percentPrecision
     profile.showLabels = profile.showLabels ~= false
     profile.showValues = profile.showValues ~= false
+    profile.textAlign = profile.textAlign or defaults.textAlign
+    if profile.textAlign ~= "LEFT" and profile.textAlign ~= "CENTER" and profile.textAlign ~= "RIGHT" then
+        profile.textAlign = defaults.textAlign
+    end
+    profile.goldUseSeparator = profile.goldUseSeparator ~= false
+    profile.goldSeparator = profile.goldSeparator or defaults.goldSeparator
+    if profile.goldSeparator ~= " " and profile.goldSeparator ~= "," and profile.goldSeparator ~= "." and profile.goldSeparator ~= "'" and profile.goldSeparator ~= "_" then
+        profile.goldSeparator = defaults.goldSeparator
+    end
     profile.locked = profile.locked or false
     profile.showLockOnHover = profile.showLockOnHover == true
     profile.preferCurrentSpecMainStat = profile.preferCurrentSpecMainStat == true
@@ -860,6 +1067,19 @@ ApplyCurrentProfileState = function()
     if controlRefs.showValuesCheckbox then
         controlRefs.showValuesCheckbox:SetChecked(profile.showValues)
     end
+    if controlRefs.textAlignDropDown then
+        local align = profile.textAlign or defaults.textAlign
+        UIDropDownMenu_SetSelectedValue(controlRefs.textAlignDropDown, align)
+        UIDropDownMenu_SetText(controlRefs.textAlignDropDown, GetTextAlignDisplayName(align))
+    end
+    if controlRefs.goldUseSeparatorCheckbox then
+        controlRefs.goldUseSeparatorCheckbox:SetChecked(profile.goldUseSeparator)
+    end
+    if controlRefs.goldSeparatorDropDown then
+        UIDropDownMenu_Initialize(controlRefs.goldSeparatorDropDown, controlRefs.goldSeparatorDropDown.initializeFunc)
+        UIDropDownMenu_SetSelectedValue(controlRefs.goldSeparatorDropDown, profile.goldSeparator or defaults.goldSeparator)
+        UIDropDownMenu_SetText(controlRefs.goldSeparatorDropDown, GetGoldSeparatorDisplayName(profile.goldSeparator or defaults.goldSeparator))
+    end
     if controlRefs.lockCheckbox then
         controlRefs.lockCheckbox:SetChecked(profile.locked)
     end
@@ -944,6 +1164,27 @@ RefreshLocalizedUI = function()
     end
     if controlRefs.showValuesCheckbox then
         controlRefs.showValuesCheckbox.label:SetText(S("Show values"))
+    end
+    if controlRefs.textAlignLabel then
+        controlRefs.textAlignLabel:SetText(S("Text alignment"))
+    end
+    if controlRefs.textAlignDropDown then
+        UIDropDownMenu_Initialize(controlRefs.textAlignDropDown, controlRefs.textAlignDropDown.initializeFunc)
+        local align = (GetActiveProfile().textAlign or defaults.textAlign)
+        UIDropDownMenu_SetSelectedValue(controlRefs.textAlignDropDown, align)
+        UIDropDownMenu_SetText(controlRefs.textAlignDropDown, GetTextAlignDisplayName(align))
+    end
+    if controlRefs.goldUseSeparatorCheckbox then
+        controlRefs.goldUseSeparatorCheckbox.label:SetText(S("Use separator for gold"))
+    end
+    if controlRefs.goldSeparatorLabel then
+        controlRefs.goldSeparatorLabel:SetText(S("Gold separator"))
+    end
+    if controlRefs.goldSeparatorDropDown then
+        UIDropDownMenu_Initialize(controlRefs.goldSeparatorDropDown, controlRefs.goldSeparatorDropDown.initializeFunc)
+        local separator = (GetActiveProfile().goldSeparator or defaults.goldSeparator)
+        UIDropDownMenu_SetSelectedValue(controlRefs.goldSeparatorDropDown, separator)
+        UIDropDownMenu_SetText(controlRefs.goldSeparatorDropDown, GetGoldSeparatorDisplayName(separator))
     end
     if controlRefs.lockCheckbox then
         controlRefs.lockCheckbox.label:SetText(S("Lock frame"))
@@ -1039,16 +1280,16 @@ local function GetVisibleStats()
         end
 
         if not mainStatKey then
-            local strength = select(2, UnitStat("player", 1)) or 0
-            local agility = select(2, UnitStat("player", 2)) or 0
-            local intellect = select(2, UnitStat("player", 4)) or 0
+            local _, classFile = UnitClass("player")
+            if classFile and activeSpecIndex then
+                local classSpecMap = PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC[classFile]
+                if classSpecMap then
+                    mainStatKey = classSpecMap[activeSpecIndex]
+                end
+            end
 
-            if strength >= agility and strength >= intellect then
-                mainStatKey = "STR"
-            elseif agility >= intellect then
-                mainStatKey = "AGI"
-            else
-                mainStatKey = "INT"
+            if not mainStatKey and classFile then
+                mainStatKey = PRIMARY_STAT_KEY_BY_CLASS_FILE[classFile]
             end
         end
     end
@@ -1339,13 +1580,41 @@ local function FormatValue(entry, value)
     return string.format("%.2f", value)
 end
 
+local function SafeNumberCall(fn, fallback)
+    if type(fn) ~= "function" then
+        return fallback
+    end
+
+    local ok, value = pcall(fn)
+    if not ok or type(value) ~= "number" then
+        return fallback
+    end
+
+    if issecretvalue and issecretvalue(value) then
+        return fallback
+    end
+
+    return value
+end
+
+local function ApplyTextAlignmentToVisibleLines()
+    local align = GetActiveProfile().textAlign or defaults.textAlign
+    for _, line in ipairs(lines) do
+        if line and line:IsShown() then
+            line:SetJustifyH(align)
+            -- Force immediate visual refresh of existing text nodes.
+            line:SetText(line:GetText() or "")
+        end
+    end
+end
+
 local function FormatStatLine(def, profile, value)
     local statLabel = S(def.label)
     local labelPart = profile.showLabels and (statLabel .. " ") or ""
     local precision = math.max(0, math.min(3, profile.percentPrecision or defaults.percentPrecision))
 
     if def.rating then
-        local rating = def.rating() or 0
+        local rating = SafeNumberCall(def.rating, 0)
         if profile.showValues and profile.showPercent then
             return string.format("%s%d / %." .. precision .. "f%%", labelPart, math.floor(rating + 0.5), value)
         end
@@ -1365,14 +1634,19 @@ local function FormatStatLine(def, profile, value)
         return labelPart ~= "" and labelPart or statLabel
     end
 
+    if def.formatValue then
+        return string.format("%s%s", labelPart, def.formatValue(value, profile))
+    end
+
     return string.format("%s%s", labelPart, FormatValue(def, value))
 end
 
-RefreshStats = function()
+local function RefreshStatsImpl()
     EnsureStatsFrame()
     ApplyFrameStyle()
 
     local profile = GetActiveProfile()
+    local textAlign = profile.textAlign or defaults.textAlign
     local visibleStats = GetVisibleStats()
     local fontPath, fontFlags = GetFontInfo(profile.fontKey)
     local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
@@ -1388,19 +1662,21 @@ RefreshStats = function()
     measureLine:SetFont(fontPath, fontSize, fontFlags)
     for index, entry in ipairs(visibleStats) do
         local def = statDefinitions[entry.key]
-        local value = def.value()
-        local text = FormatStatLine(def, profile, value)
+        local value = SafeNumberCall(def.value, nil)
+        if value ~= nil then
+            local text = FormatStatLine(def, profile, value)
 
-        measureLine:SetText(text)
-        local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
-        local textHeight = measureLine:GetStringHeight()
-        measuredStats[index] = {
-            entry = entry,
-            text = text,
-            textWidth = textWidth,
-            textHeight = textHeight,
-        }
-        maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
+            measureLine:SetText(text)
+            local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
+            local textHeight = measureLine:GetStringHeight()
+            measuredStats[index] = {
+                entry = entry,
+                text = text,
+                textWidth = textWidth,
+                textHeight = textHeight,
+            }
+            maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
+        end
     end
 
     local actualColumns, columnItemCounts = GetDisplayLayout(profile, #measuredStats)
@@ -1431,10 +1707,14 @@ RefreshStats = function()
             local line = lines[itemIndex]
             if measured and line then
                 local currentYOffset = topPadding + (rowIndex - 1) * (maxLineHeight + rowGap)
+                local columnWidth = math.max(columnWidths[columnIndex] + 4, 40)
                 line:ClearAllPoints()
                 line:SetFont(fontPath, fontSize, fontFlags)
+                line:SetJustifyH(textAlign)
                 line:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", currentXOffset, -currentYOffset)
-                line:SetWidth(math.max(columnWidths[columnIndex] + 4, 40))
+                line:SetPoint("TOPRIGHT", statsFrame, "TOPLEFT", currentXOffset + columnWidth, -currentYOffset)
+                line:SetWidth(0)
+                line:SetJustifyH(textAlign)
                 line:SetWordWrap(false)
                 line:SetMaxLines(1)
                 line:SetTextColor(measured.entry.color[1], measured.entry.color[2], measured.entry.color[3], 1)
@@ -1469,6 +1749,29 @@ RefreshStats = function()
     if statsAnchor then
         local scale = profile.scale or defaults.scale
         statsAnchor:SetSize(frameWidth * scale, frameHeight * scale)
+    end
+end
+
+RefreshStats = function()
+    local handledError
+    local ok, err = xpcall(RefreshStatsImpl, function(message)
+        handledError = tostring(message or "unknown error")
+        local errorHandler = geterrorhandler and geterrorhandler()
+        if type(errorHandler) == "function" then
+            errorHandler(handledError)
+        end
+        return handledError
+    end)
+    if not ok then
+        local displayError = tostring(err or handledError or "")
+        if displayError ~= "" and displayError ~= "nil" then
+            local now = (GetTime and GetTime()) or 0
+            if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 2 then
+                print(S("NE Stats: refresh failed: %s", displayError))
+                lastRefreshErrorMessage = displayError
+                lastRefreshErrorAt = now
+            end
+        end
     end
 end
 
@@ -1600,6 +1903,12 @@ local function RefreshStatsDeferred()
 end
 
 RefreshOptionRows = function()
+    if InCombatLockdown and InCombatLockdown() then
+        pendingOptionRowsAfterCombat = true
+        return
+    end
+
+    pendingOptionRowsAfterCombat = false
     if not optionsPanel then
         return
     end
@@ -1844,6 +2153,74 @@ BuildOptionsPanel = function()
     showValuesCheckbox:SetPoint("TOPLEFT", showLabelsCheckbox, "BOTTOMLEFT", 0, -8)
     controlRefs.showValuesCheckbox = showValuesCheckbox
 
+    local textAlignLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    textAlignLabel:SetPoint("TOPLEFT", showValuesCheckbox, "BOTTOMLEFT", 0, -16)
+    textAlignLabel:SetText(S("Text alignment"))
+    controlRefs.textAlignLabel = textAlignLabel
+
+    local textAlignDropDown = CreateFrame("Frame", ADDON_NAME .. "TextAlignDropDown", content, "UIDropDownMenuTemplate")
+    textAlignDropDown:SetPoint("TOPLEFT", textAlignLabel, "BOTTOMLEFT", -16, -2)
+    UIDropDownMenu_SetWidth(textAlignDropDown, 140)
+    textAlignDropDown.initializeFunc = function(_, level)
+        for _, align in ipairs(TEXT_ALIGN_OPTIONS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = GetTextAlignDisplayName(align)
+            info.value = align
+            info.checked = (GetActiveProfile().textAlign or defaults.textAlign) == align
+            info.func = function()
+                GetActiveProfile().textAlign = align
+                UIDropDownMenu_SetSelectedValue(textAlignDropDown, align)
+                UIDropDownMenu_SetText(textAlignDropDown, GetTextAlignDisplayName(align))
+                ApplyTextAlignmentToVisibleLines()
+                RefreshStats()
+                if C_Timer and C_Timer.After then
+                    C_Timer.After(0, function()
+                        if initialized then
+                            ApplyTextAlignmentToVisibleLines()
+                            RefreshStats()
+                        end
+                    end)
+                end
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+    UIDropDownMenu_Initialize(textAlignDropDown, textAlignDropDown.initializeFunc)
+    controlRefs.textAlignDropDown = textAlignDropDown
+
+    local goldUseSeparatorCheckbox = CreateCheckbox(content, S("Use separator for gold"), nil, function(self)
+        GetActiveProfile().goldUseSeparator = self:GetChecked()
+        RefreshStats()
+    end)
+    goldUseSeparatorCheckbox:SetPoint("TOPLEFT", textAlignDropDown, "BOTTOMLEFT", 16, -8)
+    controlRefs.goldUseSeparatorCheckbox = goldUseSeparatorCheckbox
+
+    local goldSeparatorLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    goldSeparatorLabel:SetPoint("TOPLEFT", goldUseSeparatorCheckbox, "BOTTOMLEFT", 0, -16)
+    goldSeparatorLabel:SetText(S("Gold separator"))
+    controlRefs.goldSeparatorLabel = goldSeparatorLabel
+
+    local goldSeparatorDropDown = CreateFrame("Frame", ADDON_NAME .. "GoldSeparatorDropDown", content, "UIDropDownMenuTemplate")
+    goldSeparatorDropDown:SetPoint("TOPLEFT", goldSeparatorLabel, "BOTTOMLEFT", -16, -2)
+    UIDropDownMenu_SetWidth(goldSeparatorDropDown, 140)
+    goldSeparatorDropDown.initializeFunc = function(_, level)
+        for _, separator in ipairs(GOLD_SEPARATOR_OPTIONS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = GetGoldSeparatorDisplayName(separator)
+            info.value = separator
+            info.checked = (GetActiveProfile().goldSeparator or defaults.goldSeparator) == separator
+            info.func = function()
+                GetActiveProfile().goldSeparator = separator
+                UIDropDownMenu_SetSelectedValue(goldSeparatorDropDown, separator)
+                UIDropDownMenu_SetText(goldSeparatorDropDown, GetGoldSeparatorDisplayName(separator))
+                RefreshStats()
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+    UIDropDownMenu_Initialize(goldSeparatorDropDown, goldSeparatorDropDown.initializeFunc)
+    controlRefs.goldSeparatorDropDown = goldSeparatorDropDown
+
     local lockCheckbox = CreateCheckbox(content, S("Lock frame"), nil, function(self)
         GetActiveProfile().locked = self:GetChecked()
         UpdateFrameLockState()
@@ -1853,7 +2230,7 @@ BuildOptionsPanel = function()
             print(S("NE Stats: frame unlocked. Drag it, then lock when ready."))
         end
     end)
-    lockCheckbox:SetPoint("TOPLEFT", showValuesCheckbox, "BOTTOMLEFT", 0, -8)
+    lockCheckbox:SetPoint("TOPLEFT", goldSeparatorDropDown, "BOTTOMLEFT", 16, -12)
     controlRefs.lockCheckbox = lockCheckbox
 
     local showLockOnHoverCheckbox = CreateCheckbox(
@@ -2131,6 +2508,13 @@ addon:SetScript("OnEvent", function(_, event, arg1)
 
     if event == "PLAYER_ENTERING_WORLD" then
         RefreshStats()
+        return
+    end
+
+    if event == "PLAYER_REGEN_ENABLED" then
+        if pendingOptionRowsAfterCombat and optionsPanel and optionsPanel:IsShown() then
+            RefreshOptionRows()
+        end
         return
     end
 
