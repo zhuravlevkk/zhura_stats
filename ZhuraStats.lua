@@ -23,6 +23,89 @@ local PRIMARY_STAT_KEY_BY_ID = {
     [2] = "AGI",
     [4] = "INT",
 }
+local PRIMARY_STAT_KEY_BY_CLASS_FILE = {
+    DEATHKNIGHT = "STR",
+    DEMONHUNTER = "AGI",
+    DRUID = "AGI",
+    EVOKER = "INT",
+    HUNTER = "AGI",
+    MAGE = "INT",
+    MONK = "AGI",
+    PALADIN = "STR",
+    PRIEST = "INT",
+    ROGUE = "AGI",
+    SHAMAN = "INT",
+    WARLOCK = "INT",
+    WARRIOR = "STR",
+}
+local PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC = {
+    DEATHKNIGHT = {
+        [1] = "STR", -- Blood
+        [2] = "STR", -- Frost
+        [3] = "STR", -- Unholy
+    },
+    DEMONHUNTER = {
+        [1] = "AGI", -- Havoc
+        [2] = "AGI", -- Vengeance
+        [3] = "INT", -- Devourer
+    },
+    DRUID = {
+        [1] = "INT", -- Balance
+        [2] = "AGI", -- Feral
+        [3] = "AGI", -- Guardian
+        [4] = "INT", -- Restoration
+    },
+    EVOKER = {
+        [1] = "INT", -- Devastation
+        [2] = "INT", -- Preservation
+        [3] = "INT", -- Augmentation
+    },
+    HUNTER = {
+        [1] = "AGI", -- Beast Mastery
+        [2] = "AGI", -- Marksmanship
+        [3] = "AGI", -- Survival
+    },
+    MAGE = {
+        [1] = "INT", -- Arcane
+        [2] = "INT", -- Fire
+        [3] = "INT", -- Frost
+    },
+    MONK = {
+        [1] = "AGI", -- Brewmaster
+        [2] = "INT", -- Mistweaver
+        [3] = "AGI", -- Windwalker
+    },
+    PALADIN = {
+        [1] = "INT", -- Holy
+        [2] = "STR", -- Protection
+        [3] = "STR", -- Retribution
+    },
+    SHAMAN = {
+        [1] = "INT", -- Elemental
+        [2] = "AGI", -- Enhancement
+        [3] = "INT", -- Restoration
+    },
+    PRIEST = {
+        [1] = "INT", -- Discipline
+        [2] = "INT", -- Holy
+        [3] = "INT", -- Shadow
+    },
+    ROGUE = {
+        [1] = "AGI", -- Assassination
+        [2] = "AGI", -- Outlaw
+        [3] = "AGI", -- Subtlety
+    },
+    WARLOCK = {
+        [1] = "INT", -- Affliction
+        [2] = "INT", -- Demonology
+        [3] = "INT", -- Destruction
+    },
+    WARRIOR = {
+        [1] = "STR", -- Arms
+        [2] = "STR", -- Fury
+        [3] = "STR", -- Protection
+    },
+}
 local L = {}
 
 local db
@@ -115,6 +198,7 @@ addon:RegisterEvent("UNIT_AURA")
 addon:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
 addon:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 addon:RegisterEvent("TRAIT_CONFIG_UPDATED")
+addon:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
 local AceDB = LibStub and LibStub("AceDB-3.0", true)
@@ -220,7 +304,9 @@ local statDefinitions = {
             return GetCombatRating and (GetCombatRating(CR_VERSATILITY_DAMAGE_DONE) or 0) or 0
         end,
         value = function()
-            return GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE) or 0
+            local ratingBonus = (GetCombatRatingBonus and GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)) or 0
+            local baseBonus = (GetVersatilityBonus and GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)) or 0
+            return ratingBonus + baseBonus
         end,
     },
     MASTERY = {
@@ -319,6 +405,9 @@ local lines = {}
 local defaultStatsByKey = {}
 local MIN_DYNAMIC_FONT_SIZE = 8
 local measureLine
+local pendingOptionRowsAfterCombat = false
+local lastRefreshErrorAt = 0
+local lastRefreshErrorMessage = ""
 local BuildOptionsPanel
 local SelectRootProfile
 local InitializeProfileDropDown
@@ -1039,16 +1128,16 @@ local function GetVisibleStats()
         end
 
         if not mainStatKey then
-            local strength = select(2, UnitStat("player", 1)) or 0
-            local agility = select(2, UnitStat("player", 2)) or 0
-            local intellect = select(2, UnitStat("player", 4)) or 0
+            local _, classFile = UnitClass("player")
+            if classFile and activeSpecIndex then
+                local classSpecMap = PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC[classFile]
+                if classSpecMap then
+                    mainStatKey = classSpecMap[activeSpecIndex]
+                end
+            end
 
-            if strength >= agility and strength >= intellect then
-                mainStatKey = "STR"
-            elseif agility >= intellect then
-                mainStatKey = "AGI"
-            else
-                mainStatKey = "INT"
+            if not mainStatKey and classFile then
+                mainStatKey = PRIMARY_STAT_KEY_BY_CLASS_FILE[classFile]
             end
         end
     end
@@ -1339,13 +1428,30 @@ local function FormatValue(entry, value)
     return string.format("%.2f", value)
 end
 
+local function SafeNumberCall(fn, fallback)
+    if type(fn) ~= "function" then
+        return fallback
+    end
+
+    local ok, value = pcall(fn)
+    if not ok or type(value) ~= "number" then
+        return fallback
+    end
+
+    if issecretvalue and issecretvalue(value) then
+        return fallback
+    end
+
+    return value
+end
+
 local function FormatStatLine(def, profile, value)
     local statLabel = S(def.label)
     local labelPart = profile.showLabels and (statLabel .. " ") or ""
     local precision = math.max(0, math.min(3, profile.percentPrecision or defaults.percentPrecision))
 
     if def.rating then
-        local rating = def.rating() or 0
+        local rating = SafeNumberCall(def.rating, 0)
         if profile.showValues and profile.showPercent then
             return string.format("%s%d / %." .. precision .. "f%%", labelPart, math.floor(rating + 0.5), value)
         end
@@ -1368,7 +1474,7 @@ local function FormatStatLine(def, profile, value)
     return string.format("%s%s", labelPart, FormatValue(def, value))
 end
 
-RefreshStats = function()
+local function RefreshStatsImpl()
     EnsureStatsFrame()
     ApplyFrameStyle()
 
@@ -1388,19 +1494,21 @@ RefreshStats = function()
     measureLine:SetFont(fontPath, fontSize, fontFlags)
     for index, entry in ipairs(visibleStats) do
         local def = statDefinitions[entry.key]
-        local value = def.value()
-        local text = FormatStatLine(def, profile, value)
+        local value = SafeNumberCall(def.value, nil)
+        if value ~= nil then
+            local text = FormatStatLine(def, profile, value)
 
-        measureLine:SetText(text)
-        local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
-        local textHeight = measureLine:GetStringHeight()
-        measuredStats[index] = {
-            entry = entry,
-            text = text,
-            textWidth = textWidth,
-            textHeight = textHeight,
-        }
-        maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
+            measureLine:SetText(text)
+            local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
+            local textHeight = measureLine:GetStringHeight()
+            measuredStats[index] = {
+                entry = entry,
+                text = text,
+                textWidth = textWidth,
+                textHeight = textHeight,
+            }
+            maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
+        end
     end
 
     local actualColumns, columnItemCounts = GetDisplayLayout(profile, #measuredStats)
@@ -1469,6 +1577,29 @@ RefreshStats = function()
     if statsAnchor then
         local scale = profile.scale or defaults.scale
         statsAnchor:SetSize(frameWidth * scale, frameHeight * scale)
+    end
+end
+
+RefreshStats = function()
+    local handledError
+    local ok, err = xpcall(RefreshStatsImpl, function(message)
+        handledError = tostring(message or "unknown error")
+        local errorHandler = geterrorhandler and geterrorhandler()
+        if type(errorHandler) == "function" then
+            errorHandler(handledError)
+        end
+        return handledError
+    end)
+    if not ok then
+        local displayError = tostring(err or handledError or "")
+        if displayError ~= "" and displayError ~= "nil" then
+            local now = (GetTime and GetTime()) or 0
+            if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 2 then
+                print(S("NE Stats: refresh failed: %s", displayError))
+                lastRefreshErrorMessage = displayError
+                lastRefreshErrorAt = now
+            end
+        end
     end
 end
 
@@ -1600,6 +1731,12 @@ local function RefreshStatsDeferred()
 end
 
 RefreshOptionRows = function()
+    if InCombatLockdown and InCombatLockdown() then
+        pendingOptionRowsAfterCombat = true
+        return
+    end
+
+    pendingOptionRowsAfterCombat = false
     if not optionsPanel then
         return
     end
@@ -2131,6 +2268,13 @@ addon:SetScript("OnEvent", function(_, event, arg1)
 
     if event == "PLAYER_ENTERING_WORLD" then
         RefreshStats()
+        return
+    end
+
+    if event == "PLAYER_REGEN_ENABLED" then
+        if pendingOptionRowsAfterCombat and optionsPanel and optionsPanel:IsShown() then
+            RefreshOptionRows()
+        end
         return
     end
 
