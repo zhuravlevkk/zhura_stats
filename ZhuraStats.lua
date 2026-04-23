@@ -228,6 +228,7 @@ addon:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
 addon:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 addon:RegisterEvent("TRAIT_CONFIG_UPDATED")
 addon:RegisterEvent("PLAYER_REGEN_ENABLED")
+addon:RegisterEvent("PLAYER_REGEN_DISABLED")
 
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
 local AceDB = LibStub and LibStub("AceDB-3.0", true)
@@ -304,6 +305,15 @@ local statDefinitions = {
         value = function()
             return select(2, UnitStat("player", 1))
         end,
+        valueReaders = {
+            function()
+                local base, _, posBuff, negBuff = UnitStat("player", 1)
+                if type(base) ~= "number" or type(posBuff) ~= "number" or type(negBuff) ~= "number" then
+                    return nil
+                end
+                return base + posBuff - negBuff
+            end,
+        },
     },
     AGI = {
         label = "Agility",
@@ -312,6 +322,15 @@ local statDefinitions = {
         value = function()
             return select(2, UnitStat("player", 2))
         end,
+        valueReaders = {
+            function()
+                local base, _, posBuff, negBuff = UnitStat("player", 2)
+                if type(base) ~= "number" or type(posBuff) ~= "number" or type(negBuff) ~= "number" then
+                    return nil
+                end
+                return base + posBuff - negBuff
+            end,
+        },
     },
     INT = {
         label = "Intellect",
@@ -320,6 +339,15 @@ local statDefinitions = {
         value = function()
             return select(2, UnitStat("player", 4))
         end,
+        valueReaders = {
+            function()
+                local base, _, posBuff, negBuff = UnitStat("player", 4)
+                if type(base) ~= "number" or type(posBuff) ~= "number" or type(negBuff) ~= "number" then
+                    return nil
+                end
+                return base + posBuff - negBuff
+            end,
+        },
     },
     HASTE = {
         label = "Haste",
@@ -331,6 +359,14 @@ local statDefinitions = {
         value = function()
             return GetHaste()
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_HASTE_MELEE)
+            end,
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_HASTE_SPELL)
+            end,
+        },
     },
     CRIT = {
         label = "Crit",
@@ -342,6 +378,14 @@ local statDefinitions = {
         value = function()
             return GetCritChance()
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_CRIT_SPELL)
+            end,
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_CRIT_MELEE)
+            end,
+        },
     },
     VERS = {
         label = "Vers",
@@ -355,6 +399,14 @@ local statDefinitions = {
             local baseBonus = (GetVersatilityBonus and GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)) or 0
             return ratingBonus + baseBonus
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
+            end,
+            function()
+                return GetVersatilityBonus and GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
+            end,
+        },
     },
     MASTERY = {
         label = "Mastery",
@@ -366,6 +418,11 @@ local statDefinitions = {
         value = function()
             return GetMasteryEffect()
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_MASTERY)
+            end,
+        },
     },
     AVOIDANCE = {
         label = "Avoidance",
@@ -377,6 +434,11 @@ local statDefinitions = {
         value = function()
             return GetAvoidance and (GetAvoidance() or 0) or 0
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_AVOIDANCE)
+            end,
+        },
     },
     PARRY = {
         label = "Parry",
@@ -388,6 +450,11 @@ local statDefinitions = {
         value = function()
             return GetParryChance and (GetParryChance() or 0) or 0
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_PARRY)
+            end,
+        },
     },
     DODGE = {
         label = "Dodge",
@@ -399,6 +466,11 @@ local statDefinitions = {
         value = function()
             return GetDodgeChance and (GetDodgeChance() or 0) or 0
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_DODGE)
+            end,
+        },
     },
     BLOCK = {
         label = "Block",
@@ -410,6 +482,11 @@ local statDefinitions = {
         value = function()
             return GetBlockChance and (GetBlockChance() or 0) or 0
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_BLOCK)
+            end,
+        },
     },
     LEECH = {
         label = "Leech",
@@ -421,6 +498,11 @@ local statDefinitions = {
         value = function()
             return GetLifesteal and (GetLifesteal() or 0) or 0
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_LIFESTEAL)
+            end,
+        },
     },
     SPEED = {
         label = "Speed",
@@ -432,6 +514,11 @@ local statDefinitions = {
         value = function()
             return GetSpeed and (GetSpeed() or 0) or 0
         end,
+        valueReaders = {
+            function()
+                return GetCombatRatingBonus and GetCombatRatingBonus(CR_SPEED)
+            end,
+        },
     },
     DURA = {
         label = "Durability",
@@ -511,6 +598,12 @@ local lines = {}
 local defaultStatsByKey = {}
 local MIN_DYNAMIC_FONT_SIZE = 8
 local measureLine
+-- Last successful numeric reads; used when API returns secret values in combat / instances.
+local statValueCache = {}
+local statRatingCache = {}
+-- While fighting, poll stats so we pick up values as soon as the API stops returning secrets.
+local combatStatRefreshHandle
+local COMBAT_STAT_REFRESH_SEC = 0.35
 local pendingOptionRowsAfterCombat = false
 local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
@@ -1597,6 +1690,44 @@ local function SafeNumberCall(fn, fallback)
     return value
 end
 
+local function SafeNumberCallFirst(readers, fallback)
+    if type(readers) ~= "table" then
+        return fallback
+    end
+
+    for index = 1, #readers do
+        local fn = readers[index]
+        local value = SafeNumberCall(fn, nil)
+        if value ~= nil then
+            return value
+        end
+    end
+
+    return fallback
+end
+
+local function ReadStatValueFromDef(def)
+    local primary = SafeNumberCall(def.value, nil)
+    if primary ~= nil then
+        return primary
+    end
+
+    return SafeNumberCallFirst(def.valueReaders, nil)
+end
+
+local function ReadStatRatingFromDef(def)
+    if not def.rating then
+        return nil
+    end
+
+    local primary = SafeNumberCall(def.rating, nil)
+    if primary ~= nil then
+        return primary
+    end
+
+    return SafeNumberCallFirst(def.ratingReaders, nil)
+end
+
 local function ApplyTextAlignmentToVisibleLines()
     local align = GetActiveProfile().textAlign or defaults.textAlign
     for _, line in ipairs(lines) do
@@ -1608,13 +1739,16 @@ local function ApplyTextAlignmentToVisibleLines()
     end
 end
 
-local function FormatStatLine(def, profile, value)
+local function FormatStatLine(def, profile, value, ratingOverride)
     local statLabel = S(def.label)
     local labelPart = profile.showLabels and (statLabel .. " ") or ""
     local precision = math.max(0, math.min(3, profile.percentPrecision or defaults.percentPrecision))
 
     if def.rating then
-        local rating = SafeNumberCall(def.rating, 0)
+        local rating = ratingOverride
+        if rating == nil then
+            rating = SafeNumberCall(def.rating, 0)
+        end
         if profile.showValues and profile.showPercent then
             return string.format("%s%d / %." .. precision .. "f%%", labelPart, math.floor(rating + 0.5), value)
         end
@@ -1660,21 +1794,33 @@ local function RefreshStatsImpl()
     local maxLineHeight = 0
 
     measureLine:SetFont(fontPath, fontSize, fontFlags)
-    for index, entry in ipairs(visibleStats) do
+    for _, entry in ipairs(visibleStats) do
         local def = statDefinitions[entry.key]
-        local value = SafeNumberCall(def.value, nil)
+        local freshValue = ReadStatValueFromDef(def)
+        if freshValue ~= nil then
+            statValueCache[entry.key] = freshValue
+        end
+        local value = freshValue or statValueCache[entry.key]
         if value ~= nil then
-            local text = FormatStatLine(def, profile, value)
+            local cachedRating
+            if def.rating then
+                local freshRating = ReadStatRatingFromDef(def)
+                if freshRating ~= nil then
+                    statRatingCache[entry.key] = freshRating
+                end
+                cachedRating = freshRating or statRatingCache[entry.key]
+            end
+            local text = FormatStatLine(def, profile, value, cachedRating)
 
             measureLine:SetText(text)
             local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
             local textHeight = measureLine:GetStringHeight()
-            measuredStats[index] = {
+            table.insert(measuredStats, {
                 entry = entry,
                 text = text,
                 textWidth = textWidth,
                 textHeight = textHeight,
-            }
+            })
             maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
         end
     end
@@ -1773,6 +1919,30 @@ RefreshStats = function()
             end
         end
     end
+end
+
+local function StopCombatStatRefresh()
+    if combatStatRefreshHandle then
+        combatStatRefreshHandle:Cancel()
+        combatStatRefreshHandle = nil
+    end
+end
+
+local function StartCombatStatRefresh()
+    if combatStatRefreshHandle or not (C_Timer and C_Timer.NewTicker) then
+        return
+    end
+
+    combatStatRefreshHandle = C_Timer.NewTicker(COMBAT_STAT_REFRESH_SEC, function()
+        if not InCombatLockdown or not InCombatLockdown() then
+            StopCombatStatRefresh()
+            return
+        end
+
+        if initialized then
+            RefreshStats()
+        end
+    end)
 end
 
 local function MoveStat(index, direction)
@@ -2507,14 +2677,25 @@ addon:SetScript("OnEvent", function(_, event, arg1)
     end
 
     if event == "PLAYER_ENTERING_WORLD" then
+        if InCombatLockdown and InCombatLockdown() then
+            StartCombatStatRefresh()
+        end
+        RefreshStats()
+        return
+    end
+
+    if event == "PLAYER_REGEN_DISABLED" then
+        StartCombatStatRefresh()
         RefreshStats()
         return
     end
 
     if event == "PLAYER_REGEN_ENABLED" then
+        StopCombatStatRefresh()
         if pendingOptionRowsAfterCombat and optionsPanel and optionsPanel:IsShown() then
             RefreshOptionRows()
         end
+        RefreshStats()
         return
     end
 
