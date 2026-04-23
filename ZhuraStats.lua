@@ -165,6 +165,35 @@ local function GetLocaleDisplayName(localeCode)
     return LOCALE_DISPLAY_NAMES[localeCode] or localeCode
 end
 
+local function GetTextAlignDisplayName(value)
+    if value == "CENTER" then
+        return S("Center")
+    end
+    if value == "RIGHT" then
+        return S("Right")
+    end
+    return S("Left")
+end
+
+local function GetGoldSeparatorDisplayName(value)
+    if value == " " then
+        return S("Space")
+    end
+    if value == "," then
+        return S("Comma")
+    end
+    if value == "." then
+        return S("Dot")
+    end
+    if value == "'" then
+        return S("Apostrophe")
+    end
+    if value == "_" then
+        return S("Underscore")
+    end
+    return tostring(value or " ")
+end
+
 ApplyLocale()
 
 local function GetDisplayProfileName(profileName)
@@ -223,6 +252,21 @@ local STAT_KEYS = {
     "BLOCK",
     "LEECH",
     "SPEED",
+    "DURA",
+    "ILVL",
+    "GOLD",
+}
+local TEXT_ALIGN_OPTIONS = {
+    "LEFT",
+    "CENTER",
+    "RIGHT",
+}
+local GOLD_SEPARATOR_OPTIONS = {
+    " ",
+    ",",
+    ".",
+    "'",
+    "_",
 }
 
 local defaults = {
@@ -237,6 +281,9 @@ local defaults = {
     percentPrecision = 2,
     showLabels = true,
     showValues = true,
+    textAlign = "LEFT",
+    goldUseSeparator = true,
+    goldSeparator = " ",
     locked = false,
     showLockOnHover = false,
     preferCurrentSpecMainStat = false,
@@ -386,6 +433,65 @@ local statDefinitions = {
             return GetSpeed and (GetSpeed() or 0) or 0
         end,
     },
+    DURA = {
+        label = "Durability",
+        color = { 0.42, 1.00, 0.42 },
+        suffix = "%",
+        value = function()
+            local totalCurrent = 0
+            local totalMaximum = 0
+            for slot = 1, 17 do
+                local current, maximum = GetInventoryItemDurability(slot)
+                if current and maximum and maximum > 0 then
+                    totalCurrent = totalCurrent + current
+                    totalMaximum = totalMaximum + maximum
+                end
+            end
+            if totalMaximum <= 0 then
+                return 0
+            end
+            return (totalCurrent / totalMaximum) * 100
+        end,
+    },
+    ILVL = {
+        label = "Item Level",
+        color = { 0.60, 0.82, 1.00 },
+        suffix = "",
+        value = function()
+            local _, equippedLevel = GetAverageItemLevel()
+            return equippedLevel or 0
+        end,
+    },
+    GOLD = {
+        label = "Gold",
+        color = { 1.00, 0.84, 0.00 },
+        suffix = "",
+        value = function()
+            return math.floor((GetMoney() or 0) / 10000)
+        end,
+        formatValue = function(value, profile)
+            local rounded = math.floor((value or 0) + 0.5)
+            if not profile.goldUseSeparator then
+                return tostring(rounded)
+            end
+
+            local separator = profile.goldSeparator or defaults.goldSeparator or " "
+            local digits = tostring(rounded)
+            local sign = ""
+            if string.sub(digits, 1, 1) == "-" then
+                sign = "-"
+                digits = string.sub(digits, 2)
+            end
+
+            local chunks = {}
+            while string.len(digits) > 3 do
+                table.insert(chunks, 1, string.sub(digits, -3))
+                digits = string.sub(digits, 1, -4)
+            end
+            table.insert(chunks, 1, digits)
+            return sign .. table.concat(chunks, separator)
+        end,
+    },
 }
 
 local initialized = false
@@ -470,6 +576,9 @@ defaults.stats = {
     { key = "BLOCK", enabled = false, color = DeepCopy(statDefinitions.BLOCK.color) },
     { key = "LEECH", enabled = false, color = DeepCopy(statDefinitions.LEECH.color) },
     { key = "SPEED", enabled = false, color = DeepCopy(statDefinitions.SPEED.color) },
+    { key = "DURA", enabled = true, color = DeepCopy(statDefinitions.DURA.color) },
+    { key = "ILVL", enabled = true, color = DeepCopy(statDefinitions.ILVL.color) },
+    { key = "GOLD", enabled = true, color = DeepCopy(statDefinitions.GOLD.color) },
 }
 
 for _, entry in ipairs(defaults.stats) do
@@ -578,6 +687,15 @@ MigrateProfile = function(profile)
         or defaults.percentPrecision
     profile.showLabels = profile.showLabels ~= false
     profile.showValues = profile.showValues ~= false
+    profile.textAlign = profile.textAlign or defaults.textAlign
+    if profile.textAlign ~= "LEFT" and profile.textAlign ~= "CENTER" and profile.textAlign ~= "RIGHT" then
+        profile.textAlign = defaults.textAlign
+    end
+    profile.goldUseSeparator = profile.goldUseSeparator ~= false
+    profile.goldSeparator = profile.goldSeparator or defaults.goldSeparator
+    if profile.goldSeparator ~= " " and profile.goldSeparator ~= "," and profile.goldSeparator ~= "." and profile.goldSeparator ~= "'" and profile.goldSeparator ~= "_" then
+        profile.goldSeparator = defaults.goldSeparator
+    end
     profile.locked = profile.locked or false
     profile.showLockOnHover = profile.showLockOnHover == true
     profile.preferCurrentSpecMainStat = profile.preferCurrentSpecMainStat == true
@@ -949,6 +1067,19 @@ ApplyCurrentProfileState = function()
     if controlRefs.showValuesCheckbox then
         controlRefs.showValuesCheckbox:SetChecked(profile.showValues)
     end
+    if controlRefs.textAlignDropDown then
+        local align = profile.textAlign or defaults.textAlign
+        UIDropDownMenu_SetSelectedValue(controlRefs.textAlignDropDown, align)
+        UIDropDownMenu_SetText(controlRefs.textAlignDropDown, GetTextAlignDisplayName(align))
+    end
+    if controlRefs.goldUseSeparatorCheckbox then
+        controlRefs.goldUseSeparatorCheckbox:SetChecked(profile.goldUseSeparator)
+    end
+    if controlRefs.goldSeparatorDropDown then
+        UIDropDownMenu_Initialize(controlRefs.goldSeparatorDropDown, controlRefs.goldSeparatorDropDown.initializeFunc)
+        UIDropDownMenu_SetSelectedValue(controlRefs.goldSeparatorDropDown, profile.goldSeparator or defaults.goldSeparator)
+        UIDropDownMenu_SetText(controlRefs.goldSeparatorDropDown, GetGoldSeparatorDisplayName(profile.goldSeparator or defaults.goldSeparator))
+    end
     if controlRefs.lockCheckbox then
         controlRefs.lockCheckbox:SetChecked(profile.locked)
     end
@@ -1033,6 +1164,27 @@ RefreshLocalizedUI = function()
     end
     if controlRefs.showValuesCheckbox then
         controlRefs.showValuesCheckbox.label:SetText(S("Show values"))
+    end
+    if controlRefs.textAlignLabel then
+        controlRefs.textAlignLabel:SetText(S("Text alignment"))
+    end
+    if controlRefs.textAlignDropDown then
+        UIDropDownMenu_Initialize(controlRefs.textAlignDropDown, controlRefs.textAlignDropDown.initializeFunc)
+        local align = (GetActiveProfile().textAlign or defaults.textAlign)
+        UIDropDownMenu_SetSelectedValue(controlRefs.textAlignDropDown, align)
+        UIDropDownMenu_SetText(controlRefs.textAlignDropDown, GetTextAlignDisplayName(align))
+    end
+    if controlRefs.goldUseSeparatorCheckbox then
+        controlRefs.goldUseSeparatorCheckbox.label:SetText(S("Use separator for gold"))
+    end
+    if controlRefs.goldSeparatorLabel then
+        controlRefs.goldSeparatorLabel:SetText(S("Gold separator"))
+    end
+    if controlRefs.goldSeparatorDropDown then
+        UIDropDownMenu_Initialize(controlRefs.goldSeparatorDropDown, controlRefs.goldSeparatorDropDown.initializeFunc)
+        local separator = (GetActiveProfile().goldSeparator or defaults.goldSeparator)
+        UIDropDownMenu_SetSelectedValue(controlRefs.goldSeparatorDropDown, separator)
+        UIDropDownMenu_SetText(controlRefs.goldSeparatorDropDown, GetGoldSeparatorDisplayName(separator))
     end
     if controlRefs.lockCheckbox then
         controlRefs.lockCheckbox.label:SetText(S("Lock frame"))
@@ -1445,6 +1597,17 @@ local function SafeNumberCall(fn, fallback)
     return value
 end
 
+local function ApplyTextAlignmentToVisibleLines()
+    local align = GetActiveProfile().textAlign or defaults.textAlign
+    for _, line in ipairs(lines) do
+        if line and line:IsShown() then
+            line:SetJustifyH(align)
+            -- Force immediate visual refresh of existing text nodes.
+            line:SetText(line:GetText() or "")
+        end
+    end
+end
+
 local function FormatStatLine(def, profile, value)
     local statLabel = S(def.label)
     local labelPart = profile.showLabels and (statLabel .. " ") or ""
@@ -1471,6 +1634,10 @@ local function FormatStatLine(def, profile, value)
         return labelPart ~= "" and labelPart or statLabel
     end
 
+    if def.formatValue then
+        return string.format("%s%s", labelPart, def.formatValue(value, profile))
+    end
+
     return string.format("%s%s", labelPart, FormatValue(def, value))
 end
 
@@ -1479,6 +1646,7 @@ local function RefreshStatsImpl()
     ApplyFrameStyle()
 
     local profile = GetActiveProfile()
+    local textAlign = profile.textAlign or defaults.textAlign
     local visibleStats = GetVisibleStats()
     local fontPath, fontFlags = GetFontInfo(profile.fontKey)
     local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
@@ -1539,10 +1707,14 @@ local function RefreshStatsImpl()
             local line = lines[itemIndex]
             if measured and line then
                 local currentYOffset = topPadding + (rowIndex - 1) * (maxLineHeight + rowGap)
+                local columnWidth = math.max(columnWidths[columnIndex] + 4, 40)
                 line:ClearAllPoints()
                 line:SetFont(fontPath, fontSize, fontFlags)
+                line:SetJustifyH(textAlign)
                 line:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", currentXOffset, -currentYOffset)
-                line:SetWidth(math.max(columnWidths[columnIndex] + 4, 40))
+                line:SetPoint("TOPRIGHT", statsFrame, "TOPLEFT", currentXOffset + columnWidth, -currentYOffset)
+                line:SetWidth(0)
+                line:SetJustifyH(textAlign)
                 line:SetWordWrap(false)
                 line:SetMaxLines(1)
                 line:SetTextColor(measured.entry.color[1], measured.entry.color[2], measured.entry.color[3], 1)
@@ -1981,6 +2153,74 @@ BuildOptionsPanel = function()
     showValuesCheckbox:SetPoint("TOPLEFT", showLabelsCheckbox, "BOTTOMLEFT", 0, -8)
     controlRefs.showValuesCheckbox = showValuesCheckbox
 
+    local textAlignLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    textAlignLabel:SetPoint("TOPLEFT", showValuesCheckbox, "BOTTOMLEFT", 0, -16)
+    textAlignLabel:SetText(S("Text alignment"))
+    controlRefs.textAlignLabel = textAlignLabel
+
+    local textAlignDropDown = CreateFrame("Frame", ADDON_NAME .. "TextAlignDropDown", content, "UIDropDownMenuTemplate")
+    textAlignDropDown:SetPoint("TOPLEFT", textAlignLabel, "BOTTOMLEFT", -16, -2)
+    UIDropDownMenu_SetWidth(textAlignDropDown, 140)
+    textAlignDropDown.initializeFunc = function(_, level)
+        for _, align in ipairs(TEXT_ALIGN_OPTIONS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = GetTextAlignDisplayName(align)
+            info.value = align
+            info.checked = (GetActiveProfile().textAlign or defaults.textAlign) == align
+            info.func = function()
+                GetActiveProfile().textAlign = align
+                UIDropDownMenu_SetSelectedValue(textAlignDropDown, align)
+                UIDropDownMenu_SetText(textAlignDropDown, GetTextAlignDisplayName(align))
+                ApplyTextAlignmentToVisibleLines()
+                RefreshStats()
+                if C_Timer and C_Timer.After then
+                    C_Timer.After(0, function()
+                        if initialized then
+                            ApplyTextAlignmentToVisibleLines()
+                            RefreshStats()
+                        end
+                    end)
+                end
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+    UIDropDownMenu_Initialize(textAlignDropDown, textAlignDropDown.initializeFunc)
+    controlRefs.textAlignDropDown = textAlignDropDown
+
+    local goldUseSeparatorCheckbox = CreateCheckbox(content, S("Use separator for gold"), nil, function(self)
+        GetActiveProfile().goldUseSeparator = self:GetChecked()
+        RefreshStats()
+    end)
+    goldUseSeparatorCheckbox:SetPoint("TOPLEFT", textAlignDropDown, "BOTTOMLEFT", 16, -8)
+    controlRefs.goldUseSeparatorCheckbox = goldUseSeparatorCheckbox
+
+    local goldSeparatorLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    goldSeparatorLabel:SetPoint("TOPLEFT", goldUseSeparatorCheckbox, "BOTTOMLEFT", 0, -16)
+    goldSeparatorLabel:SetText(S("Gold separator"))
+    controlRefs.goldSeparatorLabel = goldSeparatorLabel
+
+    local goldSeparatorDropDown = CreateFrame("Frame", ADDON_NAME .. "GoldSeparatorDropDown", content, "UIDropDownMenuTemplate")
+    goldSeparatorDropDown:SetPoint("TOPLEFT", goldSeparatorLabel, "BOTTOMLEFT", -16, -2)
+    UIDropDownMenu_SetWidth(goldSeparatorDropDown, 140)
+    goldSeparatorDropDown.initializeFunc = function(_, level)
+        for _, separator in ipairs(GOLD_SEPARATOR_OPTIONS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = GetGoldSeparatorDisplayName(separator)
+            info.value = separator
+            info.checked = (GetActiveProfile().goldSeparator or defaults.goldSeparator) == separator
+            info.func = function()
+                GetActiveProfile().goldSeparator = separator
+                UIDropDownMenu_SetSelectedValue(goldSeparatorDropDown, separator)
+                UIDropDownMenu_SetText(goldSeparatorDropDown, GetGoldSeparatorDisplayName(separator))
+                RefreshStats()
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+    UIDropDownMenu_Initialize(goldSeparatorDropDown, goldSeparatorDropDown.initializeFunc)
+    controlRefs.goldSeparatorDropDown = goldSeparatorDropDown
+
     local lockCheckbox = CreateCheckbox(content, S("Lock frame"), nil, function(self)
         GetActiveProfile().locked = self:GetChecked()
         UpdateFrameLockState()
@@ -1990,7 +2230,7 @@ BuildOptionsPanel = function()
             print(S("NE Stats: frame unlocked. Drag it, then lock when ready."))
         end
     end)
-    lockCheckbox:SetPoint("TOPLEFT", showValuesCheckbox, "BOTTOMLEFT", 0, -8)
+    lockCheckbox:SetPoint("TOPLEFT", goldSeparatorDropDown, "BOTTOMLEFT", 16, -12)
     controlRefs.lockCheckbox = lockCheckbox
 
     local showLockOnHoverCheckbox = CreateCheckbox(
