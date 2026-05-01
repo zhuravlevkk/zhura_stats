@@ -296,10 +296,10 @@ function Addon:EnsureDatabase()
     self.db = db
 
     if db.RegisterCallback then
-        db:RegisterCallback(self, "OnProfileChanged", "HandleAceDBProfileStateChanged")
-        db:RegisterCallback(self, "OnProfileCopied", "HandleAceDBProfileStateChanged")
-        db:RegisterCallback(self, "OnProfileReset", "HandleAceDBProfileStateChanged")
-        db:RegisterCallback(self, "OnNewProfile", "HandleAceDBNewProfile")
+        db.RegisterCallback(Addon, "OnProfileChanged", "HandleAceDBProfileStateChanged")
+        db.RegisterCallback(Addon, "OnProfileCopied", "HandleAceDBProfileStateChanged")
+        db.RegisterCallback(Addon, "OnProfileReset", "HandleAceDBProfileStateChanged")
+        db.RegisterCallback(Addon, "OnNewProfile", "HandleAceDBNewProfile")
     end
 
     for _, profile in pairs(db.sv.profiles or {}) do

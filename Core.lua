@@ -7,6 +7,29 @@ local Addon = ns.ZhuraStats
 Addon.name = Addon.name or ADDON_NAME
 
 local addonFrame = CreateFrame("Frame")
+local pendingCombatLogRegistration = false
+
+local combatLogTicker = nil
+
+local function StartCombatLogPolling()
+    if combatLogTicker then return end
+    combatLogTicker = C_Timer.NewTicker(0.1, function()
+        local Stats = ns.Stats
+        if Stats and Stats.HandleCombatLogEvent then
+            Stats.HandleCombatLogEvent()
+        end
+        if Addon.initialized then
+            Addon:RefreshStats()
+        end
+    end)
+end
+
+local function StopCombatLogPolling()
+    if combatLogTicker then
+        combatLogTicker:Cancel()
+        combatLogTicker = nil
+    end
+end
 
 local function EnsureDatabaseBackup()
     ZhuraStatsDBBackup = ZhuraStatsDBBackup or Addon.DeepCopy(ZhuraStatsDB)
@@ -103,12 +126,14 @@ local function OnEvent(_, event, arg1)
     end
 
     if event == "PLAYER_REGEN_DISABLED" then
+        StartCombatLogPolling()
         Addon:StartCombatStatRefresh()
         Addon:RefreshStats()
         return
     end
 
     if event == "PLAYER_REGEN_ENABLED" then
+        StopCombatLogPolling()
         Addon:StopCombatStatRefresh()
         local refs = Addon:GetControlRefs()
         if Addon.pendingOptionRowsAfterCombat and refs and refs.scrollFrame and refs.scrollFrame:IsShown() then
@@ -141,41 +166,53 @@ local function OnEvent(_, event, arg1)
     end
 end
 
+local function RegisterAllEvents()
+    addonFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    addonFrame:RegisterEvent("COMBAT_RATING_UPDATE")
+    if addonFrame.RegisterUnitEvent then
+        addonFrame:RegisterUnitEvent("UNIT_STATS", "player")
+        addonFrame:RegisterUnitEvent("UNIT_INVENTORY_CHANGED", "player")
+        addonFrame:RegisterUnitEvent("UNIT_AURA", "player")
+        addonFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+    else
+        addonFrame:RegisterEvent("UNIT_STATS")
+        addonFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+        addonFrame:RegisterEvent("UNIT_AURA")
+        addonFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    end
+    addonFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+    addonFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+    addonFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
+    addonFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    addonFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    addonFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+    addonFrame:RegisterEvent("PLAYER_MONEY")
+    addonFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
+    addonFrame:RegisterEvent("MASTERY_UPDATE")
+    addonFrame:RegisterEvent("PLAYER_LEVEL_UP")
+    addonFrame:RegisterEvent("PLAYER_STARTED_MOVING")
+    addonFrame:RegisterEvent("PLAYER_STOPPED_MOVING")
+    addonFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+    addonFrame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
+    if addonFrame.RegisterUnitEvent then
+        addonFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", "player")
+        addonFrame:RegisterUnitEvent("UNIT_EXITED_VEHICLE", "player")
+    else
+        addonFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
+        addonFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
+    end
+end
+
+local eventsRegistered = false
+
+local function BootstrapOnEvent(self, event, arg1, ...)
+    if event == "ADDON_LOADED" and arg1 == ADDON_NAME and not eventsRegistered then
+        eventsRegistered = true
+        RegisterAllEvents()
+    end
+    OnEvent(self, event, arg1, ...)
+end
+
 addonFrame:RegisterEvent("ADDON_LOADED")
 addonFrame:RegisterEvent("PLAYER_LOGIN")
-addonFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-addonFrame:RegisterEvent("COMBAT_RATING_UPDATE")
-if addonFrame.RegisterUnitEvent then
-    addonFrame:RegisterUnitEvent("UNIT_STATS", "player")
-    addonFrame:RegisterUnitEvent("UNIT_INVENTORY_CHANGED", "player")
-    addonFrame:RegisterUnitEvent("UNIT_AURA", "player")
-    addonFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
-else
-    addonFrame:RegisterEvent("UNIT_STATS")
-    addonFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
-    addonFrame:RegisterEvent("UNIT_AURA")
-    addonFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-end
-addonFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
-addonFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-addonFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
-addonFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-addonFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-addonFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-addonFrame:RegisterEvent("PLAYER_MONEY")
-addonFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
-addonFrame:RegisterEvent("MASTERY_UPDATE")
-addonFrame:RegisterEvent("PLAYER_LEVEL_UP")
-addonFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-addonFrame:RegisterEvent("PLAYER_STARTED_MOVING")
-addonFrame:RegisterEvent("PLAYER_STOPPED_MOVING")
-addonFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
-addonFrame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
-if addonFrame.RegisterUnitEvent then
-    addonFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", "player")
-    addonFrame:RegisterUnitEvent("UNIT_EXITED_VEHICLE", "player")
-else
-    addonFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
-    addonFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
-end
-addonFrame:SetScript("OnEvent", OnEvent)
+addonFrame:SetScript("OnEvent", BootstrapOnEvent)

@@ -63,17 +63,6 @@ local function CallNumber(fn)
     return AsNumber(value)
 end
 
-local function MaxNumber(...)
-    local best
-    for index = 1, select("#", ...) do
-        local value = AsNumber(select(index, ...))
-        if value and (not best or value > best) then
-            best = value
-        end
-    end
-    return best
-end
-
 local function MakeResult(key, value, rating, ratingBonus, extra)
     local result = extra or {}
     result.key = key
@@ -177,7 +166,7 @@ local function ReadPrimary(key)
 end
 
 local function ReadHaste()
-    local ratingId = CR_HASTE_MELEE
+    local ratingId = CR_HASTE_MELEE or CR_HASTE_SPELL or CR_HASTE
     local value = CallNumber(GetHaste)
     local rating = ratingId and CallNumber(function() return GetCombatRating(ratingId) end)
     local ratingBonus = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
@@ -187,19 +176,10 @@ local function ReadHaste()
 end
 
 local function ReadCrit()
-    local meleeRating = CR_CRIT_MELEE and CallNumber(function() return GetCombatRating(CR_CRIT_MELEE) end)
-    local rangedRating = CR_CRIT_RANGED and CallNumber(function() return GetCombatRating(CR_CRIT_RANGED) end)
-    local spellRating = CR_CRIT_SPELL and CallNumber(function() return GetCombatRating(CR_CRIT_SPELL) end)
-    local meleeBonus = CR_CRIT_MELEE and CallNumber(function() return GetCombatRatingBonus(CR_CRIT_MELEE) end)
-    local rangedBonus = CR_CRIT_RANGED and CallNumber(function() return GetCombatRatingBonus(CR_CRIT_RANGED) end)
-    local spellBonus = CR_CRIT_SPELL and CallNumber(function() return GetCombatRatingBonus(CR_CRIT_SPELL) end)
-    local value = MaxNumber(
-        CallNumber(GetCritChance),
-        CallNumber(GetRangedCritChance),
-        CallNumber(GetSpellCritChance)
-    )
-    local rating = MaxNumber(meleeRating, rangedRating, spellRating)
-    local ratingBonus = MaxNumber(meleeBonus, rangedBonus, spellBonus)
+    local value = CallNumber(GetCritChance)
+    local ratingId = CR_CRIT_MELEE or CR_CRIT_SPELL or CR_CRIT_RANGED or CR_CRIT
+    local rating = ratingId and CallNumber(function() return GetCombatRating(ratingId) end)
+    local ratingBonus = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
 
     return MakeResult("CRIT", value, rating, ratingBonus, {
         dr = Stats.GetDRInfo(ratingBonus),
@@ -207,39 +187,37 @@ local function ReadCrit()
 end
 
 local function ReadMastery()
-    local mastery, coefficient = nil, nil
+    local value, coefficient = nil, nil
     if GetMasteryEffect then
-        local ok, masteryValue, coefficientValue = pcall(GetMasteryEffect)
+        local ok, valueResult, coefficientValue = pcall(GetMasteryEffect)
         if ok then
-            mastery = AsNumber(masteryValue)
+            value = AsNumber(valueResult)
             coefficient = AsNumber(coefficientValue)
         end
     end
-    local rating = CR_MASTERY and CallNumber(function() return GetCombatRating(CR_MASTERY) end)
-    local ratingBonus = CR_MASTERY and CallNumber(function() return GetCombatRatingBonus(CR_MASTERY) end)
+    local ratingId = CR_MASTERY
+    local rating = ratingId and CallNumber(function() return GetCombatRating(ratingId) end)
+    local ratingBonus = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
 
-    return MakeResult("MASTERY", mastery, rating, ratingBonus, {
+    return MakeResult("MASTERY", value, rating, ratingBonus, {
         coefficient = coefficient,
         dr = Stats.GetDRInfo(ratingBonus, coefficient),
     })
 end
 
 local function ReadVersatility()
-    local damageRatingId = CR_VERSATILITY_DAMAGE_DONE or 29
-    local mitigationRatingId = CR_VERSATILITY_DAMAGE_TAKEN or 31
-    local damageRatingBonus = CallNumber(function() return GetCombatRatingBonus(damageRatingId) end)
-    local damageBaseBonus = CallNumber(function() return GetVersatilityBonus(damageRatingId) end) or 0
-    local mitigationRatingBonus = CallNumber(function() return GetCombatRatingBonus(mitigationRatingId) end)
-    local mitigationBaseBonus = CallNumber(function() return GetVersatilityBonus(mitigationRatingId) end) or 0
-    local rating = CallNumber(function() return GetCombatRating(damageRatingId) end)
-    local value
-    if damageRatingBonus then
-        value = damageBaseBonus + damageRatingBonus
-    end
+    local ratingId = CR_VERSATILITY_DAMAGE_DONE or CR_VERSATILITY_DAMAGE_TAKEN or CR_VERSATILITY
+    local mitigationRatingId = CR_VERSATILITY_DAMAGE_TAKEN
+    local value = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
+    local rating = ratingId and CallNumber(function() return GetCombatRating(ratingId) end)
+    local ratingBonus = value
+    local mitigationValue = mitigationRatingId and CallNumber(function()
+        return GetCombatRatingBonus(mitigationRatingId)
+    end)
 
-    return MakeResult("VERS", value, rating, damageRatingBonus, {
-        mitigation = mitigationRatingBonus and (mitigationBaseBonus + mitigationRatingBonus) or nil,
-        dr = Stats.GetDRInfo(damageRatingBonus),
+    return MakeResult("VERS", value, rating, ratingBonus, {
+        mitigation = mitigationValue,
+        dr = Stats.GetDRInfo(ratingBonus),
     })
 end
 

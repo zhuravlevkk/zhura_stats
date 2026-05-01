@@ -26,10 +26,54 @@ local statDefinitions = {
         suffix = "",
         value = function() return select(2, UnitStat("player", 4)) end,
     },
-    HASTE = { label = "Haste", color = { 0.45, 1.00, 0.82 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_HASTE_MELEE) or 0) or 0 end, value = function() return GetHaste() end },
-    CRIT = { label = "Crit", color = { 1.00, 0.15, 0.15 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_CRIT_MELEE) or 0) or 0 end, value = function() return GetCritChance() end },
-    VERS = { label = "Vers", color = { 0.42, 0.56, 0.74 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_VERSATILITY_DAMAGE_DONE) or 0) or 0 end, value = function() local ratingBonus = (GetCombatRatingBonus and GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)) or 0 local baseBonus = (GetVersatilityBonus and GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)) or 0 return ratingBonus + baseBonus end },
-    MASTERY = { label = "Mastery", color = { 0.68, 0.20, 1.00 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_MASTERY) or 0) or 0 end, value = function() return GetMasteryEffect() end },
+    HASTE = {
+        label = "Haste",
+        color = { 0.45, 1.00, 0.82 },
+        suffix = "%",
+        rating = function()
+            local ratingId = CR_HASTE_MELEE or CR_HASTE_SPELL or CR_HASTE
+            return GetCombatRating and ratingId and (GetCombatRating(ratingId) or 0) or 0
+        end,
+        value = function()
+            return GetHaste and (GetHaste() or 0) or 0
+        end,
+    },
+    CRIT = {
+        label = "Crit",
+        color = { 1.00, 0.15, 0.15 },
+        suffix = "%",
+        rating = function()
+            local ratingId = CR_CRIT_MELEE or CR_CRIT_SPELL or CR_CRIT_RANGED or CR_CRIT
+            return GetCombatRating and ratingId and (GetCombatRating(ratingId) or 0) or 0
+        end,
+        value = function()
+            return GetCritChance and (GetCritChance() or 0) or 0
+        end,
+    },
+    VERS = {
+        label = "Vers",
+        color = { 0.42, 0.56, 0.74 },
+        suffix = "%",
+        rating = function()
+            local ratingId = CR_VERSATILITY_DAMAGE_DONE or CR_VERSATILITY_DAMAGE_TAKEN or CR_VERSATILITY
+            return GetCombatRating and ratingId and (GetCombatRating(ratingId) or 0) or 0
+        end,
+        value = function()
+            local ratingId = CR_VERSATILITY_DAMAGE_DONE or CR_VERSATILITY_DAMAGE_TAKEN or CR_VERSATILITY
+            return GetCombatRatingBonus and ratingId and (GetCombatRatingBonus(ratingId) or 0) or 0
+        end,
+    },
+    MASTERY = {
+        label = "Mastery",
+        color = { 0.68, 0.20, 1.00 },
+        suffix = "%",
+        rating = function()
+            return GetCombatRating and CR_MASTERY and (GetCombatRating(CR_MASTERY) or 0) or 0
+        end,
+        value = function()
+            return GetMasteryEffect and (GetMasteryEffect() or 0) or 0
+        end,
+    },
     AVOIDANCE = { label = "Avoidance", color = { 1.00, 0.72, 0.20 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_AVOIDANCE) or 0) or 0 end, value = function() return GetAvoidance and (GetAvoidance() or 0) or 0 end },
     PARRY = { label = "Parry", color = { 0.94, 0.64, 0.24 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_PARRY) or 0) or 0 end, value = function() return GetParryChance and (GetParryChance() or 0) or 0 end },
     DODGE = { label = "Dodge", color = { 0.95, 0.80, 0.26 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_DODGE) or 0) or 0 end, value = function() return GetDodgeChance and (GetDodgeChance() or 0) or 0 end },
