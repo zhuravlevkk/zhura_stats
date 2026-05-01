@@ -1,8 +1,8 @@
-## Interface: 120001
+## Interface: 120001, 120005
 ## Title: NE Stats
 ## Notes: Shows configurable secondary stat priorities per character and talent setup.
 ## Author: dijtex
-## Version: 0.2.2
+## Version: 0.2.3
 ## SavedVariables: ZhuraStatsDB
 ## OptionalDeps: SharedMedia
 
@@ -21,4 +21,16 @@ Locales\ukUA.lua
 Locales\zhCN.lua
 Locales\zhTW.lua
 
+Stats.lua
+Defaults.lua
+Locale.lua
+Media.lua
+Database.lua
+StatDefinitions.lua
+Format.lua
+Frame.lua
+Render.lua
+Popups.lua
+Options.lua
+Core.lua
 ZhuraStats.lua

@@ -55,7 +55,7 @@ $env:LUA_CPATH = @(
 ) -join ";"
 
 if (-not $Targets -or $Targets.Count -eq 0) {
-    $Targets = @("ZhuraStats.lua", "Locales", "--config", ".luacheckrc")
+    $Targets = @("ZhuraStats.lua", "Stats.lua", "Locales", "--config", ".luacheckrc")
 }
 
 & $lua $luacheckScript @Targets
