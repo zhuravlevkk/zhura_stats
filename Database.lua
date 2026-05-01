@@ -9,6 +9,11 @@ ZhuraStatsDB = ZhuraStatsDB or {}
 local AceDB = LibStub and LibStub("AceDB-3.0", true)
 local db
 local STATS_MIGRATION_VERSION = 4
+local PRIMARY_STATS = {
+    STR = true,
+    AGI = true,
+    INT = true,
+}
 
 local function PrintProfileList(title, profiles)
     print(title)
@@ -44,6 +49,76 @@ end
 
 function Addon:CanModifyProfile(profileName)
     return profileName and profileName ~= "" and profileName ~= "Default"
+end
+
+function Addon:GetCurrentPrimaryStatKey()
+    local constants = self.Constants
+    local primaryStatKeyById = constants and constants.PRIMARY_STAT_KEY_BY_ID
+    if type(primaryStatKeyById) ~= "table" then
+        return nil
+    end
+
+    if type(GetSpecialization) ~= "function" or type(GetSpecializationInfo) ~= "function" then
+        return nil
+    end
+
+    local okSpec, specIndex = pcall(GetSpecialization)
+    if not okSpec or type(specIndex) ~= "number" then
+        return nil
+    end
+
+    -- pcall returns ok first, then GetSpecializationInfo values:
+    -- id, name, description, icon, role, primaryStat.
+    -- Therefore primaryStat is the variable after five ignored return values.
+    local okInfo, _, _, _, _, _, primaryStat = pcall(GetSpecializationInfo, specIndex)
+    if not okInfo then
+        return nil
+    end
+
+    return primaryStatKeyById[primaryStat]
+end
+
+function Addon:InitializePrimaryStatForProfile(profile)
+    if type(profile) ~= "table" then
+        return
+    end
+
+    if profile.primaryStatInitialized == true then
+        return
+    end
+
+    if type(profile.stats) ~= "table" then
+        profile.primaryStatInitialized = true
+        return
+    end
+
+    for _, entry in ipairs(profile.stats) do
+        if type(entry) == "table" and PRIMARY_STATS[entry.key] then
+            entry.enabled = false
+        end
+    end
+
+    local primaryStatKey = self:GetCurrentPrimaryStatKey()
+    if primaryStatKey then
+        for _, entry in ipairs(profile.stats) do
+            if type(entry) == "table" and entry.key == primaryStatKey then
+                entry.enabled = true
+                break
+            end
+        end
+    end
+
+    profile.primaryStatInitialized = true
+end
+
+function Addon:InitializeNewProfile(profile)
+    if type(profile) ~= "table" then
+        return
+    end
+
+    self:MigrateProfile(profile)
+    profile.primaryStatInitialized = false
+    self:InitializePrimaryStatForProfile(profile)
 end
 
 function Addon:MigrateProfile(profile)
@@ -202,6 +277,9 @@ function Addon:MigrateProfile(profile)
     profile.height = profile.height or defaults.height
     profile.useSpecProfiles = false
     profile.useLoadoutProfiles = nil
+    if profile.primaryStatInitialized == nil then
+        profile.primaryStatInitialized = true
+    end
 end
 
 function Addon:EnsureDatabase()
@@ -210,12 +288,17 @@ function Addon:EnsureDatabase()
     end
     local aceDefaults = self.Defaults.ace
     ZhuraStatsDB = ZhuraStatsDB or {}
+    local hasExistingProfiles = type(ZhuraStatsDB.profiles) == "table" and next(ZhuraStatsDB.profiles) ~= nil
 
     db = LibStub("AceDB-3.0"):New("ZhuraStatsDB", aceDefaults, true)
     self.db = db
 
     for _, profile in pairs(db.sv.profiles or {}) do
         Addon:MigrateProfile(profile)
+    end
+
+    if not hasExistingProfiles and db.profile then
+        self:InitializeNewProfile(db.profile)
     end
 
     db.global.addonLocale = db.global.addonLocale or self.Constants.CLIENT_LANGUAGE_VALUE
@@ -358,6 +441,9 @@ function Addon:CreateProfile(profileName)
     if not ok then
         print(self:S("NE Stats: profile could not be created."))
         return "invalid", nil
+    end
+    if db and db.profile then
+        self:InitializeNewProfile(db.profile)
     end
     self:ApplyCurrentProfileState()
     return "created", profileName

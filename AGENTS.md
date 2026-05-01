@@ -263,6 +263,12 @@ After ANY change:
 * Profile switching works
 * Localization still works
 
+### Iteration Routine (MANDATORY)
+
+After each implementation iteration (even small patches):
+* Deploy addon locally via `scripts/deploy-local.ps1`
+* Regenerate review diff file via `git diff > temp-review.diff`
+
 ---
 
 ## Anti-Patterns (STRICTLY FORBIDDEN)

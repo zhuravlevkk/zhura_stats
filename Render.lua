@@ -15,27 +15,9 @@ function Addon:GetVisibleStats()
     local visible = {}
     local mainStatKey
     local mainStatEntry
-    local constants = self.Constants
 
     if profile.preferCurrentSpecMainStat then
-        local activeSpecIndex = GetSpecialization and GetSpecialization()
-        if activeSpecIndex and GetSpecializationInfo then
-            local _, _, _, _, _, _, primaryStat = GetSpecializationInfo(activeSpecIndex)
-            mainStatKey = constants.PRIMARY_STAT_KEY_BY_ID[primaryStat]
-        end
-
-        if not mainStatKey then
-            local _, classFile = UnitClass("player")
-            if classFile and activeSpecIndex then
-                local classSpecMap = constants.PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC[classFile]
-                if classSpecMap then
-                    mainStatKey = classSpecMap[activeSpecIndex]
-                end
-            end
-            if not mainStatKey and classFile then
-                mainStatKey = constants.PRIMARY_STAT_KEY_BY_CLASS_FILE[classFile]
-            end
-        end
+        mainStatKey = self.GetCurrentPrimaryStatKey and self:GetCurrentPrimaryStatKey()
     end
 
     for _, entry in ipairs(profile.stats) do

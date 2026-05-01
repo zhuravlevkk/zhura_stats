@@ -22,38 +22,6 @@ local PRIMARY_STAT_KEY_BY_ID = {
     [4] = "INT",
 }
 
-local PRIMARY_STAT_KEY_BY_CLASS_FILE = {
-    DEATHKNIGHT = "STR",
-    DEMONHUNTER = "AGI",
-    DRUID = "AGI",
-    EVOKER = "INT",
-    HUNTER = "AGI",
-    MAGE = "INT",
-    MONK = "AGI",
-    PALADIN = "STR",
-    PRIEST = "INT",
-    ROGUE = "AGI",
-    SHAMAN = "INT",
-    WARLOCK = "INT",
-    WARRIOR = "STR",
-}
-
-local PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC = {
-    DEATHKNIGHT = { [1] = "STR", [2] = "STR", [3] = "STR" },
-    DEMONHUNTER = { [1] = "AGI", [2] = "AGI", [3] = "INT" },
-    DRUID = { [1] = "INT", [2] = "AGI", [3] = "AGI", [4] = "INT" },
-    EVOKER = { [1] = "INT", [2] = "INT", [3] = "INT" },
-    HUNTER = { [1] = "AGI", [2] = "AGI", [3] = "AGI" },
-    MAGE = { [1] = "INT", [2] = "INT", [3] = "INT" },
-    MONK = { [1] = "AGI", [2] = "INT", [3] = "AGI" },
-    PALADIN = { [1] = "INT", [2] = "STR", [3] = "STR" },
-    SHAMAN = { [1] = "INT", [2] = "AGI", [3] = "INT" },
-    PRIEST = { [1] = "INT", [2] = "INT", [3] = "INT" },
-    ROGUE = { [1] = "AGI", [2] = "AGI", [3] = "AGI" },
-    WARLOCK = { [1] = "INT", [2] = "INT", [3] = "INT" },
-    WARRIOR = { [1] = "STR", [2] = "STR", [3] = "STR" },
-}
-
 local STAT_KEYS = {
     "STR", "AGI", "INT", "HASTE", "CRIT", "VERS", "MASTERY", "AVOIDANCE",
     "PARRY", "DODGE", "BLOCK", "LEECH", "SPEED", "DURA", "ILVL", "GOLD",
@@ -81,6 +49,7 @@ local defaults = {
     locked = false,
     showLockOnHover = false,
     preferCurrentSpecMainStat = false,
+    primaryStatInitialized = false,
     point = "TOPLEFT",
     relativeTo = "UIParent",
     relativePoint = "TOPLEFT",
@@ -100,8 +69,6 @@ local aceDefaults = {
 
 Addon.Constants = Addon.Constants or {}
 Addon.Constants.PRIMARY_STAT_KEY_BY_ID = PRIMARY_STAT_KEY_BY_ID
-Addon.Constants.PRIMARY_STAT_KEY_BY_CLASS_FILE = PRIMARY_STAT_KEY_BY_CLASS_FILE
-Addon.Constants.PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC = PRIMARY_STAT_KEY_BY_CLASS_AND_SPEC
 Addon.Constants.STAT_KEYS = STAT_KEYS
 Addon.Constants.TEXT_ALIGN_OPTIONS = TEXT_ALIGN_OPTIONS
 Addon.Constants.GOLD_SEPARATOR_OPTIONS = GOLD_SEPARATOR_OPTIONS

@@ -42,16 +42,13 @@ local statDefinitions = {
 }
 
 defaults.stats = {
-    { key = "STR", enabled = true, color = DeepCopy(statDefinitions.STR.color) },
-    { key = "AGI", enabled = true, color = DeepCopy(statDefinitions.AGI.color) },
-    { key = "INT", enabled = true, color = DeepCopy(statDefinitions.INT.color) },
+    { key = "STR", enabled = false, color = DeepCopy(statDefinitions.STR.color) },
+    { key = "AGI", enabled = false, color = DeepCopy(statDefinitions.AGI.color) },
+    { key = "INT", enabled = false, color = DeepCopy(statDefinitions.INT.color) },
     { key = "HASTE", enabled = true, color = DeepCopy(statDefinitions.HASTE.color) },
     { key = "CRIT", enabled = true, color = DeepCopy(statDefinitions.CRIT.color) },
     { key = "VERS", enabled = true, color = DeepCopy(statDefinitions.VERS.color) },
     { key = "MASTERY", enabled = true, color = DeepCopy(statDefinitions.MASTERY.color) },
-    { key = "AVOIDANCE", enabled = false, color = DeepCopy(statDefinitions.AVOIDANCE.color) },
-    { key = "PARRY", enabled = false, color = DeepCopy(statDefinitions.PARRY.color) },
-    { key = "DODGE", enabled = false, color = DeepCopy(statDefinitions.DODGE.color) },
     { key = "BLOCK", enabled = false, color = DeepCopy(statDefinitions.BLOCK.color) },
     { key = "LEECH", enabled = false, color = DeepCopy(statDefinitions.LEECH.color) },
     { key = "SPEED", enabled = false, color = DeepCopy(statDefinitions.SPEED.color) },
