@@ -23,8 +23,8 @@ local PRIMARY_STAT_KEY_BY_ID = {
 }
 
 local STAT_KEYS = {
-    "STR", "AGI", "INT", "HASTE", "CRIT", "VERS", "MASTERY", "AVOIDANCE",
-    "PARRY", "DODGE", "BLOCK", "LEECH", "SPEED", "DURA", "ILVL", "GOLD",
+    "STR", "AGI", "INT", "HASTE", "CRIT", "VERS", "MASTERY",
+    "BLOCK", "LEECH", "SPEED", "DURA", "ILVL", "GOLD",
 }
 
 local TEXT_ALIGN_OPTIONS = { "LEFT", "CENTER", "RIGHT" }
