@@ -1,35 +1,38 @@
 # NE Stats
 
-NE Stats is a World of Warcraft addon that shows your primary and secondary stats in a compact, movable panel.
+NE Stats is a modular World of Warcraft addon that shows your stats in a compact, movable panel.
 
-It is designed for players who want a lightweight stat display with profile support, per-character customization, and multilingual UI options.
+It is built for players who want a lightweight live stat display with profile support, per-character customization, and multilingual UI.
 
 ## Features
 
-- Movable stat panel with lock/unlock support
-- Optional lock icon display only on hover
-- Lock button tooltip with left-click and right-click actions
-- Configurable stat visibility and ordering
-- Support for `Parry`, `Dodge`, and `Block` in addition to the existing stats
-- Optional priority for the current specialization's main stat
-- Adjustable columns, max rows per column, font, font size, UI scale, and background opacity
-- Toggle stat names, values, and percentages
-- Account-wide profiles with create, rename, and delete actions
-- Addon language selector
-- Localized UI for `enUS`, `deDE`, `esES`, `esMX`, `frFR`, `itIT`, `koKR`, `ptBR`, `ruRU`, `ukUA`, `zhCN`, and `zhTW`
+- Movable stat panel with lock/unlock behavior
+- Optional lock icon shown only on hover
+- Configurable stat visibility, order, and per-stat color
+- Support for primary and secondary stats, plus utility stats (`Parry`, `Dodge`, `Block`, `Leech`, `Speed Rating`, `Movement Speed`, `Durability`, `Item Level`, `Gold`)
+- Stat priority modes:
+  - `Manual`
+  - `Archon Raid`
+  - `Archon Mythic+`
+- Optional priority for current specialization primary stat
+- Adjustable columns, max rows per column, font, font size, text alignment, scale, and background opacity
+- Toggle stat labels, values, and percentages
+- Profile create/rename/delete/switch actions (AceDB)
+- Addon language selector with runtime localization refresh
+- Localized UI for `enUS`, `deDE`, `esES`, `esMX`, `frFR`, `itIT`, `koKR`, `ptBR`, `ruRU`, `ukUA`, `zhCN`, `zhTW`
 
 ## Commands
 
 - `/zhs`
 - `/zhurastats`
 
-Open the addon settings with either command.
+Both commands open addon settings.
 
 Additional shortcuts:
 
-- `/zhs lock` locks the frame
-- `/zhs unlock` unlocks the frame
-- `/zhs reset` resets the active profile
+- `/zhs lock` - lock the frame
+- `/zhs unlock` - unlock the frame
+- `/zhs reset` - reset the active profile
 
 ## Installation
 
@@ -42,15 +45,15 @@ Additional shortcuts:
 World of Warcraft\_retail_\Interface\AddOns\
 ```
 
-3. The final path should look like:
+3. Final path should look like:
 
 ```text
 World of Warcraft\_retail_\Interface\AddOns\ZhuraStats\ZhuraStats.toc
 ```
 
-### CurseForge Pack Structure
+### CurseForge Package Structure
 
-The uploaded archive should contain a single top-level addon folder:
+The release archive must contain a single top-level addon folder:
 
 ```text
 ZhuraStats.zip
@@ -66,43 +69,77 @@ ZhuraStats.zip
 
 In the settings panel you can:
 
-- choose the addon language or follow the client language
-- show or hide percentages
-- show or hide stat names and values
-- lock the frame
-- show the lock icon only on hover
-- always show the current specialization main stat first
-- split the stat list into multiple columns
-- limit the number of rows per column or keep it on auto
-- change font and font size
-- change UI scale and background opacity
-- reset the panel position
-- reorder visible stats
+- choose addon language or follow the game client language
+- lock/unlock the frame and show lock icon only on hover
+- show or hide stat labels, values, and percentages
+- select stat priority mode (`Manual`, `Archon Raid`, `Archon Mythic+`)
+- keep current spec primary stat at top
+- split stats into multiple columns
+- limit rows per column or keep auto layout
+- change font, font size, and text alignment
+- change frame scale and background opacity
+- reset frame position
+- reorder visible stats (when priority mode allows manual ordering)
 
-## Notes
+## Data Sources
 
-- Profiles are shared across your account
-- The display is character-focused, with profile-based customization
-- The addon bundles its required libraries locally
+### `WoWLogsStatsPrio.lua`
+
+Contains generated stat priority data used by Archon priority modes.
+
+- Generated locally by script (not by CI)
+- Key format: `"class/spec/activity"` where `activity` is `m+` or `raid`
+- Used at runtime to lock and apply stat ordering for secondary stats
+
+Update command (PowerShell, repo root):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Get-AllStats.ps1 -OutFile ".\WoWLogsStatsPrio.lua"
+```
+
+Optional custom thread count:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Get-AllStats.ps1 -Threads 20 -OutFile ".\WoWLogsStatsPrio.lua"
+```
+
+### `ArchonPriority.lua`
+
+Runtime mapping and resolution layer that:
+
+- resolves player class/spec to Archon keys
+- validates available stat entries
+- applies mode-specific priority ordering
 
 ## Development
 
-Main files:
+Core addon modules are split by responsibility:
 
-- `ZhuraStats.lua`
-- `ZhuraStats.toc`
-- `Locales/`
+- `Core.lua` - initialization and event orchestration
+- `Database.lua` - profile data and migrations
+- `Stats.lua` - stat reads and calculations
+- `Render.lua` - frame text layout/rendering
+- `Frame.lua` - movable frame container behavior
+- `Format.lua` - centralized stat formatting
+- `Options.lua` - settings UI
+- `Popups.lua` - profile popup dialogs
+- `Locale.lua` - localization resolution
+- `Defaults.lua` - defaults/constants
+- `StatDefinitions.lua` - stat metadata
+- `Media.lua` - font/media helpers
+- `ZhuraStats.lua` - addon entry point
 
 ## Releases
 
-GitHub Actions can build a release archive automatically.
+GitHub Actions can build and publish release artifacts automatically.
 
-- When a change is merged into `master` with a new `## Version` in `ZhuraStats.toc`, the `Tag Release Version` workflow creates a matching tag automatically
-- That tag then triggers the `Release Build` workflow, which builds the zip and publishes a GitHub Release with autogenerated release notes
-- You can still push a tag manually like `v0.2.0` if needed
-- Or run the `Release Build` workflow manually from the Actions tab to generate an artifact without publishing a tagged release
+- After merge to `master`, updating `## Version` in `ZhuraStats.toc` triggers `Tag Release Version`
+- The created tag triggers `Release Build` workflow
+- `Release Build` packages a CurseForge-ready zip and publishes GitHub Release notes
+- You can also push a manual tag (for example `v0.3.0`)
+- Or run `Release Build` manually to produce an artifact without publishing a tagged release
 
-The release workflows read the addon version from `ZhuraStats.toc` and package the addon as a CurseForge-ready zip with a top-level `ZhuraStats/` folder.
+The workflow always reads addon version from `ZhuraStats.toc`.
 
 ## License
 

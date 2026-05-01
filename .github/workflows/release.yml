@@ -29,7 +29,13 @@ jobs:
 
           $tocVersion = $versionLine.Matches[0].Groups[1].Value.Trim()
           $tagName = "${{ github.ref_name }}"
-          $releaseVersion = if ($tagName) { $tagName.TrimStart('v') } else { $tocVersion }
+          $isTagRef = "${{ startsWith(github.ref, 'refs/tags/v') }}"
+          $releaseVersion = if ($isTagRef -eq 'true' -and $tagName) { $tagName.TrimStart('v') } else { $tocVersion }
+          if ($isTagRef -eq 'true' -and $tagName) {
+            $tagName = if ($tagName.StartsWith('v')) { $tagName } else { "v$tagName" }
+          } else {
+            $tagName = "v$tocVersion"
+          }
 
           "toc_version=$tocVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "release_version=$releaseVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
@@ -42,8 +48,10 @@ jobs:
           $workspace = $env:GITHUB_WORKSPACE
           $stageRoot = Join-Path $env:RUNNER_TEMP 'release-stage'
           $addonDir = Join-Path $stageRoot 'ZhuraStats'
-          $zipName = "ZhuraStats-${{ steps.version.outputs.release_version }}.zip"
+          $zipName = "NE-Stats-v${{ steps.version.outputs.release_version }}.zip"
           $zipPath = Join-Path $env:RUNNER_TEMP $zipName
+          $tocPath = Join-Path $workspace 'ZhuraStats.toc'
+          $embedsPath = Join-Path $workspace 'embeds.xml'
 
           if (Test-Path $stageRoot) {
             Remove-Item -LiteralPath $stageRoot -Recurse -Force
@@ -54,11 +62,72 @@ jobs:
 
           New-Item -ItemType Directory -Path $addonDir -Force | Out-Null
 
-          Copy-Item -LiteralPath (Join-Path $workspace 'ZhuraStats.toc') -Destination $addonDir
-          Copy-Item -LiteralPath (Join-Path $workspace 'ZhuraStats.lua') -Destination $addonDir
-          Copy-Item -LiteralPath (Join-Path $workspace 'embeds.xml') -Destination $addonDir
-          Copy-Item -LiteralPath (Join-Path $workspace 'Locales') -Destination $addonDir -Recurse
-          Copy-Item -LiteralPath (Join-Path $workspace 'Libs') -Destination $addonDir -Recurse
+          if (-not (Test-Path -LiteralPath $tocPath)) {
+            throw "Required file ZhuraStats.toc is missing."
+          }
+
+          $tocEntries = Get-Content -LiteralPath $tocPath |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -and -not $_.StartsWith('#') -and -not $_.StartsWith('##') }
+
+          if (-not $tocEntries) {
+            throw "ZhuraStats.toc does not contain file entries."
+          }
+
+          $requiredPaths = @('ZhuraStats.toc')
+          foreach ($entry in $tocEntries) {
+            $normalized = $entry -replace '/', '\'
+            $requiredPaths += $normalized
+          }
+
+          $missingRequired = @()
+          foreach ($relativePath in $requiredPaths) {
+            $sourcePath = Join-Path $workspace $relativePath
+            if (-not (Test-Path -LiteralPath $sourcePath)) {
+              $missingRequired += $relativePath
+            }
+          }
+
+          if ($missingRequired.Count -gt 0) {
+            $missingList = $missingRequired -join ', '
+            throw "Release package is missing required files from TOC: $missingList"
+          }
+
+          if (Test-Path -LiteralPath $embedsPath) {
+            $libReferences = Select-String -Path $embedsPath -Pattern 'Libs[\\/][^"]+' -AllMatches |
+              ForEach-Object { $_.Matches } |
+              ForEach-Object { $_.Value }
+
+            foreach ($libReference in $libReferences) {
+              $normalizedLibPath = $libReference -replace '/', '\'
+              $libSourcePath = Join-Path $workspace $normalizedLibPath
+              if (-not (Test-Path -LiteralPath $libSourcePath)) {
+                throw "embeds.xml references missing library asset: $normalizedLibPath"
+              }
+            }
+          }
+
+          foreach ($relativePath in $requiredPaths) {
+            $sourcePath = Join-Path $workspace $relativePath
+            $destinationPath = Join-Path $addonDir $relativePath
+            $destinationDir = Split-Path -Parent $destinationPath
+
+            if ($destinationDir -and -not (Test-Path -LiteralPath $destinationDir)) {
+              New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
+            }
+
+            if (Test-Path -LiteralPath $sourcePath -PathType Container) {
+              Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Recurse -Force
+            } else {
+              Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
+            }
+          }
+
+          $libsSourcePath = Join-Path $workspace 'Libs'
+          if (Test-Path -LiteralPath $libsSourcePath) {
+            Copy-Item -LiteralPath $libsSourcePath -Destination (Join-Path $addonDir 'Libs') -Recurse -Force
+          }
+
           if (Test-Path (Join-Path $workspace 'README.md')) {
             Copy-Item -LiteralPath (Join-Path $workspace 'README.md') -Destination $addonDir
           }
@@ -81,7 +150,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          name: NE Stats ${{ steps.version.outputs.release_version }}
+          name: NE Stats v${{ steps.version.outputs.release_version }}
           tag_name: ${{ steps.version.outputs.tag_name }}
           files: ${{ steps.archive.outputs.zip_path }}
           generate_release_notes: true
