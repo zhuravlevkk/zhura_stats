@@ -8,12 +8,26 @@ Addon.name = Addon.name or ADDON_NAME
 
 local addonFrame = CreateFrame("Frame")
 
+local function EnsureDatabaseBackup()
+    ZhuraStatsDBBackup = ZhuraStatsDBBackup or Addon.DeepCopy(ZhuraStatsDB)
+end
+
 local function SlashHandler(message)
     local command = string.lower(strtrim(message or ""))
     if command == "reset" then
         Addon:ResetActiveProfile()
         Addon:ApplyCurrentProfileState()
         print(Addon:S("NE Stats: active profile reset."))
+        return
+    end
+
+    if command == "restoreprofiles" then
+        Addon:RestoreProfilesFromBackup()
+        return
+    end
+
+    if command == "db" then
+        Addon:PrintDatabaseDebug()
         return
     end
 
@@ -44,6 +58,7 @@ function Addon:Initialize()
     end
 
     self.initialized = true
+    EnsureDatabaseBackup()
     self:EnsureDatabase()
     self:ApplyLocale()
     self:EnsureFormatBindings()
@@ -67,6 +82,7 @@ local function OnEvent(_, event, arg1)
     end
 
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
+        EnsureDatabaseBackup()
         Addon:EnsureDatabase()
         Addon:ApplyLocale()
         Addon:EnsureFormatBindings()

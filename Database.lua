@@ -8,6 +8,30 @@ ZhuraStatsDB = ZhuraStatsDB or {}
 
 local AceDB = LibStub and LibStub("AceDB-3.0", true)
 local db
+local STATS_MIGRATION_VERSION = 4
+
+local function PrintProfileList(title, profiles)
+    print(title)
+    if type(profiles) ~= "table" then
+        print("-", "<none>")
+        return
+    end
+
+    local names = {}
+    for name in pairs(profiles) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+
+    if #names == 0 then
+        print("-", "<empty>")
+        return
+    end
+
+    for _, name in ipairs(names) do
+        print("-", name)
+    end
+end
 
 function Addon:NormalizeProfileName(profileName)
     if not profileName then
@@ -28,50 +52,112 @@ function Addon:MigrateProfile(profile)
     local defaultStatsByKey = self.DefaultStatsByKey
     local statKeys = self.Constants.STAT_KEYS
 
-    if not profile.stats then
-        profile.stats = self.DeepCopy(defaults.stats)
-    end
-
-    local byKey = {}
-    for _, entry in ipairs(profile.stats) do
-        if type(entry) == "string" and statDefinitions[entry] then
-            byKey[entry] = { key = entry, enabled = true, color = self.DeepCopy(statDefinitions[entry].color) }
-        elseif type(entry) == "table" and entry.key and statDefinitions[entry.key] then
-            byKey[entry.key] = entry
+    local function IsStatsValid(stats)
+        if type(stats) ~= "table" then
+            return false
         end
-    end
-
-    local migrated, seen = {}, {}
-    for _, entry in ipairs(profile.stats) do
-        local key = type(entry) == "table" and entry.key or entry
-        if key and byKey[key] and not seen[key] then
-            local normalized = byKey[key]
-            normalized.enabled = normalized.enabled ~= false
-            normalized.color = normalized.color or self.DeepCopy(statDefinitions[key].color)
-            table.insert(migrated, normalized)
-            seen[key] = true
-        end
-    end
-
-    for _, key in ipairs(statKeys) do
-        if not seen[key] then
-            local entry = byKey[key]
-            if entry then
-                entry.enabled = entry.enabled ~= false
-                entry.color = entry.color or self.DeepCopy(statDefinitions[key].color)
-                table.insert(migrated, entry)
-            else
-                local defaultEntry = defaultStatsByKey[key]
-                table.insert(migrated, {
-                    key = key,
-                    enabled = defaultEntry and defaultEntry.enabled or false,
-                    color = self.DeepCopy(statDefinitions[key].color),
-                })
+        for i = 1, #statKeys do
+            local entry = stats[i]
+            if type(entry) ~= "table" then
+                return false
+            end
+            if entry.key ~= statKeys[i] then
+                return false
+            end
+            if entry.enabled == nil then
+                return false
+            end
+            if type(entry.color) ~= "table" then
+                return false
             end
         end
+        return true
     end
 
-    profile.stats = migrated
+    if profile.statsMigrationVersion ~= STATS_MIGRATION_VERSION or not IsStatsValid(profile.stats) then
+        local oldStats = type(profile.stats) == "table" and profile.stats or nil
+        local oldByKey = {}
+        local oldPriorityByKey = {}
+
+        for index = 1, #statKeys do
+            local entry = oldStats and oldStats[index] or nil
+            local key
+            local priority = 0
+
+            if type(entry) == "table" then
+                if type(entry.key) == "string" then
+                    key = entry.key
+                    priority = 2
+                else
+                    key = statKeys[index]
+                    priority = 1
+                end
+            elseif type(entry) == "string" then
+                key = entry
+                priority = 2
+            end
+
+            if key and statDefinitions[key] then
+                local existingPriority = oldPriorityByKey[key] or -1
+                if priority >= existingPriority then
+                    oldByKey[key] = entry
+                    oldPriorityByKey[key] = priority
+                end
+            end
+        end
+
+        if oldStats then
+            for _, entry in pairs(oldStats) do
+                local key
+                local priority = 0
+                if type(entry) == "table" and type(entry.key) == "string" then
+                    key = entry.key
+                    priority = 2
+                elseif type(entry) == "string" then
+                    key = entry
+                    priority = 2
+                end
+                if key and statDefinitions[key] then
+                    local existingPriority = oldPriorityByKey[key] or -1
+                    if priority >= existingPriority then
+                        oldByKey[key] = entry
+                        oldPriorityByKey[key] = priority
+                    end
+                end
+            end
+        end
+
+        local migrated = {}
+        for i = 1, #statKeys do
+            local key = statKeys[i]
+            local oldEntry = oldByKey[key]
+
+            local enabled
+            local color
+
+            if type(oldEntry) == "table" then
+                enabled = oldEntry.enabled
+                color = oldEntry.color
+            end
+
+            if enabled == nil then
+                enabled = defaultStatsByKey[key] and defaultStatsByKey[key].enabled or false
+            end
+
+            if type(color) ~= "table" then
+                color = self.DeepCopy(statDefinitions[key].color)
+            end
+
+            migrated[i] = {
+                key = key,
+                enabled = enabled ~= false,
+                color = color,
+            }
+        end
+
+        profile.stats = migrated
+        profile.statsMigrationVersion = STATS_MIGRATION_VERSION
+    end
     profile.alpha = profile.alpha or defaults.alpha
     profile.scale = profile.scale or defaults.scale
     profile.fontSize = profile.fontSize or defaults.fontSize
@@ -123,16 +209,76 @@ function Addon:EnsureDatabase()
         return
     end
     local aceDefaults = self.Defaults.ace
-    if type(ZhuraStatsDB) ~= "table" or not ZhuraStatsDB.profileKeys or ZhuraStatsDB.characters or ZhuraStatsDB.accountProfilesMigrated then
-        ZhuraStatsDB = nil
+    ZhuraStatsDB = ZhuraStatsDB or {}
+
+    db = LibStub("AceDB-3.0"):New("ZhuraStatsDB", aceDefaults, true)
+    self.db = db
+
+    for _, profile in pairs(db.sv.profiles or {}) do
+        Addon:MigrateProfile(profile)
     end
-    if not db then
-        db = AceDB:New("ZhuraStatsDB", aceDefaults, "Default")
-        self.db = db
-    end
+
     db.global.addonLocale = db.global.addonLocale or self.Constants.CLIENT_LANGUAGE_VALUE
     self:ApplyLocale()
-    self:MigrateProfile(db.profile)
+end
+
+function Addon:RestoreMissingProfilesFromBackup()
+    if type(ZhuraStatsDBBackup) ~= "table" then return end
+    if type(ZhuraStatsDBBackup.profiles) ~= "table" then return end
+    if type(ZhuraStatsDB) ~= "table" then return end
+    if type(ZhuraStatsDB.profiles) ~= "table" then return end
+
+    for profileName, profileData in pairs(ZhuraStatsDBBackup.profiles) do
+        if type(profileData) == "table" and ZhuraStatsDB.profiles[profileName] == nil then
+            ZhuraStatsDB.profiles[profileName] = Addon.DeepCopy(profileData)
+            print("NE Stats: restored profile from backup:", profileName)
+        end
+    end
+
+    if type(ZhuraStatsDBBackup.profileKeys) == "table" then
+        if type(ZhuraStatsDB.profileKeys) ~= "table" then return end
+        for charKey, profileName in pairs(ZhuraStatsDBBackup.profileKeys) do
+            if ZhuraStatsDB.profileKeys[charKey] == nil then
+                ZhuraStatsDB.profileKeys[charKey] = profileName
+            end
+        end
+    end
+end
+
+function Addon:ReinitializeDatabase()
+    db = nil
+    self.db = nil
+    self:EnsureDatabase()
+end
+
+function Addon:RestoreProfilesFromBackup()
+    self:RestoreMissingProfilesFromBackup()
+    self:ReinitializeDatabase()
+    self:ApplyCurrentProfileState()
+    if self.RefreshOptionRows then
+        self:RefreshOptionRows()
+    end
+    print("NE Stats: profile restore complete.")
+end
+
+function Addon:PrintDatabaseDebug()
+    PrintProfileList("ZhuraStatsDB.profiles:", ZhuraStatsDB and ZhuraStatsDB.profiles)
+    PrintProfileList("ZhuraStatsDBBackup.profiles:", ZhuraStatsDBBackup and ZhuraStatsDBBackup.profiles)
+
+    print("AceDB profiles:")
+    if not db then
+        print("-", "<db not initialized>")
+        return
+    end
+    local profileNames = db:GetProfiles()
+    if #profileNames == 0 then
+        print("-", "<empty>")
+    else
+        table.sort(profileNames)
+        for _, name in ipairs(profileNames) do
+            print("-", name)
+        end
+    end
 end
 
 function Addon:GetActiveRootProfile()
@@ -140,7 +286,6 @@ function Addon:GetActiveRootProfile()
         return self.Defaults.profile, "Default"
     end
     local profileName = db:GetCurrentProfile() or "Default"
-    self:MigrateProfile(db.profile)
     return db.profile, profileName
 end
 
@@ -184,7 +329,6 @@ function Addon:SelectRootProfile(profileName)
     end
     local ok = pcall(function()
         db:SetProfile(profileName)
-        self:MigrateProfile(db.profile)
     end)
     if not ok then
         print(self:S("NE Stats: profile could not be applied."))
@@ -210,7 +354,6 @@ function Addon:CreateProfile(profileName)
         if sourceProfileName and sourceProfileName ~= profileName then
             db:CopyProfile(sourceProfileName, true)
         end
-        self:MigrateProfile(db.profile)
     end)
     if not ok then
         print(self:S("NE Stats: profile could not be created."))
@@ -253,7 +396,6 @@ function Addon:RenameProfile(oldName, newName)
         db.profiles = profiles
         db.keys.profile = newName
         db.profile = profiles[newName]
-        self:MigrateProfile(db.profile)
     end, function(message) return tostring(message) end)
     if not ok then
         return "invalid", err
@@ -269,7 +411,6 @@ function Addon:DeleteProfile(profileName)
     end
     local ok = pcall(function()
         db:SetProfile("Default")
-        self:MigrateProfile(db.profile)
         db:DeleteProfile(profileName, true)
     end)
     if not ok then
@@ -284,7 +425,6 @@ function Addon:ResetActiveProfile()
         return
     end
     db:ResetProfile()
-    self:MigrateProfile(db.profile)
 end
 
 function Addon:ApplyCurrentProfileState()

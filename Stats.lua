@@ -250,6 +250,18 @@ local function ReadRatingStat(key, valueFn, ratingId)
     return MakeResult(key, value, rating, ratingBonus)
 end
 
+local function ReadSpeed()
+    local value = CallNumber(GetSpeed)
+    local rating = CR_SPEED and CallNumber(function()
+        return GetCombatRating(CR_SPEED)
+    end)
+    local ratingBonus = CR_SPEED and CallNumber(function()
+        return GetCombatRatingBonus(CR_SPEED)
+    end)
+
+    return MakeResult("SPEED", value, rating, ratingBonus)
+end
+
 local function ReadDurability()
     local totalCurrent = 0
     local totalMaximum = 0
@@ -298,9 +310,7 @@ local readers = {
     LEECH = function()
         return ReadRatingStat("LEECH", GetLifesteal, CR_LIFESTEAL)
     end,
-    SPEED = function()
-        return ReadRatingStat("SPEED", GetSpeed, CR_SPEED)
-    end,
+    SPEED = ReadSpeed,
     DURA = ReadDurability,
     ILVL = ReadItemLevel,
     GOLD = ReadGold,

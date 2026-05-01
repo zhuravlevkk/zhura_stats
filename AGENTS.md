@@ -252,7 +252,7 @@ When modifying code:
 ## Testing Checklist (MANDATORY)
 
 After ANY change:
-
+* Deploy addon to the game folder with addons (if possible)
 * `/reload` → no Lua errors
 * Frame appears
 * Frame can be dragged
