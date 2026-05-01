@@ -245,12 +245,16 @@ function Addon:MigrateProfile(profile)
     profile.percentPrecision = profile.percentPrecision or profile.decimalPrecision or defaults.percentPrecision
     if profile.drDisplayMode == nil then
         if profile.showDiminishingReturns == true then
-            profile.drDisplayMode = "suffix"
+            profile.drDisplayMode = "penalty"
         else
             profile.drDisplayMode = defaults.drDisplayMode
         end
     end
-    if profile.drDisplayMode ~= "off" and profile.drDisplayMode ~= "suffix" then
+    if profile.drDisplayMode == "suffix" then
+        profile.drDisplayMode = "penalty"
+    end
+    if profile.drDisplayMode ~= "off" and profile.drDisplayMode ~= "penalty"
+        and profile.drDisplayMode ~= "loss" and profile.drDisplayMode ~= "full" then
         profile.drDisplayMode = defaults.drDisplayMode
     end
     profile.showDiminishingReturns = nil
