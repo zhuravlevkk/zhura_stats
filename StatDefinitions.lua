@@ -35,7 +35,19 @@ local statDefinitions = {
     DODGE = { label = "Dodge", color = { 0.95, 0.80, 0.26 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_DODGE) or 0) or 0 end, value = function() return GetDodgeChance and (GetDodgeChance() or 0) or 0 end },
     BLOCK = { label = "Block", color = { 0.87, 0.73, 0.42 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_BLOCK) or 0) or 0 end, value = function() return GetBlockChance and (GetBlockChance() or 0) or 0 end },
     LEECH = { label = "Leech", color = { 0.10, 1.00, 0.55 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_LIFESTEAL) or 0) or 0 end, value = function() return GetLifesteal and (GetLifesteal() or 0) or 0 end },
-    SPEED = { label = "Movement Speed", color = { 1.00, 0.85, 0.30 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_SPEED) or 0) or 0 end, value = function() return GetSpeed and (GetSpeed() or 0) or 0 end },
+    SPEED = { label = "Speed Rating", color = { 1.00, 0.85, 0.30 }, suffix = "%", rating = function() return GetCombatRating and (GetCombatRating(CR_SPEED) or 0) or 0 end, value = function() return GetCombatRatingBonus and (GetCombatRatingBonus(CR_SPEED) or 0) or 0 end },
+    MOVEMENT_SPEED = {
+        label = "Movement Speed",
+        color = { 1.00, 0.92, 0.38 },
+        suffix = "%",
+        value = function()
+            local Stats = ns.Stats
+            if Stats and Stats.GetMovementSpeedPercent then
+                return Stats.GetMovementSpeedPercent()
+            end
+            return 0
+        end,
+    },
     DURA = { label = "Durability", color = { 0.42, 1.00, 0.42 }, suffix = "%", value = function() local totalCurrent = 0 local totalMaximum = 0 for slot = 1, 17 do local current, maximum = GetInventoryItemDurability(slot) if current and maximum and maximum > 0 then totalCurrent = totalCurrent + current totalMaximum = totalMaximum + maximum end end if totalMaximum <= 0 then return 0 end return (totalCurrent / totalMaximum) * 100 end },
     ILVL = { label = "Item Level", color = { 0.60, 0.82, 1.00 }, suffix = "", value = function() local _, equippedLevel = GetAverageItemLevel() return equippedLevel or 0 end },
     GOLD = { label = "Gold", color = { 1.00, 0.84, 0.00 }, suffix = "", value = function() return math.floor((GetMoney() or 0) / 10000) end },
@@ -55,6 +67,7 @@ defaults.stats = {
     { key = "DURA", enabled = true, color = DeepCopy(statDefinitions.DURA.color) },
     { key = "ILVL", enabled = true, color = DeepCopy(statDefinitions.ILVL.color) },
     { key = "GOLD", enabled = true, color = DeepCopy(statDefinitions.GOLD.color) },
+    { key = "MOVEMENT_SPEED", enabled = false, color = DeepCopy(statDefinitions.MOVEMENT_SPEED.color) },
 }
 
 local defaultStatsByKey = {}

@@ -251,7 +251,9 @@ local function ReadRatingStat(key, valueFn, ratingId)
 end
 
 local function ReadSpeed()
-    local value = CallNumber(GetSpeed)
+    local value = CR_SPEED and CallNumber(function()
+        return GetCombatRatingBonus(CR_SPEED)
+    end)
     local rating = CR_SPEED and CallNumber(function()
         return GetCombatRating(CR_SPEED)
     end)
@@ -260,6 +262,37 @@ local function ReadSpeed()
     end)
 
     return MakeResult("SPEED", value, rating, ratingBonus)
+end
+
+local function GetMovementSpeedPercent()
+    if not GetUnitSpeed then
+        return 0
+    end
+
+    local currentSpeed, runSpeed, flightSpeed, swimSpeed = GetUnitSpeed("player")
+    local speed = runSpeed
+
+    if type(speed) ~= "number" or speed <= 0 then
+        speed = currentSpeed
+    end
+
+    if type(flightSpeed) == "number" and flightSpeed > (speed or 0) then
+        speed = flightSpeed
+    end
+
+    if type(swimSpeed) == "number" and swimSpeed > (speed or 0) then
+        speed = swimSpeed
+    end
+
+    if type(speed) ~= "number" or speed <= 0 then
+        return 0
+    end
+
+    return (speed / 7) * 100
+end
+
+local function ReadMovementSpeed()
+    return MakeResult("MOVEMENT_SPEED", GetMovementSpeedPercent())
 end
 
 local function ReadDurability()
@@ -311,6 +344,7 @@ local readers = {
         return ReadRatingStat("LEECH", GetLifesteal, CR_LIFESTEAL)
     end,
     SPEED = ReadSpeed,
+    MOVEMENT_SPEED = ReadMovementSpeed,
     DURA = ReadDurability,
     ILVL = ReadItemLevel,
     GOLD = ReadGold,
@@ -390,4 +424,8 @@ end
 function Stats.GetPotionState()
     Stats.RefreshPotionState()
     return potionState
+end
+
+function Stats.GetMovementSpeedPercent()
+    return GetMovementSpeedPercent()
 end

@@ -9,6 +9,10 @@ local combatStatRefreshHandle
 local COMBAT_STAT_REFRESH_SEC = 0.35
 local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
+local stableLayoutSignature = nil
+local stableColumnWidths = {}
+local stableFrameWidth = 0
+local stableFrameHeight = 0
 
 function Addon:GetVisibleStats()
     local profile = self:GetProfile()
@@ -96,6 +100,25 @@ function Addon:RefreshStatsImpl()
     local measuredStats = {}
     local maxLineHeight = 0
     local Stats = ns.Stats
+    local layoutSignature = table.concat({
+        tostring(profile.fontKey or ""),
+        tostring(fontSize),
+        tostring(profile.showLabels),
+        tostring(profile.showValues),
+        tostring(profile.showPercent),
+        tostring(profile.percentPrecision),
+        tostring(textAlign),
+        tostring(profile.columnCount or defaults.columnCount),
+        tostring(profile.rowsPerColumn or defaults.rowsPerColumn),
+        tostring(#visibleStats),
+    }, "|")
+
+    if stableLayoutSignature ~= layoutSignature then
+        stableLayoutSignature = layoutSignature
+        stableColumnWidths = {}
+        stableFrameWidth = 0
+        stableFrameHeight = 0
+    end
 
     measureLine:SetFont(fontPath, fontSize, fontFlags)
     for _, entry in ipairs(visibleStats) do
@@ -135,6 +158,14 @@ function Addon:RefreshStatsImpl()
         columnWidths[columnIndex] = columnWidth
     end
 
+    for columnIndex = 1, actualColumns do
+        local currentWidth = columnWidths[columnIndex] or 0
+        local rememberedWidth = stableColumnWidths[columnIndex] or 0
+        local effectiveWidth = math.max(currentWidth, rememberedWidth)
+        stableColumnWidths[columnIndex] = effectiveWidth
+        columnWidths[columnIndex] = effectiveWidth
+    end
+
     maxLineHeight = math.max(maxLineHeight, fontSize)
     itemIndex = 1
     local currentXOffset = leftPadding
@@ -150,8 +181,7 @@ function Addon:RefreshStatsImpl()
                 line:SetFont(fontPath, fontSize, fontFlags)
                 line:SetJustifyH(textAlign)
                 line:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", currentXOffset, -currentYOffset)
-                line:SetPoint("TOPRIGHT", statsFrame, "TOPLEFT", currentXOffset + columnWidth, -currentYOffset)
-                line:SetWidth(0)
+                line:SetWidth(columnWidth)
                 line:SetJustifyH(textAlign)
                 line:SetWordWrap(false)
                 line:SetMaxLines(1)
@@ -186,11 +216,13 @@ function Addon:RefreshStatsImpl()
 
     local frameWidth = math.max(24, math.ceil(contentWidth) + leftPadding + rightPadding)
     local frameHeight = math.max(24, math.ceil(topPadding + contentHeight + bottomPadding))
-    statsFrame:SetSize(frameWidth, frameHeight)
+    stableFrameWidth = math.max(stableFrameWidth or 0, frameWidth)
+    stableFrameHeight = math.max(stableFrameHeight or 0, frameHeight)
+    statsFrame:SetSize(stableFrameWidth, stableFrameHeight)
     if statsAnchor then
         local scale = profile.scale or defaults.scale
-        local newAnchorWidth = frameWidth * scale
-        local newAnchorHeight = frameHeight * scale
+        local newAnchorWidth = stableFrameWidth * scale
+        local newAnchorHeight = stableFrameHeight * scale
         local currentAnchorWidth, currentAnchorHeight = statsAnchor:GetSize()
         if math.abs(currentAnchorWidth - newAnchorWidth) > 0.5 or math.abs(currentAnchorHeight - newAnchorHeight) > 0.5 then
             statsAnchor:SetSize(newAnchorWidth, newAnchorHeight)

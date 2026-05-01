@@ -118,7 +118,8 @@ local function OnEvent(_, event, arg1)
         return
     end
 
-    if (event == "UNIT_AURA" or event == "UNIT_STATS" or event == "UNIT_INVENTORY_CHANGED" or event == "UNIT_SPELLCAST_SUCCEEDED")
+    if (event == "UNIT_AURA" or event == "UNIT_STATS" or event == "UNIT_INVENTORY_CHANGED" or event == "UNIT_SPELLCAST_SUCCEEDED"
+        or event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_EXITED_VEHICLE")
         and arg1 ~= "player" then
         return
     end
@@ -166,4 +167,15 @@ addonFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
 addonFrame:RegisterEvent("MASTERY_UPDATE")
 addonFrame:RegisterEvent("PLAYER_LEVEL_UP")
 addonFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+addonFrame:RegisterEvent("PLAYER_STARTED_MOVING")
+addonFrame:RegisterEvent("PLAYER_STOPPED_MOVING")
+addonFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+addonFrame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
+if addonFrame.RegisterUnitEvent then
+    addonFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", "player")
+    addonFrame:RegisterUnitEvent("UNIT_EXITED_VEHICLE", "player")
+else
+    addonFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
+    addonFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
+end
 addonFrame:SetScript("OnEvent", OnEvent)

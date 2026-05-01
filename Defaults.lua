@@ -24,7 +24,7 @@ local PRIMARY_STAT_KEY_BY_ID = {
 
 local STAT_KEYS = {
     "STR", "AGI", "INT", "HASTE", "CRIT", "VERS", "MASTERY",
-    "BLOCK", "LEECH", "SPEED", "DURA", "ILVL", "GOLD",
+    "BLOCK", "LEECH", "SPEED", "DURA", "ILVL", "GOLD", "MOVEMENT_SPEED",
 }
 
 local TEXT_ALIGN_OPTIONS = { "LEFT", "CENTER", "RIGHT" }

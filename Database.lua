@@ -10,7 +10,7 @@ local AceDB = LibStub and LibStub("AceDB-3.0", true)
 local db
 local profileStateChangeCounter = 0
 local newProfileInitCounter = 0
-local STATS_MIGRATION_VERSION = 4
+local STATS_MIGRATION_VERSION = 5
 local PRIMARY_STATS = {
     STR = true,
     AGI = true,
