@@ -8,6 +8,8 @@ ZhuraStatsDB = ZhuraStatsDB or {}
 
 local AceDB = LibStub and LibStub("AceDB-3.0", true)
 local db
+local profileStateChangeCounter = 0
+local newProfileInitCounter = 0
 local STATS_MIGRATION_VERSION = 4
 local PRIMARY_STATS = {
     STR = true,
@@ -293,6 +295,13 @@ function Addon:EnsureDatabase()
     db = LibStub("AceDB-3.0"):New("ZhuraStatsDB", aceDefaults, true)
     self.db = db
 
+    if db.RegisterCallback then
+        db:RegisterCallback(self, "OnProfileChanged", "HandleAceDBProfileStateChanged")
+        db:RegisterCallback(self, "OnProfileCopied", "HandleAceDBProfileStateChanged")
+        db:RegisterCallback(self, "OnProfileReset", "HandleAceDBProfileStateChanged")
+        db:RegisterCallback(self, "OnNewProfile", "HandleAceDBNewProfile")
+    end
+
     for _, profile in pairs(db.sv.profiles or {}) do
         Addon:MigrateProfile(profile)
     end
@@ -337,10 +346,7 @@ end
 function Addon:RestoreProfilesFromBackup()
     self:RestoreMissingProfilesFromBackup()
     self:ReinitializeDatabase()
-    self:ApplyCurrentProfileState()
-    if self.RefreshOptionRows then
-        self:RefreshOptionRows()
-    end
+    self:OnProfileStateChanged()
     print("NE Stats: profile restore complete.")
 end
 
@@ -410,6 +416,7 @@ function Addon:SelectRootProfile(profileName)
     if not db or not profileName or profileName == "" then
         return
     end
+    local callbackStateBefore = profileStateChangeCounter
     local ok = pcall(function()
         db:SetProfile(profileName)
     end)
@@ -417,7 +424,9 @@ function Addon:SelectRootProfile(profileName)
         print(self:S("NE Stats: profile could not be applied."))
         return
     end
-    self:ApplyCurrentProfileState()
+    if profileStateChangeCounter == callbackStateBefore then
+        self:OnProfileStateChanged()
+    end
 end
 
 function Addon:CreateProfile(profileName)
@@ -431,25 +440,47 @@ function Addon:CreateProfile(profileName)
             return "exists", profileName
         end
     end
-    local sourceProfileName = db:GetCurrentProfile()
+    local callbackStateBefore = profileStateChangeCounter
+    local newProfileInitStateBefore = newProfileInitCounter
     local ok = pcall(function()
         db:SetProfile(profileName)
-        if sourceProfileName and sourceProfileName ~= profileName then
-            db:CopyProfile(sourceProfileName, true)
-        end
     end)
     if not ok then
         print(self:S("NE Stats: profile could not be created."))
         return "invalid", nil
     end
-    if db and db.profile then
+    if db and db.profile and newProfileInitCounter == newProfileInitStateBefore then
         self:InitializeNewProfile(db.profile)
     end
-    self:ApplyCurrentProfileState()
+    if profileStateChangeCounter == callbackStateBefore then
+        self:OnProfileStateChanged()
+    end
     return "created", profileName
 end
 
-function Addon:RenameProfile(oldName, newName)
+function Addon:CopyProfile(sourceProfileName)
+    sourceProfileName = self:NormalizeProfileName(sourceProfileName)
+    if not db or sourceProfileName == "" then
+        return false
+    end
+
+    local callbackStateBefore = profileStateChangeCounter
+    local ok = pcall(function()
+        db:CopyProfile(sourceProfileName)
+    end)
+    if not ok then
+        return false
+    end
+
+    if profileStateChangeCounter == callbackStateBefore then
+        self:OnProfileStateChanged()
+    end
+    return true
+end
+
+-- AceDB-3.0 does not expose a safe public profile rename API.
+-- Keep this custom flow isolated from normal Set/Copy/Reset/Delete methods.
+function Addon:LegacyRenameProfile(oldName, newName)
     oldName = self:NormalizeProfileName(oldName)
     newName = self:NormalizeProfileName(newName)
     if not db or not self:CanModifyProfile(oldName) or newName == "" then
@@ -486,8 +517,12 @@ function Addon:RenameProfile(oldName, newName)
     if not ok then
         return "invalid", err
     end
-    self:ApplyCurrentProfileState()
+    self:OnProfileStateChanged()
     return "renamed", newName
+end
+
+function Addon:RenameProfile(oldName, newName)
+    return self:LegacyRenameProfile(oldName, newName)
 end
 
 function Addon:DeleteProfile(profileName)
@@ -495,14 +530,20 @@ function Addon:DeleteProfile(profileName)
     if not db or not self:CanModifyProfile(profileName) then
         return false
     end
+    local activeProfileName = db:GetCurrentProfile()
+    if activeProfileName == profileName then
+        return false
+    end
+    local callbackStateBefore = profileStateChangeCounter
     local ok = pcall(function()
-        db:SetProfile("Default")
-        db:DeleteProfile(profileName, true)
+        db:DeleteProfile(profileName)
     end)
     if not ok then
         return false
     end
-    self:ApplyCurrentProfileState()
+    if profileStateChangeCounter == callbackStateBefore then
+        self:OnProfileStateChanged()
+    end
     return true
 end
 
@@ -510,11 +551,37 @@ function Addon:ResetActiveProfile()
     if not db then
         return
     end
+    local callbackStateBefore = profileStateChangeCounter
     db:ResetProfile()
+    if profileStateChangeCounter == callbackStateBefore then
+        self:OnProfileStateChanged()
+    end
 end
 
 function Addon:ApplyCurrentProfileState()
     if self.ApplyCurrentProfileStateImpl then
         self:ApplyCurrentProfileStateImpl()
     end
+end
+
+function Addon:OnProfileStateChanged()
+    self:ApplyCurrentProfileState()
+    if self.RefreshOptions then
+        self:RefreshOptions()
+    elseif self.RefreshOptionRows then
+        self:RefreshOptionRows()
+    end
+end
+
+function Addon:HandleAceDBProfileStateChanged()
+    profileStateChangeCounter = profileStateChangeCounter + 1
+    self:OnProfileStateChanged()
+end
+
+function Addon:HandleAceDBNewProfile()
+    newProfileInitCounter = newProfileInitCounter + 1
+    if db and db.profile then
+        self:InitializeNewProfile(db.profile)
+    end
+    self:HandleAceDBProfileStateChanged()
 end

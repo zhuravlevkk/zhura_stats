@@ -16,7 +16,6 @@ local function SlashHandler(message)
     local command = string.lower(strtrim(message or ""))
     if command == "reset" then
         Addon:ResetActiveProfile()
-        Addon:ApplyCurrentProfileState()
         print(Addon:S("NE Stats: active profile reset."))
         return
     end
