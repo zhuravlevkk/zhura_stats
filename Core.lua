@@ -90,8 +90,24 @@ function Addon:Initialize()
     self:RefreshStats()
 end
 
-local function OnEvent(_, event, arg1)
+local function OnEvent(_, event, arg1, ...)
     local Stats = ns.Stats
+
+    if event == "ADDON_RESTRICTION_STATE_CHANGED" then
+        local restrictionType = arg1
+        local restrictionState = select(2, ...)
+
+        if restrictionType == 2 then
+            if restrictionState == 0 then
+                C_Timer.After(0.05, function()
+                    if Addon.initialized then
+                        Addon:RefreshStats()
+                    end
+                end)
+            end
+        end
+        return
+    end
 
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         if Stats and Stats.HandleCombatLogEvent then
@@ -143,6 +159,13 @@ local function OnEvent(_, event, arg1)
         return
     end
 
+    if event == "COMBAT_RATING_UPDATE"
+        or (event == "UNIT_AURA" and arg1 == "player")
+        or (event == "UNIT_STATS" and arg1 == "player") then
+        Addon:RefreshStats()
+        return
+    end
+
     if (event == "UNIT_AURA" or event == "UNIT_STATS" or event == "UNIT_INVENTORY_CHANGED" or event == "UNIT_SPELLCAST_SUCCEEDED"
         or event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_EXITED_VEHICLE")
         and arg1 ~= "player" then
@@ -158,6 +181,7 @@ local function OnEvent(_, event, arg1)
         and tostring(arg1) ~= tostring(C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID() or "") then
         return
     end
+
 
     Addon:RefreshStats()
     local refs = Addon:GetControlRefs()
@@ -185,6 +209,7 @@ local function RegisterAllEvents()
     addonFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
     addonFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     addonFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    addonFrame:RegisterEvent("ADDON_RESTRICTION_STATE_CHANGED")
     addonFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
     addonFrame:RegisterEvent("PLAYER_MONEY")
     addonFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")

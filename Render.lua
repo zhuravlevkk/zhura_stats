@@ -123,20 +123,26 @@ function Addon:RefreshStatsImpl()
     measureLine:SetFont(fontPath, fontSize, fontFlags)
     for _, entry in ipairs(visibleStats) do
         local def = statDefinitions[entry.key]
-        local statResult = Stats and Stats.ReadStat and Stats.ReadStat(entry.key)
-        if statResult and statResult.value ~= nil then
-            local text = self:FormatStatValue(entry.key, statResult, profile, def)
-            measureLine:SetText(text)
-            local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
-            local textHeight = measureLine:GetStringHeight()
-            table.insert(measuredStats, {
-                entry = entry,
-                text = text,
-                textWidth = textWidth,
-                textHeight = textHeight,
-                drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
-            })
-            maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
+        local readOk, statResult = pcall(function()
+            return Stats and Stats.ReadStat and Stats.ReadStat(entry.key)
+        end)
+        if readOk and statResult and statResult.value ~= nil then
+            local formatOk, text = pcall(function()
+                return self:FormatStatValue(entry.key, statResult, profile, def)
+            end)
+            if formatOk and text then
+                measureLine:SetText(text)
+                local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
+                local textHeight = measureLine:GetStringHeight()
+                table.insert(measuredStats, {
+                    entry = entry,
+                    text = text,
+                    textWidth = textWidth,
+                    textHeight = textHeight,
+                    drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
+                })
+                maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
+            end
         end
     end
 
@@ -247,7 +253,7 @@ function Addon:RefreshStats()
         local displayError = tostring(err or handledError or "")
         if displayError ~= "" and displayError ~= "nil" then
             local now = (GetTime and GetTime()) or 0
-            if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 2 then
+            if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 30 then
                 print(self:S("NE Stats: refresh failed: %s", displayError))
                 lastRefreshErrorMessage = displayError
                 lastRefreshErrorAt = now
