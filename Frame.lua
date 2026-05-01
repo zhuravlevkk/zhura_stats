@@ -43,7 +43,6 @@ function Addon:UpdateFrameLockState()
         return
     end
 
-    local profile = self:GetProfile()
     local locked = self:GetProfileValue("locked")
     statsAnchor:EnableMouse(true)
     statsFrame:SetBackdropColor(0, 0, 0, 0)
@@ -151,13 +150,13 @@ function Addon:EnsureStatsFrame()
         insets = { left = 3, right = 3, top = 3, bottom = 3 },
     })
     statsFrame:EnableMouse(false)
-    statsAnchor:SetScript("OnDragStart", function(self)
+    statsAnchor:SetScript("OnDragStart", function(anchor)
         if not Addon:GetProfileValue("locked") then
-            self:StartMoving()
+            anchor:StartMoving()
         end
     end)
-    statsAnchor:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
+    statsAnchor:SetScript("OnDragStop", function(anchor)
+        anchor:StopMovingOrSizing()
         Addon:SaveFramePosition()
     end)
 
@@ -167,10 +166,10 @@ function Addon:EnsureStatsFrame()
     lockButton:SetFrameLevel(statsAnchor:GetFrameLevel() + 10)
     lockButton:SetText("")
     lockButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    lockButton:SetScript("OnEnter", function(self)
+    lockButton:SetScript("OnEnter", function(btn)
         isLockButtonHovered = true
         Addon:UpdateFrameLockState()
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
         GameTooltip:SetText(Addon:S("Lock button"), 1, 0.82, 0)
         GameTooltip:AddLine(Addon:S("Left-click: lock or unlock the frame."), 1, 1, 1, true)
         GameTooltip:AddLine(Addon:S("Right-click: open addon settings."), 1, 1, 1, true)
@@ -232,19 +231,19 @@ function Addon:EnsureStatsFrame()
         button.mode = config.id
         button.tooltipTitle = config.title
         button.tooltipBody = config.body
-        button:SetScript("OnEnter", function(self)
+        button:SetScript("OnEnter", function(btn)
             isPriorityModeHovered = true
             Addon:UpdateFrameLockState()
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(Addon:S(self.tooltipTitle), 1, 0.82, 0)
-            GameTooltip:AddLine(Addon:S(self.tooltipBody), 1, 1, 1, true)
+            GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
+            GameTooltip:SetText(Addon:S(btn.tooltipTitle), 1, 0.82, 0)
+            GameTooltip:AddLine(Addon:S(btn.tooltipBody), 1, 1, 1, true)
             GameTooltip:Show()
         end)
         button:SetScript("OnLeave", function()
             GameTooltip:Hide()
         end)
-        button:SetScript("OnClick", function(self)
-            Addon:SetStatPriorityMode(self.mode)
+        button:SetScript("OnClick", function(btn)
+            Addon:SetStatPriorityMode(btn.mode)
         end)
         priorityModeButtons[config.id] = button
     end

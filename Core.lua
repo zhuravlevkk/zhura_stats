@@ -7,7 +7,6 @@ local Addon = ns.ZhuraStats
 Addon.name = Addon.name or ADDON_NAME
 
 local addonFrame = CreateFrame("Frame")
-local pendingCombatLogRegistration = false
 
 local combatLogTicker = nil
 

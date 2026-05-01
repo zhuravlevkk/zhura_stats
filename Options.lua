@@ -33,7 +33,6 @@ local PAGE_Y = -112
 local PAGE_WIDTH = 620
 local ROW_H = 30
 local FIELD_X = 190
-local BUTTON_X = 440
 local FORM_X = 24
 local FORM_Y = -70
 local LABEL_X = 24
@@ -63,30 +62,12 @@ local function SetValue(key, value)
     Addon:SetProfileValue(key, value)
 end
 
-local function SafeCall(fn)
-    if type(fn) ~= "function" then
-        return false
-    end
-    local ok = pcall(fn)
-    return ok
-end
-
 local function GetActiveProfileNameFromDB()
     local db = Addon.db
     if db and db.GetCurrentProfile then
         return db:GetCurrentProfile() or "Default"
     end
     return "Default"
-end
-
-local function SetProfileDropDownSelection(dropDown, profileName)
-    if not dropDown or not profileName then
-        return
-    end
-    local displayName = Addon:GetDisplayProfileName(profileName)
-    UIDropDownMenu_SetText(dropDown, displayName)
-    UIDropDownMenu_SetSelectedName(dropDown, displayName)
-    UIDropDownMenu_SetSelectedValue(dropDown, profileName)
 end
 
 local function SetGenericDropDownSelection(dropDown, text, value)
@@ -468,15 +449,6 @@ local function EnsureResetProfilePopup()
     }
 end
 
-local function FindPriorityModeLabel(value)
-    for _, option in ipairs(PRIORITY_MODE_OPTIONS) do
-        if option.value == value then
-            return Addon:S(option.label)
-        end
-    end
-    return Addon:S("Manual priority")
-end
-
 local function RefreshProfileControls()
     local activeName = GetActiveProfileNameFromDB()
 
@@ -678,13 +650,6 @@ function Addon:RefreshLocalizedUI()
     self:RefreshOptions()
 end
 
-local function AddTextRow(page, labelText, widget)
-    local label = page:AddRowLabel(labelText)
-    widget:SetPoint("TOPLEFT", page, "TOPLEFT", FIELD_X, page.cursorY + 8)
-    page:Advance(1)
-    return label, widget
-end
-
 local function CreateCard(page, title, topY)
     local card = CreateFrame("Frame", nil, page, "BackdropTemplate")
     card:SetPoint("TOPLEFT", page, "TOPLEFT", FORM_X, topY)
@@ -760,11 +725,11 @@ local function CreateCard(page, title, topY)
         currentY = currentY - FORM_ROW_H
     end
 
-    function card:Advance(amount)
+    function card.Advance(_, amount)
         currentY = currentY - (amount or FORM_ROW_H)
     end
 
-    function card:GetCurrentY()
+    function card.GetCurrentY()
         return currentY
     end
 
