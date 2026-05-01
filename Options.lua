@@ -598,6 +598,9 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.priorityModeDropDown then
         controlRefs.priorityModeDropDown:Refresh(self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual"))
     end
+    if self.RefreshPriorityModeButtons then
+        self:RefreshPriorityModeButtons()
+    end
 
     if controlRefs.fontDropDown or controlRefs.fontPreview then
         for _, font in ipairs(self:GetAvailableFonts()) do
@@ -1116,9 +1119,7 @@ local function BuildStatsPage(content, addonName, statKeys)
         end
         return items
     end, function(mode)
-        SetValue("statPriorityMode", mode)
-        Addon:RefreshStats()
-        Addon:RefreshOptionRows()
+        Addon:SetStatPriorityMode(mode)
     end)
     card:AddDropdownRow(Addon:S("Display order"), priorityDropDown, 220)
     controlRefs.priorityModeDropDown = priorityDropDown

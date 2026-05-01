@@ -7,8 +7,11 @@ local Addon = ns.ZhuraStats
 local statsFrame
 local statsAnchor
 local lockButton
+local priorityModeButtons = {}
+local priorityModeControls
 local isStatsFrameHovered = false
 local isLockButtonHovered = false
+local isPriorityModeHovered = false
 local lines = {}
 local measureLine
 
@@ -46,6 +49,8 @@ function Addon:UpdateFrameLockState()
     statsFrame:SetBackdropColor(0, 0, 0, 0)
     statsFrame:SetBackdropBorderColor(0, 0, 0, 0)
 
+    local controlsVisible = (not self:GetProfileValue("showLockOnHover")) or isStatsFrameHovered or isLockButtonHovered or isPriorityModeHovered
+
     if lockButton then
         if locked then
             lockButton:SetNormalTexture("Interface\\BUTTONS\\LockButton-Locked-Up")
@@ -55,7 +60,26 @@ function Addon:UpdateFrameLockState()
             lockButton:SetPushedTexture("Interface\\BUTTONS\\LockButton-Unlocked-Down")
         end
         lockButton:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight")
-        lockButton:SetShown((not self:GetProfileValue("showLockOnHover")) or isStatsFrameHovered or isLockButtonHovered)
+        lockButton:SetShown(controlsVisible)
+    end
+
+    if priorityModeControls then
+        priorityModeControls:SetShown(controlsVisible)
+    end
+end
+
+function Addon:RefreshPriorityModeButtons()
+    if not priorityModeButtons then
+        return
+    end
+
+    local activeMode = self:NormalizeStatPriorityMode(self:GetProfileValue("statPriorityMode") or "manual")
+    for mode, button in pairs(priorityModeButtons) do
+        if button then
+            local isActive = mode == activeMode
+            button:SetEnabled(not isActive)
+            button:SetAlpha(isActive and 1 or 0.45)
+        end
     end
 end
 
@@ -164,6 +188,68 @@ function Addon:EnsureStatsFrame()
         end
         Addon:ToggleLockState()
     end)
+
+    priorityModeControls = CreateFrame("Frame", nil, statsFrame)
+    priorityModeControls:SetSize(62, 20)
+    priorityModeControls:SetPoint("TOPRIGHT", lockButton, "TOPLEFT", -2, 0)
+    priorityModeControls:SetFrameLevel(statsAnchor:GetFrameLevel() + 10)
+    priorityModeControls:SetScript("OnEnter", function()
+        isPriorityModeHovered = true
+        Addon:UpdateFrameLockState()
+    end)
+    priorityModeControls:SetScript("OnLeave", function()
+        isPriorityModeHovered = false
+        GameTooltip:Hide()
+        Addon:UpdateFrameLockState()
+    end)
+
+    local modeButtons = {
+        {
+            id = "manual",
+            text = "U",
+            title = "User priority",
+            body = "Manual stat order from settings.",
+        },
+        {
+            id = "archon_raid",
+            text = "R",
+            title = "Archon Raid",
+            body = "Use Archon Raid stat priority for display order.",
+        },
+        {
+            id = "archon_mplus",
+            text = "M",
+            title = "Archon Mythic+",
+            body = "Use Archon Mythic+ stat priority for display order.",
+        },
+    }
+
+    for index, config in ipairs(modeButtons) do
+        local button = CreateFrame("Button", nil, priorityModeControls, "UIPanelButtonTemplate")
+        button:SetSize(18, 18)
+        button:SetPoint("LEFT", priorityModeControls, "LEFT", (index - 1) * 21, 0)
+        button:SetText(config.text)
+        button.mode = config.id
+        button.tooltipTitle = config.title
+        button.tooltipBody = config.body
+        button:SetScript("OnEnter", function(self)
+            isPriorityModeHovered = true
+            Addon:UpdateFrameLockState()
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(Addon:S(self.tooltipTitle), 1, 0.82, 0)
+            GameTooltip:AddLine(Addon:S(self.tooltipBody), 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        button:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+        button:SetScript("OnClick", function(self)
+            Addon:SetStatPriorityMode(self.mode)
+        end)
+        priorityModeButtons[config.id] = button
+    end
+    self:RefreshPriorityModeButtons()
+    self:UpdateFrameLockState()
 
     local statKeys = Addon.Constants.STAT_KEYS
     for index = 1, #statKeys + 1 do

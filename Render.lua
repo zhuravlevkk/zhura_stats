@@ -95,7 +95,7 @@ function Addon:RefreshStatsImpl()
     local visibleStats = self:GetVisibleStats()
     local fontPath, fontFlags = self:GetFontInfo(profile.fontKey)
     local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
-    local leftPadding, rightPadding, topPadding, bottomPadding = 8, 28, 8, 4
+    local leftPadding, rightPadding, topPadding, bottomPadding = 8, 92, 8, 4
     local columnGap, rowGap = 20, 2
     local measuredStats = {}
     local maxLineHeight = 0
@@ -253,6 +253,10 @@ function Addon:RefreshStats()
                 lastRefreshErrorAt = now
             end
         end
+    end
+
+    if self.RefreshPriorityModeButtons then
+        self:RefreshPriorityModeButtons()
     end
 end
 
