@@ -39,4 +39,22 @@ jobs:
         run: sudo luarocks install luacheck
 
       - name: Run Luacheck
-        run: luacheck ZhuraStats.lua Locales --config .luacheckrc
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          shopt -s nullglob
+          targets=( *.lua )
+          if [ -d "Locales" ]; then
+            locale_files=( Locales/*.lua )
+            if [ ${#locale_files[@]} -gt 0 ]; then
+              targets+=( "Locales" )
+            fi
+          fi
+
+          if [ ${#targets[@]} -eq 0 ]; then
+            echo "No Lua targets found for luacheck." >&2
+            exit 1
+          fi
+
+          luacheck "${targets[@]}" --config .luacheckrc

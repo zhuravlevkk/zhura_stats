@@ -1,4 +1,4 @@
-name: Tag Release Version
+name: Release On Master Push
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  tag-version:
+  release-on-master:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,6 +23,8 @@ jobs:
         id: version
         shell: bash
         run: |
+          set -euo pipefail
+
           version="$(sed -n 's/^## Version:[[:space:]]*//p' ZhuraStats.toc | head -n1 | tr -d '\r')"
           if [ -z "$version" ]; then
             echo "Could not find ## Version in ZhuraStats.toc" >&2
@@ -33,21 +35,142 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Skip if tag already exists
-        id: exists
+      - name: Check if tag exists
+        id: tag_exists
         shell: bash
         run: |
-          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} already exists."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} does not exist yet."
           fi
 
+      - name: Check if GitHub Release exists
+        id: release_exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${{ steps.version.outputs.tag }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "GitHub Release for ${{ steps.version.outputs.tag }} already exists. Nothing to publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "GitHub Release for ${{ steps.version.outputs.tag }} does not exist yet."
+          fi
+
+      - name: Stop because release already exists
+        if: steps.release_exists.outputs.exists == 'true'
+        shell: bash
+        run: |
+          echo "Release ${{ steps.version.outputs.tag }} already exists. Workflow completed without changes."
+
+      - name: Build release archive
+        if: steps.release_exists.outputs.exists == 'false'
+        id: archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          workspace="$GITHUB_WORKSPACE"
+          stage_root="$RUNNER_TEMP/release-stage"
+          addon_dir="$stage_root/ZhuraStats"
+          zip_name="NE-Stats-v${{ steps.version.outputs.version }}.zip"
+          zip_path="$RUNNER_TEMP/$zip_name"
+          toc_path="$workspace/ZhuraStats.toc"
+          embeds_path="$workspace/embeds.xml"
+
+          rm -rf "$stage_root"
+          rm -f "$zip_path"
+          mkdir -p "$addon_dir"
+
+          if [ ! -f "$toc_path" ]; then
+            echo "Required file ZhuraStats.toc is missing." >&2
+            exit 1
+          fi
+
+          mapfile -t toc_entries < <(
+            sed 's/\r$//' "$toc_path" |
+            sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' |
+            grep -vE '^($|#)'
+          )
+          if [ "${#toc_entries[@]}" -eq 0 ]; then
+            echo "ZhuraStats.toc does not contain file entries." >&2
+            exit 1
+          fi
+
+          required_paths=("ZhuraStats.toc")
+          for entry in "${toc_entries[@]}"; do
+            normalized="${entry//\\//}"
+            required_paths+=("$normalized")
+          done
+
+          missing=()
+          for relative in "${required_paths[@]}"; do
+            if [ ! -e "$workspace/$relative" ]; then
+              missing+=("$relative")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Release package is missing required files from TOC: ${missing[*]}" >&2
+            exit 1
+          fi
+
+          if [ -f "$embeds_path" ]; then
+            mapfile -t lib_refs < <(grep -oE 'Libs[\\/][^"]+' "$embeds_path" | sed 's#\\#/#g')
+            for lib_ref in "${lib_refs[@]}"; do
+              if [ ! -e "$workspace/$lib_ref" ]; then
+                echo "embeds.xml references missing library asset: $lib_ref" >&2
+                exit 1
+              fi
+            done
+          fi
+
+          for relative in "${required_paths[@]}"; do
+            mkdir -p "$addon_dir/$(dirname "$relative")"
+            cp -R "$workspace/$relative" "$addon_dir/$relative"
+          done
+
+          if [ -d "$workspace/Libs" ]; then
+            cp -R "$workspace/Libs" "$addon_dir/Libs"
+          fi
+          if [ -f "$workspace/README.md" ]; then
+            cp "$workspace/README.md" "$addon_dir/README.md"
+          fi
+          if [ -f "$workspace/LICENSE" ]; then
+            cp "$workspace/LICENSE" "$addon_dir/LICENSE"
+          fi
+
+          (cd "$stage_root" && zip -r "$zip_path" "ZhuraStats")
+
+          echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+
       - name: Create tag
-        if: steps.exists.outputs.exists == 'false'
+        if: steps.release_exists.outputs.exists == 'false' && steps.tag_exists.outputs.exists == 'false'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Upload build artifact
+        if: steps.release_exists.outputs.exists == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.archive.outputs.zip_name }}
+          path: ${{ steps.archive.outputs.zip_path }}
+
+      - name: Create GitHub release
+        if: steps.release_exists.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: NE Stats v${{ steps.version.outputs.version }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: ${{ steps.archive.outputs.zip_path }}
+          generate_release_notes: true
