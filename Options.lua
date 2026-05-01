@@ -32,7 +32,6 @@ local PAGE_X = 16
 local PAGE_Y = -112
 local PAGE_WIDTH = 620
 local ROW_H = 30
-local FIELD_X = 190
 local FORM_X = 24
 local FORM_Y = -70
 local LABEL_X = 24
