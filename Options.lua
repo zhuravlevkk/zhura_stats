@@ -911,7 +911,9 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     local drModeDropDown = CreateDropDown(generalCard, addonName .. "DRModeDropDown", 220, function()
         return {
             { value = "off", text = Addon:S("Off") },
-            { value = "suffix", text = Addon:S("Show next threshold (->39%)") },
+            { value = "penalty", text = Addon:S("DR penalty (%)") },
+            { value = "loss", text = Addon:S("Rating lost to DR") },
+            { value = "full", text = Addon:S("Full DR info") },
         }
     end, function(mode)
         SetValue("drDisplayMode", mode)

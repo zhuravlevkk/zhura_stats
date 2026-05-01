@@ -44,37 +44,51 @@ function Addon:FormatValue(entry, value)
     return string.format("%.2f", value)
 end
 
-function Addon:FormatDiminishingReturns(statResult)
+function Addon:FormatDiminishingReturns(statResult, mode)
     if not statResult or not statResult.dr then
         return ""
     end
+
     local dr = statResult.dr
-    if dr.next then
-        return string.format(" ->%d%%", dr.next)
+    local penalty = dr.penalty or 0
+    local loss = math.floor((dr.loss or 0) + 0.5)
+
+    if penalty <= 0 and loss <= 0 then
+        return ""
     end
-    return " ->cap"
+
+    if mode == "penalty" then
+        return string.format(" (DR -%d%%)", penalty)
+    elseif mode == "loss" then
+        return string.format(" (-%d)", loss)
+    elseif mode == "full" then
+        return string.format(" (DR -%d%%, -%d)", penalty, loss)
+    end
+
+    return ""
 end
 
 function Addon:GetDRColor(baseColor, drPenalty)
     local r, g, b = baseColor[1], baseColor[2], baseColor[3]
-    if not drPenalty then
+    if not drPenalty or drPenalty <= 0 then
         return r, g, b
     end
 
+    local warnR, warnG, warnB
     if drPenalty >= 50 then
-        return 0.9, 0.2, 0.2
-    end
-    if drPenalty >= 40 then
-        return 0.9, 0.5, 0.1
-    end
-    if drPenalty >= 20 then
-        return 0.9, 0.8, 0.1
-    end
-    if drPenalty >= 10 then
-        return 0.7, 0.9, 0.3
+        warnR, warnG, warnB = 0.9, 0.2, 0.2
+    elseif drPenalty >= 40 then
+        warnR, warnG, warnB = 0.9, 0.5, 0.1
+    elseif drPenalty >= 20 then
+        warnR, warnG, warnB = 0.9, 0.8, 0.1
+    else
+        warnR, warnG, warnB = 0.7, 0.9, 0.3
     end
 
-    return r, g, b
+    local blend = 0.3
+    return r + (warnR - r) * blend,
+        g + (warnG - g) * blend,
+        b + (warnB - b) * blend
 end
 
 function Addon:FormatGoldValue(value, profile)
@@ -94,8 +108,9 @@ function Addon:FormatStatValue(statKey, statResult, profile, def)
     local value = statResult and statResult.value or 0
     local ratingOverride = statResult and statResult.rating or nil
     local drSuffix = ""
-    if (profile.drDisplayMode or "off") == "suffix" then
-        drSuffix = self:FormatDiminishingReturns(statResult)
+    local drMode = profile.drDisplayMode or "off"
+    if drMode ~= "off" then
+        drSuffix = self:FormatDiminishingReturns(statResult, drMode)
     end
 
     if resolvedDef.rating then
