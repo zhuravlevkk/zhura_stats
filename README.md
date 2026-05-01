@@ -103,7 +103,65 @@ GitHub Actions can build a release archive automatically.
 - Or run the `Release Build` workflow manually from the Actions tab to generate an artifact without publishing a tagged release
 
 The release workflows read the addon version from `ZhuraStats.toc` and package the addon as a CurseForge-ready zip with a top-level `ZhuraStats/` folder.
-
 ## License
 
 This project is licensed under the MIT License. See `LICENSE` for details.
+
+## Murlok Stat Priority Data
+
+The file `MurlokStats.lua` contains stat priority data fetched from [murlok.io](https://murlok.io).
+It is generated locally and committed manually — it is **not** built by CI.
+
+### How to update
+
+Run from the repo root in PowerShell:
+
+```powershell
+.\scripts\Get-MurlokStats.ps1 -Class hunter -Spec beast-mastery -Activity m+ -OutFile ".\MurlokStats.lua"
+```
+
+To filter by hero spec:
+
+```powershell
+.\scripts\Get-MurlokStats.ps1 -Class hunter -Spec beast-mastery -Activity m+ -Hero dark-ranger -OutFile ".\MurlokStats.lua"
+```
+
+If execution policy blocks the script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Get-MurlokStats.ps1 -Class hunter -Spec beast-mastery -Activity m+ -OutFile ".\MurlokStats.lua"
+```
+
+### URL pattern
+
+```
+https://murlok.io/api/guides/{class}/{spec}/{activity}
+```
+
+Activity values: `m+`, `solo`, `2v2`, `3v3`, `blitz`, `rbg`
+
+### Output format
+
+`MurlokStats.lua` exposes a global table `MurlokStats` keyed by `"class/spec/activity"`:
+
+```lua
+MurlokStats["hunter/beast-mastery/m+"] = {
+    updated   = "2026-05-01T17:55:00Z",
+    sample    = 50,
+    secondary = {
+        { stat = "crit",        rating = 930.92, pct = 20.23 },
+        { stat = "mastery",     rating = 888.52, pct = 36.69 },
+        { stat = "haste",       rating = 496.42, pct = 11.28 },
+        { stat = "versatility", rating = 93.96,  pct = 93.96 },
+    },
+    tertiary = {
+        { stat = "avoidance", rating = 157.26, pct = 4.27 },
+        { stat = "leech",     rating = 70.42,  pct = 1.02 },
+        { stat = "speed",     rating = 0,      pct = 2.07 },
+    },
+}
+```
+
+`secondary` is sorted by priority (highest avg rating first). `tertiary` order is fixed: avoidance → leech → speed.
+
+Murlok updates its data every 8 hours. Update `MurlokStats.lua` before a release if stat priority matters.
