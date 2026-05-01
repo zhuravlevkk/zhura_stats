@@ -90,6 +90,25 @@ function Addon:NormalizeStatPriorityMode(mode)
     return "manual"
 end
 
+function Addon:SetStatPriorityMode(mode)
+    local normalizedMode = self:NormalizeStatPriorityMode(mode)
+    local currentMode = self:NormalizeStatPriorityMode(self:GetProfileValue("statPriorityMode") or "manual")
+    if currentMode ~= normalizedMode then
+        self:SetProfileValue("statPriorityMode", normalizedMode)
+    end
+
+    if self.RefreshPriorityModeButtons then
+        self:RefreshPriorityModeButtons()
+    end
+
+    self:RefreshStats()
+    if self.RefreshOptions then
+        self:RefreshOptions()
+    elseif self.RefreshOptionRows then
+        self:RefreshOptionRows()
+    end
+end
+
 function Addon:GetPlayerClassSpec()
     if type(UnitClass) ~= "function" then
         return nil
