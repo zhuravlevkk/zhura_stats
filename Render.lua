@@ -12,6 +12,7 @@ local lastRefreshErrorMessage = ""
 
 function Addon:GetVisibleStats()
     local profile = self:GetProfile()
+    local displayStats = self:GetDisplayStats()
     local visible = {}
     local mainStatKey
     local mainStatEntry
@@ -20,7 +21,7 @@ function Addon:GetVisibleStats()
         mainStatKey = self.GetCurrentPrimaryStatKey and self:GetCurrentPrimaryStatKey()
     end
 
-    for _, entry in ipairs(profile.stats) do
+    for _, entry in ipairs(displayStats) do
         if entry.key == mainStatKey then
             mainStatEntry = entry
         end

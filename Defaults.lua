@@ -49,6 +49,7 @@ local defaults = {
     locked = false,
     showLockOnHover = false,
     preferCurrentSpecMainStat = false,
+    statPriorityMode = "manual",
     primaryStatInitialized = false,
     point = "TOPLEFT",
     relativeTo = "UIParent",

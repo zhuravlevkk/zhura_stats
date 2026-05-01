@@ -26,6 +26,8 @@ Defaults.lua
 Locale.lua
 Media.lua
 Database.lua
+WoWLogsStatsPrio.lua
+ArchonPriority.lua
 StatDefinitions.lua
 Format.lua
 Frame.lua

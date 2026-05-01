@@ -115,6 +115,9 @@ function Addon:FormatStatValue(statKey, statResult, profile, def)
     if not profile.showValues then
         return labelPart ~= "" and labelPart or statLabel
     end
+    if statKey == "GOLD" then
+        return string.format("%s%s", labelPart, self:FormatGoldValue(value, profile))
+    end
     if resolvedDef.formatValue then
         return string.format("%s%s", labelPart, resolvedDef.formatValue(value, profile))
     end

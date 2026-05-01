@@ -24,9 +24,8 @@ local TAB_LABELS = {
 
 local PRIORITY_MODE_OPTIONS = {
     { value = "manual", label = "Manual priority" },
-    { value = "murlok_raid", label = "Murlok Raid" },
-    { value = "murlok_mplus", label = "Murlok Mythic+" },
-    { value = "murlok_pvp", label = "Murlok PvP" },
+    { value = "archon_raid", label = "Archon Raid" },
+    { value = "archon_mplus", label = "Archon Mythic+" },
 }
 
 local PAGE_X = 16
@@ -204,19 +203,100 @@ local function RefreshStatsDeferred()
     end
 end
 
+local ARCHON_LOCKED_ORDER_STATS = {
+    CRIT = true,
+    HASTE = true,
+    MASTERY = true,
+    VERS = true,
+}
+
+local function IsStatOrderLockedByPriorityMode(statKey)
+    local profile = Profile()
+    local mode = Addon:NormalizeStatPriorityMode(profile and profile.statPriorityMode or "manual")
+    return mode ~= "manual" and ARCHON_LOCKED_ORDER_STATS[statKey] == true
+end
+
+local function CanMoveStat(index, direction)
+    local profile = Profile()
+    if not profile or not profile.stats then
+        return false
+    end
+
+    local entry = profile.stats[index]
+    local target = profile.stats[index + direction]
+    if not entry or not target then
+        return false
+    end
+
+    local mode = Addon:NormalizeStatPriorityMode(profile.statPriorityMode or "manual")
+    if mode == "manual" then
+        return true
+    end
+
+    if IsStatOrderLockedByPriorityMode(entry.key) then
+        return false
+    end
+
+    if IsStatOrderLockedByPriorityMode(target.key) then
+        return false
+    end
+
+    return true
+end
+
 local function MoveStat(index, direction)
     local profile = Profile()
-    if not profile or profile.statPriorityMode ~= "manual" then
+    if not profile or not profile.stats then
         return
     end
+    if not CanMoveStat(index, direction) then
+        return
+    end
+
     local stats = profile.stats
     local target = index + direction
-    if not stats[index] or not stats[target] then
+    stats[index], stats[target] = stats[target], stats[index]
+
+    -- Force a full UI/display sync so the main stat frame rebuilds immediately.
+    if Addon.ApplyCurrentProfileStateImpl then
+        Addon:ApplyCurrentProfileStateImpl()
+    elseif Addon.ApplyCurrentProfileState then
+        Addon:ApplyCurrentProfileState()
+    else
+        Addon:RefreshStats()
+        Addon:RefreshOptionRows()
+    end
+end
+
+local function RefreshArchonHint(profile)
+    if not controlRefs.archonHint then
         return
     end
-    stats[index], stats[target] = stats[target], stats[index]
-    Addon:RefreshStats()
-    Addon:RefreshOptionRows()
+
+    local mode = Addon:NormalizeStatPriorityMode(profile and profile.statPriorityMode or "manual")
+    if mode == "manual" then
+        controlRefs.archonHint:SetText("")
+        return
+    end
+
+    local data, _, activity = Addon:GetArchonDataForMode(mode)
+    if not data then
+        controlRefs.archonHint:SetText(Addon:S("Archon: no data for current spec"))
+        return
+    end
+
+    local hero = Addon:GetArchonTopHeroForMode(mode)
+    if hero and hero.hero then
+        local usage = tonumber(hero.usage_pct)
+        if usage and usage > 0 then
+            controlRefs.archonHint:SetText(Addon:S("Archon: top hero %s (%.1f%%)", hero.hero, usage))
+        else
+            controlRefs.archonHint:SetText(Addon:S("Archon: %s, top hero %s", activity or "unknown", hero.hero))
+        end
+        return
+    end
+
+    controlRefs.archonHint:SetText(Addon:S("Archon: %s", activity or "unknown"))
 end
 
 local function CreatePage(parent, key)
@@ -472,7 +552,6 @@ function Addon:RefreshOptionRows()
 
     local profile = self:GetProfile()
     local statDefinitions = self.StatDefinitions
-    local priorityMode = profile.statPriorityMode or "manual"
     for index, row in ipairs(rowControls) do
         local entry = profile.stats[index]
         if entry then
@@ -481,11 +560,12 @@ function Addon:RefreshOptionRows()
             row.checkbox:SetChecked(entry.enabled)
             row.label:SetText(self:S(def.label))
             row.swatch.texture:SetColorTexture(entry.color[1], entry.color[2], entry.color[3], 1)
-            row.up:SetEnabled(priorityMode == "manual" and index > 1)
-            row.down:SetEnabled(priorityMode == "manual" and index < #profile.stats)
+            row.up:SetEnabled(CanMoveStat(index, -1))
+            row.down:SetEnabled(CanMoveStat(index, 1))
             row.entry = entry
         end
     end
+    RefreshArchonHint(profile)
 end
 
 function Addon:ApplyCurrentProfileStateImpl()
@@ -516,7 +596,7 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.columnCountSlider then controlRefs.columnCountSlider:SetValue(profile.columnCount or defaults.columnCount) end
     if controlRefs.rowsPerColumnSlider then controlRefs.rowsPerColumnSlider:SetValue(profile.rowsPerColumn or defaults.rowsPerColumn) end
     if controlRefs.priorityModeDropDown then
-        controlRefs.priorityModeDropDown:Refresh(profile.statPriorityMode or defaults.statPriorityMode or "manual")
+        controlRefs.priorityModeDropDown:Refresh(self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual"))
     end
 
     if controlRefs.fontDropDown or controlRefs.fontPreview then
@@ -559,7 +639,10 @@ function Addon:RefreshLocalizedUI()
     if controlRefs.drModeDropDown then controlRefs.drModeDropDown:Refresh(GetValue("drDisplayMode", defaults.drDisplayMode)) end
     if controlRefs.textAlignDropDown then controlRefs.textAlignDropDown:Refresh(GetValue("textAlign", defaults.textAlign)) end
     if controlRefs.goldSeparatorDropDown then controlRefs.goldSeparatorDropDown:Refresh(GetValue("goldSeparator", defaults.goldSeparator)) end
-    if controlRefs.priorityModeDropDown then controlRefs.priorityModeDropDown:Refresh(GetValue("statPriorityMode", defaults.statPriorityMode or "manual")) end
+    if controlRefs.priorityModeDropDown then
+        controlRefs.priorityModeDropDown:Refresh(self:NormalizeStatPriorityMode(GetValue("statPriorityMode", defaults.statPriorityMode or "manual")))
+    end
+    RefreshArchonHint(self:GetProfile())
 
     if controlRefs.showPercentCheckbox then controlRefs.showPercentCheckbox.label:SetText(self:S("Show percentages")) end
     if controlRefs.showLabelsCheckbox then controlRefs.showLabelsCheckbox.label:SetText(self:S("Show stat names")) end
@@ -1040,12 +1123,19 @@ local function BuildStatsPage(content, addonName, statKeys)
     card:AddDropdownRow(Addon:S("Display order"), priorityDropDown, 220)
     controlRefs.priorityModeDropDown = priorityDropDown
 
-    local hint = CreateLabel(card, Addon:S("Manual mode uses the order below. Murlok modes reorder supported stats during display."), "GameFontHighlightSmall")
+    local hint = CreateLabel(card, Addon:S("Archon modes lock Crit, Haste, Mastery and Vers order. Other stats can still be moved manually."), "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
     hint:SetWidth(500)
     hint:SetJustifyH("LEFT")
     controlRefs.priorityHint = hint
-    card:Advance(FORM_ROW_H * 2)
+    card:Advance(FORM_ROW_H)
+
+    local archonHint = CreateLabel(card, "", "GameFontHighlightSmall")
+    archonHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+    archonHint:SetWidth(500)
+    archonHint:SetJustifyH("LEFT")
+    controlRefs.archonHint = archonHint
+    card:Advance(FORM_ROW_H)
 
     local header = CreateLabel(card, Addon:S("Check to show, set color, move with arrows"), "GameFontNormalSmall")
     header:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
