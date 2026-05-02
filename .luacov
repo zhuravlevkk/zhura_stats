@@ -1,0 +1,5 @@
+-- LuaCov output paths (used by `busted --coverage`).
+return {
+  statsfile = "luacov.stats.out",
+  reportfile = "luacov.report.out",
+}

@@ -50,7 +50,10 @@ function Addon:NormalizeProfileName(profileName)
 end
 
 function Addon:CanModifyProfile(profileName)
-    return profileName and profileName ~= "" and profileName ~= "Default"
+    if profileName == nil or profileName == "" or profileName == "Default" then
+        return false
+    end
+    return true
 end
 
 function Addon:GetCurrentPrimaryStatKey()

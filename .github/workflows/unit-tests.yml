@@ -1,0 +1,48 @@
+name: Unit tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  busted:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install Lua 5.1 and LuaRocks
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential liblua5.1-0-dev lua5.1 luarocks unzip
+
+      - name: Install busted and luacov
+        run: |
+          set -euo pipefail
+          sudo luarocks --lua-version=5.1 install busted
+          sudo luarocks --lua-version=5.1 install luacov
+
+      - name: Run busted with coverage
+        run: |
+          set -euo pipefail
+          busted --config-file=.busted --coverage
+
+      - name: Generate LuaCov report from stats
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f luacov.stats.out ]; then
+            luacov -c .luacov
+          fi
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: luacov-report
+          path: luacov.report.out
+          if-no-files-found: ignore

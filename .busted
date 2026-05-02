@@ -1,0 +1,8 @@
+return {
+  default = {
+    lpath = "./?.lua",
+    ROOT = { "tests" },
+    -- Busted applies pattern to basename only; Lua patterns (not globs): * repeats previous char; %. is a literal dot.
+    pattern = "test_.+%.lua",
+  },
+}
