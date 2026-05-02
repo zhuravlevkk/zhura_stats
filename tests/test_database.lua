@@ -28,7 +28,8 @@ describe("Database", function()
     it("disallows Default and empty", function()
       assert.is_false(Addon:CanModifyProfile("Default"))
       assert.is_false(Addon:CanModifyProfile(""))
-      assert.is_false(Addon:CanModifyProfile(nil))
+      -- Implementation uses `name and ...`; for nil the result is nil (falsy), not false.
+      assert.is_nil(Addon:CanModifyProfile(nil))
     end)
 
     it("allows other names", function()
@@ -52,8 +53,9 @@ describe("Database", function()
       local profile = copy_profile({
         statsMigrationVersion = 0,
         showDiminishingReturns = true,
-        drDisplayMode = nil,
       })
+      -- DeepCopy keeps defaults.drDisplayMode ("off"); migration only maps legacy DR when drDisplayMode is nil.
+      profile.drDisplayMode = nil
       Addon:MigrateProfile(profile)
       assert.is_nil(profile.showDiminishingReturns)
       assert.are.equal("penalty", profile.drDisplayMode)
@@ -80,9 +82,10 @@ describe("Database", function()
     it("copies decimalPrecision into percentPrecision when missing", function()
       local profile = copy_profile({
         statsMigrationVersion = 0,
-        percentPrecision = nil,
         decimalPrecision = 3,
       })
+      -- Defaults copy still has percentPrecision = 2; clear so MigrateProfile uses decimalPrecision.
+      profile.percentPrecision = nil
       Addon:MigrateProfile(profile)
       assert.are.equal(3, profile.percentPrecision)
     end)
