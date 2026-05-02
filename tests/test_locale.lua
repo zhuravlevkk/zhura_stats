@@ -35,7 +35,7 @@ describe("Locale", function()
 
   it("GetLocaleDisplayName for client language includes client label", function()
     local name = Addon:GetLocaleDisplayName(Addon.Constants.CLIENT_LANGUAGE_VALUE)
-    assert.is_true(name:find("Client language") ~= nil or name:len() > 0)
+    assert.is_true(name:find("Client language") ~= nil)
   end)
 
   it("GetTextAlignDisplayName maps alignment", function()

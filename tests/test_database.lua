@@ -25,11 +25,10 @@ describe("Database", function()
   end)
 
   describe("CanModifyProfile", function()
-    it("disallows Default and empty", function()
+    it("disallows Default, empty, and nil", function()
       assert.is_false(Addon:CanModifyProfile("Default"))
       assert.is_false(Addon:CanModifyProfile(""))
-      -- Implementation uses `name and ...`; for nil the result is nil (falsy), not false.
-      assert.is_nil(Addon:CanModifyProfile(nil))
+      assert.is_false(Addon:CanModifyProfile(nil))
     end)
 
     it("allows other names", function()
@@ -117,6 +116,27 @@ describe("Database", function()
       Addon:MigrateProfile(profile)
       assert.is_nil(profile.useLoadoutProfiles)
       assert.is_nil(profile.showPotionState)
+    end)
+
+    it("is idempotent when stats already at current migration version", function()
+      local profile = copy_profile({ statsMigrationVersion = 0 })
+      Addon:MigrateProfile(profile)
+      assert.are.equal(5, profile.statsMigrationVersion)
+      local keys = Addon.Constants.STAT_KEYS
+      local snap = {}
+      for i = 1, #profile.stats do
+        snap[i] = {
+          key = profile.stats[i].key,
+          enabled = profile.stats[i].enabled,
+        }
+      end
+      Addon:MigrateProfile(profile)
+      assert.are.equal(5, profile.statsMigrationVersion)
+      assert.are.equal(#keys, #profile.stats)
+      for i = 1, #keys do
+        assert.are.equal(snap[i].key, profile.stats[i].key)
+        assert.are.equal(snap[i].enabled, profile.stats[i].enabled)
+      end
     end)
   end)
 end)

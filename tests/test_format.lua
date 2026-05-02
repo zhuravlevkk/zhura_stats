@@ -92,7 +92,7 @@ describe("Format", function()
   end)
 
   describe("GetDRColor", function()
-    it("returns base color when no penalty", function()
+    it("returns base color when penalty is 0", function()
       local r, g, b = Addon:GetDRColor({ 0.5, 0.6, 0.7 }, 0)
       assert.is_true(math.abs(r - 0.5) < 0.0001)
       assert.is_true(math.abs(g - 0.6) < 0.0001)
@@ -102,6 +102,27 @@ describe("Format", function()
     it("returns base color when penalty nil", function()
       local r, g, b = Addon:GetDRColor({ 0.5, 0.6, 0.7 }, nil)
       assert.is_true(math.abs(r - 0.5) < 0.0001)
+    end)
+
+    it("interpolates at penalty 50 with fixed tolerance (>=50 warn tier)", function()
+      local baseR, baseG, baseB = 0.5, 0.5, 0.5
+      local warnR, warnG, warnB = 0.9, 0.2, 0.2
+      local blend = 0.3
+      local er = baseR + (warnR - baseR) * blend
+      local eg = baseG + (warnG - baseG) * blend
+      local eb = baseB + (warnB - baseB) * blend
+      local r, g, b = Addon:GetDRColor({ baseR, baseG, baseB }, 50)
+      assert.is_true(math.abs(r - er) < 0.05)
+      assert.is_true(math.abs(g - eg) < 0.05)
+      assert.is_true(math.abs(b - eb) < 0.05)
+    end)
+
+    it("uses same warn tier for penalty 100 as for 50 (max tier blend)", function()
+      local r50, g50, b50 = Addon:GetDRColor({ 0.2, 0.3, 0.4 }, 50)
+      local r100, g100, b100 = Addon:GetDRColor({ 0.2, 0.3, 0.4 }, 100)
+      assert.is_true(math.abs(r50 - r100) < 0.0001)
+      assert.is_true(math.abs(g50 - g100) < 0.0001)
+      assert.is_true(math.abs(b50 - b100) < 0.0001)
     end)
 
     it("shifts toward warning when penalty high", function()
@@ -160,6 +181,64 @@ describe("Format", function()
     it("returns empty when stat definition missing", function()
       local p = Addon._test_profile
       assert.are.equal("", Addon:FormatStatValue("UNKNOWN", { value = 1 }, p, nil))
+    end)
+
+    it("with showLabels true output contains stat label", function()
+      local p = Addon._test_profile
+      p.showLabels = true
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "off"
+      local def = Addon.StatDefinitions.CRIT
+      local label = Addon:S(def.label)
+      local out = Addon:FormatStatValue("CRIT", { value = 12.34, rating = 400 }, p, def)
+      assert.is_true(out:find(label, 1, true) ~= nil)
+    end)
+
+    it("with showValues false and showPercent false output has no digits", function()
+      local p = Addon._test_profile
+      p.showLabels = true
+      p.showValues = false
+      p.showPercent = false
+      p.drDisplayMode = "off"
+      local def = Addon.StatDefinitions.CRIT
+      local out = Addon:FormatStatValue("CRIT", { value = 12.34, rating = 400 }, p, def)
+      assert.is_nil(out:match("%d"))
+    end)
+
+    it("with drDisplayMode penalty appends DR suffix for rating stat when dr present", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "penalty"
+      local def = Addon.StatDefinitions.CRIT
+      local out = Addon:FormatStatValue(
+        "CRIT",
+        { value = 10, rating = 100, dr = { penalty = 25, loss = 3 } },
+        p,
+        def
+      )
+      assert.is_true(out:find("DR", 1, true) ~= nil)
+    end)
+
+    it("with drDisplayMode off does not append DR suffix", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "off"
+      local def = Addon.StatDefinitions.CRIT
+      local out = Addon:FormatStatValue(
+        "CRIT",
+        { value = 10, rating = 100, dr = { penalty = 25, loss = 3 } },
+        p,
+        def
+      )
+      assert.is_nil(out:find("DR", 1, true))
     end)
   end)
 end)
