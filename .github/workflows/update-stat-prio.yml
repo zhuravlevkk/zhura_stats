@@ -68,7 +68,7 @@ jobs:
           git commit -m $commitMsg
           git push --force origin HEAD:refs/heads/chore/stat-prio-update
 
-          $prUrl = gh pr view chore/stat-prio-update --json url --jq .url 2>$null
+          $prUrl = gh pr view chore/stat-prio-update --json url,state --jq 'select(.state=="OPEN") | .url' 2>$null
           if (-not $prUrl) {
             gh pr create `
               --base master `
