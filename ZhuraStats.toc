@@ -28,6 +28,7 @@ Media.lua
 Database.lua
 WoWLogsStatsPrio.lua
 ArchonPriority.lua
+Reference.lua
 StatDefinitions.lua
 Format.lua
 Frame.lua

@@ -260,4 +260,41 @@ function Addon:EnsureStatsFrame()
 
     measureLine = statsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     measureLine:Hide()
+
+    for _, line in ipairs(lines) do
+        line:EnableMouse(true)
+        line:SetScript("OnEnter", function(self)
+            local key = self.statKey
+            if not key then
+                return
+            end
+            local profile = Addon:GetProfile()
+            if not profile then
+                return
+            end
+            local defaults = Addon.Defaults.profile
+            if (profile.referenceDisplay or defaults.referenceDisplay or "off") ~= "tooltip" then
+                return
+            end
+            if not Addon:IsArchonReferenceStatKey(key) then
+                return
+            end
+            local Stats = ns.Stats
+            local statResult
+            if Stats and Stats.ReadStat then
+                local okRead, res = pcall(function()
+                    return Stats.ReadStat(key)
+                end)
+                if okRead then
+                    statResult = res
+                end
+            end
+            Addon:PopulateReferenceStatTooltip(self, key, statResult, profile)
+        end)
+        line:SetScript("OnLeave", function()
+            if GameTooltip then
+                GameTooltip:Hide()
+            end
+        end)
+    end
 end

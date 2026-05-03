@@ -111,6 +111,11 @@ function Addon:RefreshStatsImpl()
         tostring(profile.columnCount or defaults.columnCount),
         tostring(profile.rowsPerColumn or defaults.rowsPerColumn),
         tostring(#visibleStats),
+        tostring(profile.referenceDisplay or defaults.referenceDisplay or "inline"),
+        tostring(self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual")),
+        tostring(profile.showReferenceRanges ~= false),
+        tostring(profile.showReferenceSource ~= false),
+        tostring(profile.showDiminishingReturnHint ~= false),
     }, "|")
 
     if stableLayoutSignature ~= layoutSignature then
@@ -197,6 +202,7 @@ function Addon:RefreshStatsImpl()
                 end
                 line:SetTextColor(lineR, lineG, lineB, 1)
                 line:SetText(measured.text)
+                line.statKey = measured.entry.key
                 line:Show()
             end
             itemIndex = itemIndex + 1
@@ -205,7 +211,11 @@ function Addon:RefreshStatsImpl()
     end
 
     for index = #measuredStats + 1, #lines do
-        lines[index]:Hide()
+        local line = lines[index]
+        if line then
+            line.statKey = nil
+            line:Hide()
+        end
     end
 
     local contentWidth = 0

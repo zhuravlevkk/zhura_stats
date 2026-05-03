@@ -95,6 +95,120 @@ function Addon:FormatGoldValue(value, profile)
     return FormatGoldValue(value, profile, self.Defaults.profile)
 end
 
+-- WoWLogsStatsPrio secondary[].rating only (no Lua-derived percent bands).
+function Addon:FormatReferenceRatingSuffix(statKey, statResult, profile)
+    local defaults = self.Defaults.profile
+    local display = profile.referenceDisplay or defaults.referenceDisplay or "off"
+    if display == "off" or display == "tooltip" then
+        return ""
+    end
+    local mode = self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual")
+    if mode == "manual" then
+        return ""
+    end
+    local payload = self:GetArchonStatReferencePayload(statKey, profile)
+    if not payload then
+        return ""
+    end
+    local playerR = math.floor(((statResult and statResult.rating) or 0) + 0.5)
+    local archonR = payload.archonRating
+    local d = playerR - archonR
+    local drExtra = ""
+    if profile.showDiminishingReturnHint == true then
+        local hint = self:GetDRHint(statKey, statResult and statResult.value, statResult)
+        if hint then
+            drExtra = hint
+        end
+    end
+    local tagOk = "|cff78ff8f" .. self:S("NE_STATS_REFERENCE_TAG_OK") .. "|r"
+    local tagLowOpen = "|cffffd25d" .. self:S("NE_STATS_REFERENCE_TAG_LOW")
+    if display == "delta" then
+        if d == 0 then
+            return "  " .. tagOk .. drExtra
+        elseif d < 0 then
+            return string.format("  |cffffd25d+%d|r%s", -d, drExtra)
+        end
+        return string.format("  |cffff9455-%d|r%s", d, drExtra)
+    end
+    -- inline
+    if playerR >= archonR then
+        return "  " .. tagOk .. drExtra
+    end
+    if profile.showReferenceRanges ~= false then
+        return string.format("  %s %d|r%s", tagLowOpen, archonR, drExtra)
+    end
+    return "  " .. tagLowOpen .. "|r" .. drExtra
+end
+
+function Addon:PopulateReferenceStatTooltip(owner, statKey, statResult, profile)
+    if not GameTooltip or not owner then
+        return
+    end
+    local defaults = self.Defaults.profile
+    profile = profile or self:GetProfile()
+    if (profile.referenceDisplay or defaults.referenceDisplay or "off") ~= "tooltip" then
+        return
+    end
+    if self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual") == "manual" then
+        return
+    end
+    if not self:IsArchonReferenceStatKey(statKey) then
+        return
+    end
+    local payload = self:GetArchonStatReferencePayload(statKey, profile)
+    if not payload then
+        return
+    end
+    local def = self.StatDefinitions and self.StatDefinitions[statKey]
+    if not def then
+        return
+    end
+    local precision = math.max(0, math.min(3, profile.percentPrecision or defaults.percentPrecision))
+    local playerR = math.floor(((statResult and statResult.rating) or 0) + 0.5)
+    local pct = statResult and statResult.value or 0
+    local archonR = payload.archonRating
+    local d = playerR - archonR
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:ClearLines()
+    GameTooltip:AddLine(self:S("NE_STATS_REFERENCE_TOOLTIP_TITLE", self:S(def.label), self:S("Archon reference (rating)")), 1, 0.82, 0)
+    GameTooltip:AddLine(self:S("Your rating: %d", playerR), 1, 1, 1)
+    if profile.showPercent ~= false then
+        GameTooltip:AddLine(self:S("Your percent") .. ": " .. string.format("%." .. precision .. "f%%", pct), 1, 1, 1)
+    end
+    GameTooltip:AddLine(self:S("Archon typical rating: %d", archonR), 1, 1, 1)
+    if d == 0 then
+        GameTooltip:AddLine(self:S("Rating delta: ok"), 1, 1, 1)
+    elseif d < 0 then
+        GameTooltip:AddLine(self:S("Rating delta: need +%d vs Archon", -d), 1, 0.82, 0.4)
+    else
+        GameTooltip:AddLine(self:S("Rating delta: %d over Archon", d), 1, 0.9, 0.5)
+    end
+    if profile.showReferenceSource ~= false then
+        GameTooltip:AddLine(self:S("NE_STATS_REFERENCE_SOURCE"), 0.7, 0.7, 0.7)
+    end
+    if payload.updated ~= "" then
+        GameTooltip:AddLine(self:S("Updated: %s", payload.updated), 0.7, 0.7, 0.7)
+    end
+    if payload.activity ~= "" then
+        local actKey = payload.activity
+        local actLabel = actKey
+        if actKey == "m+" then
+            actLabel = self:S("NE_STATS_ACTIVITY_MPLUS")
+        elseif actKey == "raid" then
+            actLabel = self:S("NE_STATS_ACTIVITY_RAID")
+        end
+        GameTooltip:AddLine(self:S("Activity: %s", actLabel), 0.7, 0.7, 0.7)
+    end
+    if profile.showDiminishingReturnHint == true and statResult and statResult.dr then
+        local penalty = statResult.dr.penalty or 0
+        local loss = math.floor((statResult.dr.loss or 0) + 0.5)
+        if penalty > 0 or loss > 0 then
+            GameTooltip:AddLine(self:S("NE_STATS_REFERENCE_DR_LINE", penalty, loss), 0.8, 0.75, 0.5)
+        end
+    end
+    GameTooltip:Show()
+end
+
 function Addon:FormatStatValue(statKey, statResult, profile, def)
     local defaults = self.Defaults.profile
     local resolvedDef = def or (self.StatDefinitions and self.StatDefinitions[statKey])
@@ -115,16 +229,23 @@ function Addon:FormatStatValue(statKey, statResult, profile, def)
 
     if resolvedDef.rating then
         local rating = ratingOverride or 0
+        local out
         if profile.showValues and profile.showPercent then
-            return string.format("%s%d / %." .. precision .. "f%%%s", labelPart, math.floor(rating + 0.5), value, drSuffix)
+            out = string.format("%s%d / %." .. precision .. "f%%%s", labelPart, math.floor(rating + 0.5), value, drSuffix)
+        elseif profile.showValues and not profile.showPercent then
+            out = string.format("%s%d%s", labelPart, math.floor(rating + 0.5), drSuffix)
+        elseif (not profile.showValues) and profile.showPercent then
+            out = string.format("%s%." .. precision .. "f%%%s", labelPart, value, drSuffix)
+        else
+            out = labelPart ~= "" and labelPart or statLabel
         end
-        if profile.showValues and not profile.showPercent then
-            return string.format("%s%d%s", labelPart, math.floor(rating + 0.5), drSuffix)
+        if out and self:IsArchonReferenceStatKey(statKey) then
+            local refSuffix = self:FormatReferenceRatingSuffix(statKey, statResult, profile)
+            if refSuffix and refSuffix ~= "" then
+                out = out .. refSuffix
+            end
         end
-        if (not profile.showValues) and profile.showPercent then
-            return string.format("%s%." .. precision .. "f%%%s", labelPart, value, drSuffix)
-        end
-        return labelPart ~= "" and labelPart or statLabel
+        return out
     end
 
     if not profile.showValues then

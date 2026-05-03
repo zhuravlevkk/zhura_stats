@@ -35,7 +35,44 @@ local function EnsureDatabaseBackup()
 end
 
 local function SlashHandler(message)
-    local command = string.lower(strtrim(message or ""))
+    local raw = strtrim(message or "")
+    local command = string.lower(raw)
+    local firstToken, rest = command:match("^(%S+)%s*(.*)$")
+    if firstToken == "ref" then
+        local sub = string.lower(strtrim(rest or ""))
+        if sub == "manual" then
+            Addon:SetStatPriorityMode("manual")
+            print(Addon:S("NE_STATS_SLASH_REF_PRIORITY", Addon:S("NE_STATS_MODE_MANUAL")))
+            Addon:RefreshStats()
+            return
+        end
+        if sub == "raid" then
+            Addon:SetStatPriorityMode("archon_raid")
+            print(Addon:S("NE_STATS_SLASH_REF_PRIORITY", Addon:S("NE_STATS_MODE_RAID")))
+            Addon:RefreshStats()
+            return
+        end
+        if sub == "mythic" or sub == "mplus" or sub == "m+" then
+            Addon:SetStatPriorityMode("archon_mplus")
+            print(Addon:S("NE_STATS_SLASH_REF_PRIORITY", Addon:S("NE_STATS_MODE_MPLUS")))
+            Addon:RefreshStats()
+            return
+        end
+        if sub == "off" then
+            Addon:SetProfileValue("referenceDisplay", "off")
+            print(Addon:S("NE_STATS_SLASH_REF_DISPLAY", sub))
+            Addon:RefreshStats()
+            return
+        end
+        if sub == "inline" or sub == "delta" or sub == "tooltip" then
+            Addon:SetProfileValue("referenceDisplay", sub)
+            print(Addon:S("NE_STATS_SLASH_REF_DISPLAY", sub))
+            Addon:RefreshStats()
+            return
+        end
+        print(Addon:S("NE_STATS_SLASH_REF_USAGE"))
+        return
+    end
     if command == "reset" then
         Addon:ResetActiveProfile()
         print(Addon:S("NE Stats: active profile reset."))

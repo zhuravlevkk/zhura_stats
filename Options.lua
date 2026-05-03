@@ -23,9 +23,16 @@ local TAB_LABELS = {
 }
 
 local PRIORITY_MODE_OPTIONS = {
-    { value = "manual", label = "Manual priority" },
-    { value = "archon_raid", label = "Archon Raid" },
-    { value = "archon_mplus", label = "Archon Mythic+" },
+    { value = "manual", label = "NE_STATS_PRIORITY_MODE_MANUAL" },
+    { value = "archon_raid", label = "NE_STATS_PRIORITY_MODE_RAID" },
+    { value = "archon_mplus", label = "NE_STATS_PRIORITY_MODE_MPLUS" },
+}
+
+local REFERENCE_DISPLAY_OPTIONS = {
+    { value = "off", label = "NE_STATS_REFERENCE_DISPLAY_OFF" },
+    { value = "inline", label = "NE_STATS_REFERENCE_DISPLAY_INLINE" },
+    { value = "delta", label = "NE_STATS_REFERENCE_DISPLAY_DELTA" },
+    { value = "tooltip", label = "NE_STATS_REFERENCE_DISPLAY_TOOLTIP" },
 }
 
 local PAGE_X = 16
@@ -248,6 +255,19 @@ local function MoveStat(index, direction)
     end
 end
 
+local function LocalizeArchonActivityLabel(activity)
+    if activity == "m+" then
+        return Addon:S("NE_STATS_ACTIVITY_MPLUS")
+    end
+    if activity == "raid" then
+        return Addon:S("NE_STATS_ACTIVITY_RAID")
+    end
+    if not activity or activity == "" then
+        return Addon:S("NE_STATS_VALUE_UNKNOWN")
+    end
+    return activity
+end
+
 local function RefreshArchonHint(profile)
     if not controlRefs.archonHint then
         return
@@ -261,22 +281,23 @@ local function RefreshArchonHint(profile)
 
     local data, _, activity = Addon:GetArchonDataForMode(mode)
     if not data then
-        controlRefs.archonHint:SetText(Addon:S("Archon: no data for current spec"))
+        controlRefs.archonHint:SetText(Addon:S("NE_STATS_ARCHON_NO_DATA"))
         return
     end
 
+    local actLabel = LocalizeArchonActivityLabel(activity)
     local hero = Addon:GetArchonTopHeroForMode(mode)
     if hero and hero.hero then
         local usage = tonumber(hero.usage_pct)
         if usage and usage > 0 then
-            controlRefs.archonHint:SetText(Addon:S("Archon: top hero %s (%.1f%%)", hero.hero, usage))
+            controlRefs.archonHint:SetText(Addon:S("NE_STATS_ARCHON_TOP_HERO_PCT", hero.hero, usage))
         else
-            controlRefs.archonHint:SetText(Addon:S("Archon: %s, top hero %s", activity or "unknown", hero.hero))
+            controlRefs.archonHint:SetText(Addon:S("NE_STATS_ARCHON_ACTIVITY_TOP_HERO", actLabel, hero.hero))
         end
         return
     end
 
-    controlRefs.archonHint:SetText(Addon:S("Archon: %s", activity or "unknown"))
+    controlRefs.archonHint:SetText(Addon:S("NE_STATS_ARCHON_ACTIVITY_ONLY", actLabel))
 end
 
 local function CreatePage(parent, key)
@@ -569,6 +590,9 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.priorityModeDropDown then
         controlRefs.priorityModeDropDown:Refresh(self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual"))
     end
+    if controlRefs.referenceDisplayDropDown then
+        controlRefs.referenceDisplayDropDown:Refresh(profile.referenceDisplay or defaults.referenceDisplay or "inline")
+    end
     if self.RefreshPriorityModeButtons then
         self:RefreshPriorityModeButtons()
     end
@@ -615,6 +639,12 @@ function Addon:RefreshLocalizedUI()
     if controlRefs.goldSeparatorDropDown then controlRefs.goldSeparatorDropDown:Refresh(GetValue("goldSeparator", defaults.goldSeparator)) end
     if controlRefs.priorityModeDropDown then
         controlRefs.priorityModeDropDown:Refresh(self:NormalizeStatPriorityMode(GetValue("statPriorityMode", defaults.statPriorityMode or "manual")))
+    end
+    if controlRefs.referenceDisplayDropDown then
+        controlRefs.referenceDisplayDropDown:Refresh(GetValue("referenceDisplay", defaults.referenceDisplay or "inline"))
+    end
+    if controlRefs.referenceDisplayHint then
+        controlRefs.referenceDisplayHint:SetText(self:S("NE_STATS_REFERENCE_MODE_HINT"))
     end
     RefreshArchonHint(self:GetProfile())
 
@@ -1087,10 +1117,23 @@ local function BuildStatsPage(content, addonName, statKeys)
     end, function(mode)
         Addon:SetStatPriorityMode(mode)
     end)
-    card:AddDropdownRow(Addon:S("Display order"), priorityDropDown, 220)
+    card:AddDropdownRow(Addon:S("NE_STATS_DISPLAY_ORDER"), priorityDropDown, 220)
     controlRefs.priorityModeDropDown = priorityDropDown
 
-    local hint = CreateLabel(card, Addon:S("Archon modes lock Crit, Haste, Mastery and Vers order. Other stats can still be moved manually."), "GameFontHighlightSmall")
+    local referenceDropDown = CreateDropDown(card, addonName .. "ReferenceDisplayDropDown", 220, function()
+        local items = {}
+        for _, option in ipairs(REFERENCE_DISPLAY_OPTIONS) do
+            table.insert(items, { value = option.value, text = Addon:S(option.label) })
+        end
+        return items
+    end, function(value)
+        SetValue("referenceDisplay", value)
+        Addon:RefreshStats()
+    end)
+    card:AddDropdownRow(Addon:S("Reference display"), referenceDropDown, 220)
+    controlRefs.referenceDisplayDropDown = referenceDropDown
+
+    local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
     hint:SetWidth(500)
     hint:SetJustifyH("LEFT")
@@ -1102,6 +1145,13 @@ local function BuildStatsPage(content, addonName, statKeys)
     archonHint:SetWidth(500)
     archonHint:SetJustifyH("LEFT")
     controlRefs.archonHint = archonHint
+    card:Advance(FORM_ROW_H)
+
+    local referenceModeHint = CreateLabel(card, Addon:S("NE_STATS_REFERENCE_MODE_HINT"), "GameFontHighlightSmall")
+    referenceModeHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+    referenceModeHint:SetWidth(500)
+    referenceModeHint:SetJustifyH("LEFT")
+    controlRefs.referenceDisplayHint = referenceModeHint
     card:Advance(FORM_ROW_H)
 
     local header = CreateLabel(card, Addon:S("Check to show, set color, move with arrows"), "GameFontNormalSmall")

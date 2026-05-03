@@ -240,5 +240,65 @@ describe("Format", function()
       )
       assert.is_nil(out:find("DR", 1, true))
     end)
+
+    it("with manual stat priority does not append Archon reference suffix", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "manual"
+      p.referenceDisplay = "inline"
+      local def = Addon.StatDefinitions.CRIT
+      local out = Addon:FormatStatValue("CRIT", { value = 10, rating = 400 }, p, def)
+      assert.is_nil(out:find("ok", 1, true))
+      assert.is_nil(out:find("low", 1, true))
+    end)
+
+    it("with archon_mplus appends inline ok when rating meets Archon typical", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "archon_mplus"
+      p.referenceDisplay = "inline"
+      local def = Addon.StatDefinitions.CRIT
+      -- WoWLogsStatsPrio mage/fire/m+ crit rating is 238
+      local out = Addon:FormatStatValue("CRIT", { value = 10, rating = 400 }, p, def)
+      assert.is_true(out:find("ok", 1, true) ~= nil)
+    end)
+
+    it("with archon_mplus appends low when rating below Archon typical", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "archon_mplus"
+      p.referenceDisplay = "inline"
+      p.showReferenceRanges = true
+      local def = Addon.StatDefinitions.CRIT
+      local out = Addon:FormatStatValue("CRIT", { value = 10, rating = 100 }, p, def)
+      assert.is_true(out:find("low", 1, true) ~= nil)
+      assert.is_true(out:find("238", 1, true) ~= nil)
+    end)
+
+    it("with referenceDisplay off skips Archon suffix in archon mode", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "archon_mplus"
+      p.referenceDisplay = "off"
+      local def = Addon.StatDefinitions.CRIT
+      local out = Addon:FormatStatValue("CRIT", { value = 10, rating = 400 }, p, def)
+      assert.is_nil(out:find("ok", 1, true))
+    end)
   end)
 end)
