@@ -33,7 +33,7 @@ jobs:
       - name: Bump version, commit, and push if data changed
         shell: pwsh
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           Set-Location $env:GITHUB_WORKSPACE
 
