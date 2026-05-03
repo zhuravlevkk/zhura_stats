@@ -4,7 +4,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**.lua'
+      - '.luacheckrc'
+      - '.github/workflows/lua-syntax.yml'
   pull_request:
+    paths:
+      - '**.lua'
+      - '.luacheckrc'
+      - '.github/workflows/lua-syntax.yml'
   workflow_dispatch:
 
 jobs:

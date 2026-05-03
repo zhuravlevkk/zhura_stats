@@ -4,7 +4,17 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**.lua'
+      - '.busted'
+      - '.luacov'
+      - '.github/workflows/unit-tests.yml'
   pull_request:
+    paths:
+      - '**.lua'
+      - '.busted'
+      - '.luacov'
+      - '.github/workflows/unit-tests.yml'
 
 jobs:
   busted:
