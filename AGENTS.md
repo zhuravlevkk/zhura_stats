@@ -267,7 +267,7 @@ After ANY change:
 
 After each implementation iteration (even small patches):
 * Deploy addon locally via `scripts/deploy-local.ps1`
-* Regenerate review diff file via `git diff > temp-review.diff`
+* Regenerate review diff file from the repo root: `cmd /c "git diff > temp-review.diff"` (Windows). This preserves UTF-8 from Git; avoid `git diff | Out-File` in PowerShell, which corrupts non-ASCII strings in locale diffs. On Unix shells, `git diff > temp-review.diff` is sufficient.
 
 ---
 

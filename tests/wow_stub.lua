@@ -132,6 +132,12 @@ package.preload["Format"] = function()
   require("StatDefinitions")
   require("LocaleData_enUS")
   require("Locale")
+  -- ApplyLocale populates the L table so S() resolves locale keys to values.
+  -- Without this call L stays empty and S() returns the raw key string.
+  ns.ZhuraStats:ApplyLocale()
+  require("WoWLogsStatsPrioData")
+  require("ArchonPriority")
+  ensure_loaded("Reference.lua")
   install_profile_stubs()
   ensure_loaded("Format.lua")
   return true

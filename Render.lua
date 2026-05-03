@@ -91,6 +91,7 @@ function Addon:RefreshStatsImpl()
     local statDefinitions = self.StatDefinitions
     local statsFrame, statsAnchor = self:GetFrameRefs()
     local lines, measureLine = self:GetRenderWidgets()
+    local lineOverlays = self:GetLineOverlays()
     local textAlign = profile.textAlign or defaults.textAlign
     local visibleStats = self:GetVisibleStats()
     local fontPath, fontFlags = self:GetFontInfo(profile.fontKey)
@@ -111,6 +112,11 @@ function Addon:RefreshStatsImpl()
         tostring(profile.columnCount or defaults.columnCount),
         tostring(profile.rowsPerColumn or defaults.rowsPerColumn),
         tostring(#visibleStats),
+        tostring(profile.referenceDisplay or defaults.referenceDisplay or "inline"),
+        tostring(self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual")),
+        tostring(profile.showReferenceRanges ~= false),
+        tostring(profile.showReferenceSource ~= false),
+        tostring(profile.showDiminishingReturnHint ~= false),
     }, "|")
 
     if stableLayoutSignature ~= layoutSignature then
@@ -140,6 +146,7 @@ function Addon:RefreshStatsImpl()
                     textWidth = textWidth,
                     textHeight = textHeight,
                     drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
+                    statResult = statResult,
                 })
                 maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
             end
@@ -197,7 +204,16 @@ function Addon:RefreshStatsImpl()
                 end
                 line:SetTextColor(lineR, lineG, lineB, 1)
                 line:SetText(measured.text)
+                line.statKey = measured.entry.key
                 line:Show()
+
+                local overlay = lineOverlays[itemIndex]
+                if overlay then
+                    overlay.statKey = measured.entry.key
+                    overlay.statResult = measured.statResult
+                    overlay:SetAllPoints(line)
+                    overlay:Show()
+                end
             end
             itemIndex = itemIndex + 1
         end
@@ -205,7 +221,17 @@ function Addon:RefreshStatsImpl()
     end
 
     for index = #measuredStats + 1, #lines do
-        lines[index]:Hide()
+        local line = lines[index]
+        if line then
+            line.statKey = nil
+            line:Hide()
+        end
+        local overlay = lineOverlays[index]
+        if overlay then
+            overlay.statKey = nil
+            overlay.statResult = nil
+            overlay:Hide()
+        end
     end
 
     local contentWidth = 0
@@ -234,6 +260,8 @@ function Addon:RefreshStatsImpl()
             statsAnchor:SetSize(newAnchorWidth, newAnchorHeight)
         end
     end
+
+    self:UpdateTooltipOverlayVisibility()
 end
 
 function Addon:RefreshStats()

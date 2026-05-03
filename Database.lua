@@ -289,6 +289,14 @@ function Addon:MigrateProfile(profile)
     if profile.primaryStatInitialized == nil then
         profile.primaryStatInitialized = true
     end
+    profile.referenceDisplay = profile.referenceDisplay or defaults.referenceDisplay
+    if profile.referenceDisplay ~= "off" and profile.referenceDisplay ~= "inline"
+        and profile.referenceDisplay ~= "delta" and profile.referenceDisplay ~= "tooltip" then
+        profile.referenceDisplay = defaults.referenceDisplay
+    end
+    profile.showReferenceRanges = profile.showReferenceRanges ~= false
+    profile.showReferenceSource = profile.showReferenceSource ~= false
+    profile.showDiminishingReturnHint = profile.showDiminishingReturnHint ~= false
 end
 
 function Addon:EnsureDatabase()

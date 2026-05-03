@@ -2,7 +2,7 @@
 ## Title: NE Stats
 ## Notes: Shows configurable secondary stat priorities per character and talent setup.
 ## Author: dijtex
-## Version: 0.3.4
+## Version: 0.4.0
 ## SavedVariables: ZhuraStatsDB
 ## OptionalDeps: SharedMedia
 
@@ -28,6 +28,7 @@ Media.lua
 Database.lua
 WoWLogsStatsPrio.lua
 ArchonPriority.lua
+Reference.lua
 StatDefinitions.lua
 Format.lua
 Frame.lua
