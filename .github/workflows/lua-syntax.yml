@@ -13,13 +13,26 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            lua:
+              - '**.lua'
+              - '.github/workflows/lua-syntax.yml'
 
       - name: Install Lua 5.1
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: choco install lua -y --no-progress
 
       - name: Validate Lua syntax
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: .\scripts\check-lua-syntax.ps1
 
@@ -28,17 +41,32 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            lua:
+              - '**.lua'
+              - '.luacheckrc'
+              - '.github/workflows/lua-syntax.yml'
 
       - name: Install Lua 5.1 and LuaRocks
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential liblua5.1-0-dev lua5.1 luarocks unzip
 
       - name: Install Luacheck
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         run: sudo luarocks install luacheck
 
       - name: Run Luacheck
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail

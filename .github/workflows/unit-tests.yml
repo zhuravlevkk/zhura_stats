@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   busted:
@@ -12,27 +13,43 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            lua:
+              - '**.lua'
+              - '.busted'
+              - '.luacov'
+              - '.github/workflows/unit-tests.yml'
 
       - name: Install Lua 5.1 and LuaRocks
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y build-essential liblua5.1-0-dev lua5.1 luarocks unzip
 
       - name: Install busted and luacov
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           sudo luarocks --lua-version=5.1 install busted
           sudo luarocks --lua-version=5.1 install luacov
 
       - name: Run busted with coverage
+        if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           busted --config-file=.busted --coverage
 
       - name: Generate LuaCov report from stats
-        if: always()
+        if: (steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch') && always()
         run: |
           set -euo pipefail
           if [ -f luacov.stats.out ]; then

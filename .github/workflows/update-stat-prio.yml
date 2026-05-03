@@ -63,22 +63,20 @@ jobs:
           $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
           [System.IO.File]::WriteAllText($tocPath, $updated, $utf8NoBom)
 
+          $timestamp = Get-Date -Format "yyyyMMdd-HHmm"
+          $branch = "chore/stat-prio-update-$timestamp"
+
           git add WoWLogsStatsPrio.lua ZhuraStats.toc
           $commitMsg = "chore: update stat priority data (archon.gg) -> v$newVersion"
           git commit -m $commitMsg
-          git push --force origin HEAD:refs/heads/chore/stat-prio-update
+          git push origin HEAD:refs/heads/$branch
 
-          $prUrl = gh pr view chore/stat-prio-update --json url --jq .url 2>$null
-          if (-not $prUrl) {
-            gh pr create `
-              --base master `
-              --head chore/stat-prio-update `
-              --title "chore: update stat priority data (archon.gg) -> v$newVersion" `
-              --body "Automated stat priority update from archon.gg. Auto-merged by workflow."
-          } else {
-            Write-Host "PR already exists: $prUrl"
-          }
+          gh pr create `
+            --base master `
+            --head $branch `
+            --title "chore: update stat priority data (archon.gg) -> v$newVersion" `
+            --body "Automated stat priority update from archon.gg. Auto-merged by workflow."
 
           gh pr merge --auto --squash `
             --subject "chore: update stat priority data (archon.gg) -> v$newVersion" `
-            chore/stat-prio-update
+            $branch
