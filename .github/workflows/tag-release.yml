@@ -176,3 +176,57 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           files: ${{ steps.archive.outputs.zip_path }}
           generate_release_notes: true
+
+      - name: Upload to CurseForge
+        if: steps.release_exists.outputs.exists == 'false'
+        shell: bash
+        env:
+          CF_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CF_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+          ZIP_PATH: ${{ steps.archive.outputs.zip_path }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CF_TOKEN:-}" ] || [ -z "${CF_PROJECT_ID:-}" ]; then
+            echo "CurseForge upload requires secrets CURSEFORGE_TOKEN and CURSEFORGE_PROJECT_ID." >&2
+            exit 1
+          fi
+
+          versions=$(curl -s -H "X-Api-Token: $CF_TOKEN" "https://wow.curseforge.com/api/game/versions")
+
+          game_version_id=$(echo "$versions" | jq -r '
+            [.[] | select(.gameVersionTypeID == 517 and (.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")))]
+            | sort_by(.name | split(".") | map(tonumber))
+            | last
+            | .id
+          ')
+
+          if [ -z "$game_version_id" ] || [ "$game_version_id" = "null" ]; then
+            echo "Could not determine CurseForge retail game version ID." >&2
+            exit 1
+          fi
+          echo "Selected CurseForge game version id=$game_version_id."
+
+          changelog="## NE Stats v${RELEASE_VERSION}\n\nSee [GitHub release ${TAG_NAME}](https://github.com/${GITHUB_REPO}/releases/tag/${TAG_NAME}) for notes."
+
+          metadata=$(jq -n \
+            --arg changelog "$changelog" \
+            --arg displayName "NE Stats v${RELEASE_VERSION}" \
+            --argjson gameVersions "[${game_version_id}]" \
+            '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, releaseType: "release", gameVersions: $gameVersions}')
+
+          response=$(curl -s -X POST \
+            -H "X-Api-Token: $CF_TOKEN" \
+            -F "metadata=$metadata" \
+            -F "file=@${ZIP_PATH}" \
+            "https://wow.curseforge.com/api/projects/${CF_PROJECT_ID}/upload-file")
+
+          file_id=$(echo "$response" | jq -r '.id')
+          if [ -z "$file_id" ] || [ "$file_id" = "null" ]; then
+            echo "CurseForge upload failed. Response: $response" >&2
+            exit 1
+          fi
+          echo "CurseForge upload succeeded, file id=$file_id."
