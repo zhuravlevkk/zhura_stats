@@ -13,6 +13,7 @@ local isStatsFrameHovered = false
 local isLockButtonHovered = false
 local isPriorityModeHovered = false
 local lines = {}
+local lineOverlays = {}
 local measureLine
 
 function Addon:GetFrameRefs()
@@ -21,6 +22,10 @@ end
 
 function Addon:GetRenderWidgets()
     return lines, measureLine
+end
+
+function Addon:GetLineOverlays()
+    return lineOverlays
 end
 
 function Addon:SaveFramePosition()
@@ -118,6 +123,20 @@ function Addon:ToggleLockState()
     local refs = self:GetControlRefs()
     if refs.lockCheckbox then
         refs.lockCheckbox:SetChecked(locked)
+    end
+end
+
+function Addon:UpdateTooltipOverlayVisibility()
+    local profile = self:GetProfile()
+    if not profile then
+        return
+    end
+    local defaults = self.Defaults.profile
+    local tooltipMode = (profile.referenceDisplay or defaults.referenceDisplay or "off") == "tooltip"
+    local archonMode = self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual") ~= "manual"
+    local active = tooltipMode and archonMode
+    for _, overlay in ipairs(lineOverlays) do
+        overlay:EnableMouse(active)
     end
 end
 
@@ -256,45 +275,36 @@ function Addon:EnsureStatsFrame()
         line:SetJustifyH("LEFT")
         line:SetShadowOffset(1, -1)
         lines[index] = line
-    end
 
-    measureLine = statsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    measureLine:Hide()
-
-    for _, line in ipairs(lines) do
-        line:EnableMouse(true)
-        line:SetScript("OnEnter", function(self)
+        -- Invisible overlay frame for tooltip hit-testing.
+        -- EnableMouse is toggled by UpdateTooltipOverlayVisibility — off by default
+        -- so it never blocks drag or lock button interaction.
+        local overlay = CreateFrame("Frame", nil, statsFrame)
+        overlay:SetAllPoints(line)
+        overlay:SetFrameLevel(statsFrame:GetFrameLevel() + 1)
+        overlay:EnableMouse(false)
+        overlay:SetScript("OnEnter", function(self)
             local key = self.statKey
             if not key then
+                return
+            end
+            if not Addon:IsArchonReferenceStatKey(key) then
                 return
             end
             local profile = Addon:GetProfile()
             if not profile then
                 return
             end
-            local defaults = Addon.Defaults.profile
-            if (profile.referenceDisplay or defaults.referenceDisplay or "off") ~= "tooltip" then
-                return
-            end
-            if not Addon:IsArchonReferenceStatKey(key) then
-                return
-            end
-            local Stats = ns.Stats
-            local statResult
-            if Stats and Stats.ReadStat then
-                local okRead, res = pcall(function()
-                    return Stats.ReadStat(key)
-                end)
-                if okRead then
-                    statResult = res
-                end
-            end
-            Addon:PopulateReferenceStatTooltip(self, key, statResult, profile)
+            Addon:PopulateReferenceStatTooltip(self, key, self.statResult, profile)
         end)
-        line:SetScript("OnLeave", function()
-            if GameTooltip then
+        overlay:SetScript("OnLeave", function(self)
+            if GameTooltip and GameTooltip:GetOwner() == self then
                 GameTooltip:Hide()
             end
         end)
+        lineOverlays[index] = overlay
     end
+
+    measureLine = statsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    measureLine:Hide()
 end
