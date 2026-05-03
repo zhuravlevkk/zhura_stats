@@ -1,0 +1,84 @@
+# Regenerates WoWLogsStatsPrio.lua from archon.gg and bumps patch in ZhuraStats.toc when data changes.
+# Pushes to master only; tag-release.yml creates the tag from the new TOC version.
+
+name: Update Stat Priority
+
+on:
+  schedule:
+    - cron: "0 23 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-stat-prio
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Scrape archon.gg and regenerate WoWLogsStatsPrio.lua
+        shell: pwsh
+        run: .\scripts\Get-AllStats.ps1 -OutFile ".\WoWLogsStatsPrio.lua" -Threads 15
+
+      - name: Bump version, commit, and push if data changed
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          Set-Location $env:GITHUB_WORKSPACE
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git diff --quiet WoWLogsStatsPrio.lua
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Stat priority data is up to date, nothing to do."
+            exit 0
+          }
+
+          $tocPath = Join-Path $env:GITHUB_WORKSPACE 'ZhuraStats.toc'
+          $raw = Get-Content -LiteralPath $tocPath -Raw
+          if ($raw -notmatch '(?m)^## Version:\s*(\d+)\.(\d+)\.(\d+)\s*$') {
+            throw "Could not parse ## Version in ZhuraStats.toc"
+          }
+
+          $major = [int]$Matches[1]
+          $minor = [int]$Matches[2]
+          $patch = [int]$Matches[3] + 1
+          $newVersion = "$major.$minor.$patch"
+
+          $versionPattern = '(?m)^(## Version:\s*)\d+\.\d+\.\d+(\s*)$'
+          $versionReplace = '${1}' + $newVersion + '${2}'
+          $updated = $raw -replace $versionPattern, $versionReplace
+          $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+          [System.IO.File]::WriteAllText($tocPath, $updated, $utf8NoBom)
+
+          git add WoWLogsStatsPrio.lua ZhuraStats.toc
+          $commitMsg = "chore: update stat priority data (archon.gg) -> v$newVersion"
+          git commit -m $commitMsg
+          git push --force origin HEAD:refs/heads/chore/stat-prio-update
+
+          $prUrl = gh pr view chore/stat-prio-update --json url --jq .url 2>$null
+          if (-not $prUrl) {
+            gh pr create `
+              --base master `
+              --head chore/stat-prio-update `
+              --title "chore: update stat priority data (archon.gg) -> v$newVersion" `
+              --body "Automated stat priority update from archon.gg. Auto-merged by workflow."
+          } else {
+            Write-Host "PR already exists: $prUrl"
+          }
+
+          gh pr merge --auto --squash `
+            --subject "chore: update stat priority data (archon.gg) -> v$newVersion" `
+            chore/stat-prio-update
