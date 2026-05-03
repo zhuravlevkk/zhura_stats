@@ -283,8 +283,8 @@ function Addon:EnsureStatsFrame()
         overlay:SetAllPoints(line)
         overlay:SetFrameLevel(statsFrame:GetFrameLevel() + 1)
         overlay:EnableMouse(false)
-        overlay:SetScript("OnEnter", function(self)
-            local key = self.statKey
+        overlay:SetScript("OnEnter", function(frame)
+            local key = frame.statKey
             if not key then
                 return
             end
@@ -295,10 +295,10 @@ function Addon:EnsureStatsFrame()
             if not profile then
                 return
             end
-            Addon:PopulateReferenceStatTooltip(self, key, self.statResult, profile)
+            Addon:PopulateReferenceStatTooltip(frame, key, frame.statResult, profile)
         end)
-        overlay:SetScript("OnLeave", function(self)
-            if GameTooltip and GameTooltip:GetOwner() == self then
+        overlay:SetScript("OnLeave", function(frame)
+            if GameTooltip and GameTooltip:GetOwner() == frame then
                 GameTooltip:Hide()
             end
         end)
