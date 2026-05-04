@@ -60,7 +60,9 @@ local statDefinitions = {
         end,
         value = function()
             local ratingId = CR_VERSATILITY_DAMAGE_DONE or CR_VERSATILITY_DAMAGE_TAKEN or CR_VERSATILITY
-            return GetCombatRatingBonus and ratingId and (GetCombatRatingBonus(ratingId) or 0) or 0
+            local ratingBonus = GetCombatRatingBonus and ratingId and (GetCombatRatingBonus(ratingId) or 0) or 0
+            local passiveBonus = GetVersatilityBonus and ratingId and (GetVersatilityBonus(ratingId) or 0) or 0
+            return ratingBonus + passiveBonus
         end,
     },
     MASTERY = {
