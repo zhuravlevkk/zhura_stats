@@ -19,6 +19,10 @@ function GetCombatRatingBonus(ratingIndex)
   return 0
 end
 
+function GetVersatilityBonus(ratingIndex)
+  return 0
+end
+
 function UnitLevel(unit)
   return 0
 end

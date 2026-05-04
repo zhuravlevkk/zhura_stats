@@ -208,15 +208,26 @@ end
 local function ReadVersatility()
     local ratingId = CR_VERSATILITY_DAMAGE_DONE or CR_VERSATILITY_DAMAGE_TAKEN or CR_VERSATILITY
     local mitigationRatingId = CR_VERSATILITY_DAMAGE_TAKEN
-    local value = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
+    local ratingBonus = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
     local rating = ratingId and CallNumber(function() return GetCombatRating(ratingId) end)
-    local ratingBonus = value
-    local mitigationValue = mitigationRatingId and CallNumber(function()
+
+    -- GetVersatilityBonus returns bonus % from passives/talents/auras (on top of rating)
+    local passiveBonus = CallNumber(function()
+        return GetVersatilityBonus and GetVersatilityBonus(ratingId) or 0
+    end) or 0
+    local value = (ratingBonus or 0) + passiveBonus
+
+    local mitigationRatingBonus = mitigationRatingId and CallNumber(function()
         return GetCombatRatingBonus(mitigationRatingId)
     end)
+    local mitigationPassiveBonus = CallNumber(function()
+        return GetVersatilityBonus and GetVersatilityBonus(mitigationRatingId) or 0
+    end) or 0
+    local mitigationValue = (mitigationRatingBonus or 0) + mitigationPassiveBonus
 
     return MakeResult("VERS", value, rating, ratingBonus, {
         mitigation = mitigationValue,
+        passiveBonus = passiveBonus,
         dr = Stats.GetDRInfo(ratingBonus),
     })
 end
