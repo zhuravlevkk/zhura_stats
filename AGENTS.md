@@ -239,6 +239,23 @@ When modifying code:
 
 ---
 
+## Renderer Stability Rules
+
+The stats frame must feel anchored and predictable during live stat updates.
+
+* `RefreshStats()` MUST NOT reset frame position or call `ApplyFrameStyle()`.
+* Text alignment controls the frame anchor:
+  * `LEFT` → `BOTTOMLEFT`
+  * `CENTER` → `BOTTOM`
+  * `RIGHT` → `BOTTOMRIGHT`
+* Live stat values, reference suffixes, DR hints, or tooltip state MUST NOT cause visible frame jumping.
+* Row widgets MUST be fully reset before reuse: hide, clear points, clear text/state, and reset overlays.
+* Tooltip hit areas MUST be row frames or explicit overlay frames, not bare `FontString` geometry.
+* Frame controls belong in the controls row below the rendered stats, not in the stat text width calculation.
+* Do not disable the active priority mode button; keep it mouse-interactive and make clicking it a no-op.
+
+---
+
 ## Code Style Guidelines
 
 * Prefer small focused functions

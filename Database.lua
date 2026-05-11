@@ -244,6 +244,8 @@ function Addon:MigrateProfile(profile)
     profile.fontKey = profile.fontKey or defaults.fontKey
     profile.columnCount = math.max(1, math.floor(profile.columnCount or defaults.columnCount))
     profile.rowsPerColumn = math.max(0, math.floor(profile.rowsPerColumn or defaults.rowsPerColumn))
+    profile.rowGap = math.max(0, math.floor(profile.rowGap or defaults.rowGap))
+    profile.columnGap = math.max(0, math.floor(profile.columnGap or defaults.columnGap))
     profile.showPercent = profile.showPercent ~= false
     profile.percentPrecision = profile.percentPrecision or profile.decimalPrecision or defaults.percentPrecision
     if profile.drDisplayMode == nil then
@@ -264,6 +266,7 @@ function Addon:MigrateProfile(profile)
     profile.showPotionState = nil
     profile.showLabels = profile.showLabels ~= false
     profile.showValues = profile.showValues ~= false
+    profile.showStatIcons = profile.showStatIcons == true
     profile.textAlign = profile.textAlign or defaults.textAlign
     if profile.textAlign ~= "LEFT" and profile.textAlign ~= "CENTER" and profile.textAlign ~= "RIGHT" then
         profile.textAlign = defaults.textAlign

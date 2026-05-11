@@ -355,6 +355,12 @@ function Addon:EnsureStatsFrame()
         row:Hide()
         renderRows[index] = row
 
+        local icon = row:CreateTexture(nil, "OVERLAY")
+        icon:SetPoint("LEFT", row, "LEFT", 0, 0)
+        icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        icon:Hide()
+        row.icon = icon
+
         local line = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         line:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
         line:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
