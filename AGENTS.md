@@ -263,6 +263,28 @@ After ANY change:
 * Profile switching works
 * Localization still works
 
+### Local Game Deploy
+
+Deploy the addon into the retail WoW AddOns folder from the repository root:
+
+```powershell
+.\scripts\deploy-local.ps1
+```
+
+Default target:
+
+```text
+C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\ZhuraStats
+```
+
+To deploy somewhere else:
+
+```powershell
+.\scripts\deploy-local.ps1 -TargetPath "C:\path\to\World of Warcraft\_retail_\Interface\AddOns\ZhuraStats"
+```
+
+After deploy, reload the game UI with `/reload`.
+
 ### Iteration Routine (MANDATORY)
 
 After each implementation iteration (even small patches):

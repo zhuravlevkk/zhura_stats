@@ -11,8 +11,87 @@ local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
 local stableLayoutSignature = nil
 local stableColumnWidths = {}
-local stableFrameWidth = 0
-local stableFrameHeight = 0
+
+local function GetReservedReferenceSuffixWidth(addon, measureLine, statKey, profile, defaults)
+    if not addon:IsArchonReferenceStatKey(statKey) then
+        return 0
+    end
+
+    local display = profile.referenceDisplay or defaults.referenceDisplay or "off"
+    if display == "off" or display == "tooltip" then
+        return 0
+    end
+
+    local mode = addon:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual")
+    if mode == "manual" then
+        return 0
+    end
+
+    local payload = addon:GetArchonStatReferencePayload(statKey, profile)
+    local referenceRating = payload and payload.archonRating or 9999
+    local samples
+    if display == "delta" then
+        samples = {
+            "  |cff78ff8f" .. addon:S("NE_STATS_REFERENCE_TAG_OK") .. "|r",
+            "  |cffffd25d+" .. referenceRating .. "|r",
+            "  |cffff9455-" .. referenceRating .. "|r",
+        }
+    elseif profile.showReferenceRanges ~= false then
+        samples = {
+            "  |cff78ff8f" .. addon:S("NE_STATS_REFERENCE_TAG_OK") .. "|r",
+            "  |cffffd25d" .. addon:S("NE_STATS_REFERENCE_TAG_LOW") .. " " .. referenceRating .. "|r",
+        }
+    else
+        samples = {
+            "  |cff78ff8f" .. addon:S("NE_STATS_REFERENCE_TAG_OK") .. "|r",
+            "  |cffffd25d" .. addon:S("NE_STATS_REFERENCE_TAG_LOW") .. "|r",
+        }
+    end
+
+    if profile.showDiminishingReturnHint == true then
+        table.insert(samples, samples[#samples] .. " " .. addon:S("NE_STATS_REFERENCE_DR_TAG"))
+    end
+
+    local width = 0
+    for _, sample in ipairs(samples) do
+        measureLine:SetText(sample)
+        width = math.max(width, measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth())
+    end
+    return width
+end
+
+local function ResetRenderWidgets(lines, lineOverlays, renderRows)
+    for index, line in ipairs(lines) do
+        local row = renderRows and renderRows[index]
+        if row then
+            row.statKey = nil
+            row:Hide()
+            row:ClearAllPoints()
+            row:SetSize(1, 1)
+        end
+
+        if line then
+            line.statKey = nil
+            line:Hide()
+            line:SetText("")
+            line:SetWidth(1)
+        end
+
+        local overlay = lineOverlays[index]
+        if overlay then
+            overlay.statKey = nil
+            overlay.statResult = nil
+            overlay:Hide()
+            overlay:ClearAllPoints()
+            if row then
+                overlay:SetAllPoints(row)
+            else
+                overlay:SetSize(1, 1)
+            end
+            overlay:EnableMouse(false)
+        end
+    end
+end
 
 function Addon:GetVisibleStats()
     local profile = self:GetProfile()
@@ -84,20 +163,21 @@ end
 
 function Addon:RefreshStatsImpl()
     self:EnsureStatsFrame()
-    self:ApplyFrameStyle()
 
     local profile = self:GetProfile()
     local defaults = self.Defaults.profile
     local statDefinitions = self.StatDefinitions
     local statsFrame, statsAnchor = self:GetFrameRefs()
     local lines, measureLine = self:GetRenderWidgets()
+    local renderRows = self.GetRenderRows and self:GetRenderRows() or nil
     local lineOverlays = self:GetLineOverlays()
     local textAlign = profile.textAlign or defaults.textAlign
     local visibleStats = self:GetVisibleStats()
     local fontPath, fontFlags = self:GetFontInfo(profile.fontKey)
     local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
-    local leftPadding, rightPadding, topPadding, bottomPadding = 8, 92, 8, 4
+    local leftPadding, rightPadding, topPadding, bottomPadding = 8, 8, 8, 4
     local columnGap, rowGap = 20, 2
+    local controlsWidth, controlsHeight, controlsGap = self:GetFrameControlsSize()
     local measuredStats = {}
     local maxLineHeight = 0
     local Stats = ns.Stats
@@ -122,9 +202,9 @@ function Addon:RefreshStatsImpl()
     if stableLayoutSignature ~= layoutSignature then
         stableLayoutSignature = layoutSignature
         stableColumnWidths = {}
-        stableFrameWidth = 0
-        stableFrameHeight = 0
     end
+
+    ResetRenderWidgets(lines, lineOverlays, renderRows)
 
     measureLine:SetFont(fontPath, fontSize, fontFlags)
     for _, entry in ipairs(visibleStats) do
@@ -140,10 +220,11 @@ function Addon:RefreshStatsImpl()
                 measureLine:SetText(text)
                 local textWidth = measureLine.GetUnboundedStringWidth and measureLine:GetUnboundedStringWidth() or measureLine:GetStringWidth()
                 local textHeight = measureLine:GetStringHeight()
+                local reservedReferenceWidth = GetReservedReferenceSuffixWidth(self, measureLine, entry.key, profile, defaults)
                 table.insert(measuredStats, {
                     entry = entry,
                     text = text,
-                    textWidth = textWidth,
+                    textWidth = textWidth + reservedReferenceWidth,
                     textHeight = textHeight,
                     drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
                     statResult = statResult,
@@ -187,13 +268,18 @@ function Addon:RefreshStatsImpl()
         for rowIndex = 1, rowCount do
             local measured = measuredStats[itemIndex]
             local line = lines[itemIndex]
-            if measured and line then
+            local row = renderRows and renderRows[itemIndex]
+            if measured and line and row then
                 local currentYOffset = topPadding + (rowIndex - 1) * (maxLineHeight + rowGap)
                 local columnWidth = math.max(columnWidths[columnIndex] + 4, 40)
-                line:ClearAllPoints()
+                row:ClearAllPoints()
+                row:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", currentXOffset, -currentYOffset)
+                row:SetSize(columnWidth, maxLineHeight)
+                row.statKey = measured.entry.key
+                row:Show()
+
                 line:SetFont(fontPath, fontSize, fontFlags)
                 line:SetJustifyH(textAlign)
-                line:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", currentXOffset, -currentYOffset)
                 line:SetWidth(columnWidth)
                 line:SetJustifyH(textAlign)
                 line:SetWordWrap(false)
@@ -211,27 +297,14 @@ function Addon:RefreshStatsImpl()
                 if overlay then
                     overlay.statKey = measured.entry.key
                     overlay.statResult = measured.statResult
-                    overlay:SetAllPoints(line)
+                    overlay:ClearAllPoints()
+                    overlay:SetAllPoints(row)
                     overlay:Show()
                 end
             end
             itemIndex = itemIndex + 1
         end
         currentXOffset = currentXOffset + columnWidths[columnIndex] + columnGap
-    end
-
-    for index = #measuredStats + 1, #lines do
-        local line = lines[index]
-        if line then
-            line.statKey = nil
-            line:Hide()
-        end
-        local overlay = lineOverlays[index]
-        if overlay then
-            overlay.statKey = nil
-            overlay.statResult = nil
-            overlay:Hide()
-        end
     end
 
     local contentWidth = 0
@@ -246,15 +319,17 @@ function Addon:RefreshStatsImpl()
         contentHeight = maxRows * maxLineHeight + math.max(0, maxRows - 1) * rowGap
     end
 
-    local frameWidth = math.max(24, math.ceil(contentWidth) + leftPadding + rightPadding)
-    local frameHeight = math.max(24, math.ceil(topPadding + contentHeight + bottomPadding))
-    stableFrameWidth = math.max(stableFrameWidth or 0, frameWidth)
-    stableFrameHeight = math.max(stableFrameHeight or 0, frameHeight)
-    statsFrame:SetSize(stableFrameWidth, stableFrameHeight)
+    local controlsYOffset = topPadding + contentHeight + controlsGap
+    local frameContentWidth = math.max(contentWidth, controlsWidth)
+    local frameContentHeight = contentHeight + controlsGap + controlsHeight
+    local frameWidth = math.max(24, math.ceil(frameContentWidth) + leftPadding + rightPadding)
+    local frameHeight = math.max(24, math.ceil(topPadding + frameContentHeight + bottomPadding))
+    statsFrame:SetSize(frameWidth, frameHeight)
+    self:LayoutFrameControls(leftPadding, controlsYOffset)
     if statsAnchor then
         local scale = profile.scale or defaults.scale
-        local newAnchorWidth = stableFrameWidth * scale
-        local newAnchorHeight = stableFrameHeight * scale
+        local newAnchorWidth = frameWidth * scale
+        local newAnchorHeight = frameHeight * scale
         local currentAnchorWidth, currentAnchorHeight = statsAnchor:GetSize()
         if math.abs(currentAnchorWidth - newAnchorWidth) > 0.5 or math.abs(currentAnchorHeight - newAnchorHeight) > 0.5 then
             statsAnchor:SetSize(newAnchorWidth, newAnchorHeight)

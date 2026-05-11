@@ -924,11 +924,13 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         return items
     end, function(align)
         SetValue("textAlign", align)
+        Addon:ApplyFrameStyle()
         Addon:ApplyTextAlignmentToVisibleLines()
         Addon:RefreshStats()
         if C_Timer and C_Timer.After then
             C_Timer.After(0, function()
                 if Addon.initialized then
+                    Addon:ApplyFrameStyle()
                     Addon:ApplyTextAlignmentToVisibleLines()
                     Addon:RefreshStats()
                 end
