@@ -2,6 +2,10 @@ NE_STATS_LOCALES = NE_STATS_LOCALES or {}
 local L = NE_STATS_LOCALES["zhCN"] or {}
 NE_STATS_LOCALES["zhCN"] = L
 
+L["Show stat icons"] = "显示属性图标"
+L["Row spacing"] = "行间距"
+L["Column spacing"] = "列间距"
+
 L["Default"] = "默认"
 L["Create a new profile for this character"] = "为该角色创建新配置"
 L["Create"] = "创建"
