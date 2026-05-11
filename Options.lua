@@ -576,6 +576,7 @@ function Addon:ApplyCurrentProfileStateImpl()
     end
     if controlRefs.showLabelsCheckbox then controlRefs.showLabelsCheckbox:SetChecked(profile.showLabels) end
     if controlRefs.showValuesCheckbox then controlRefs.showValuesCheckbox:SetChecked(profile.showValues) end
+    if controlRefs.showStatIconsCheckbox then controlRefs.showStatIconsCheckbox:SetChecked(profile.showStatIcons) end
     if controlRefs.textAlignDropDown then controlRefs.textAlignDropDown:Refresh(profile.textAlign or defaults.textAlign) end
     if controlRefs.goldUseSeparatorCheckbox then controlRefs.goldUseSeparatorCheckbox:SetChecked(profile.goldUseSeparator) end
     if controlRefs.goldSeparatorDropDown then controlRefs.goldSeparatorDropDown:Refresh(profile.goldSeparator or defaults.goldSeparator) end
@@ -587,6 +588,8 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.fontSizeSlider then controlRefs.fontSizeSlider:SetValue(profile.fontSize or defaults.fontSize) end
     if controlRefs.columnCountSlider then controlRefs.columnCountSlider:SetValue(profile.columnCount or defaults.columnCount) end
     if controlRefs.rowsPerColumnSlider then controlRefs.rowsPerColumnSlider:SetValue(profile.rowsPerColumn or defaults.rowsPerColumn) end
+    if controlRefs.rowGapSlider then controlRefs.rowGapSlider:SetValue(profile.rowGap or defaults.rowGap) end
+    if controlRefs.columnGapSlider then controlRefs.columnGapSlider:SetValue(profile.columnGap or defaults.columnGap) end
     if controlRefs.priorityModeDropDown then
         controlRefs.priorityModeDropDown:Refresh(self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual"))
     end
@@ -651,10 +654,11 @@ function Addon:RefreshLocalizedUI()
     if controlRefs.showPercentCheckbox then controlRefs.showPercentCheckbox.label:SetText(self:S("Show percentages")) end
     if controlRefs.showLabelsCheckbox then controlRefs.showLabelsCheckbox.label:SetText(self:S("Show stat names")) end
     if controlRefs.showValuesCheckbox then controlRefs.showValuesCheckbox.label:SetText(self:S("Show values")) end
+    if controlRefs.showStatIconsCheckbox then controlRefs.showStatIconsCheckbox.label:SetText(self:S("Show stat icons")) end
     if controlRefs.goldUseSeparatorCheckbox then controlRefs.goldUseSeparatorCheckbox.label:SetText(self:S("Use separator for gold")) end
     if controlRefs.lockCheckbox then controlRefs.lockCheckbox.label:SetText(self:S("Lock frame")) end
     if controlRefs.showLockOnHoverCheckbox then controlRefs.showLockOnHoverCheckbox.label:SetText(self:S("Show lock icon only on hover")) end
-    if controlRefs.preferCurrentSpecMainStatCheckbox then controlRefs.preferCurrentSpecMainStatCheckbox.label:SetText(self:S("Current main stat first")) end
+    if controlRefs.preferCurrentSpecMainStatCheckbox then controlRefs.preferCurrentSpecMainStatCheckbox.label:SetText(self:S("Always show current specialization main stat first")) end
 
     if controlRefs.precisionSlider then _G[controlRefs.precisionSlider:GetName() .. "Text"]:SetText("") end
     if controlRefs.alphaSlider then _G[controlRefs.alphaSlider:GetName() .. "Text"]:SetText("") end
@@ -665,6 +669,8 @@ function Addon:RefreshLocalizedUI()
         _G[controlRefs.rowsPerColumnSlider:GetName() .. "Text"]:SetText("")
         _G[controlRefs.rowsPerColumnSlider:GetName() .. "Low"]:SetText(self:S("Auto"))
     end
+    if controlRefs.rowGapSlider then _G[controlRefs.rowGapSlider:GetName() .. "Text"]:SetText("") end
+    if controlRefs.columnGapSlider then _G[controlRefs.columnGapSlider:GetName() .. "Text"]:SetText("") end
 
     if StaticPopupDialogs["NE_STATS_RESET_PROFILE"] then
         StaticPopupDialogs["NE_STATS_RESET_PROFILE"].text = self:S("Reset active profile %s?")
@@ -924,11 +930,13 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         return items
     end, function(align)
         SetValue("textAlign", align)
+        Addon:ApplyFrameStyle()
         Addon:ApplyTextAlignmentToVisibleLines()
         Addon:RefreshStats()
         if C_Timer and C_Timer.After then
             C_Timer.After(0, function()
                 if Addon.initialized then
+                    Addon:ApplyFrameStyle()
                     Addon:ApplyTextAlignmentToVisibleLines()
                     Addon:RefreshStats()
                 end
@@ -1046,14 +1054,6 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
 
     local textLayoutCard = CreateCard(page, Addon:S("Text & Layout"), currentTopY)
 
-    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(textLayoutCard, Addon:S("Current main stat first"), Addon:S("Keeps the primary stat for your current specialization at the top of the display."), function(self)
-        SetValue("preferCurrentSpecMainStat", self:GetChecked())
-        Addon:RefreshStats()
-    end)
-    preferCurrentSpecMainStatCheckbox.label:SetWidth(320)
-    textLayoutCard:AddCheckboxRow(preferCurrentSpecMainStatCheckbox)
-    controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
-
     local fontSizeSlider = CreateSlider(addonName .. "FontSizeSlider", textLayoutCard, Addon:S("Font Size"), 10, 32, 1, function(_, value)
         SetValue("fontSize", value)
         Addon:RefreshStats()
@@ -1075,6 +1075,27 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     _G[rowsPerColumnSlider:GetName() .. "Low"]:SetText(Addon:S("Auto"))
     textLayoutCard:AddSliderRow(Addon:S("Max rows per column"), rowsPerColumnSlider)
     controlRefs.rowsPerColumnSlider = rowsPerColumnSlider
+
+    local showStatIconsCheckbox = CreateCheckbox(textLayoutCard, Addon:S("Show stat icons"), nil, function(self)
+        SetValue("showStatIcons", self:GetChecked())
+        Addon:RefreshStats()
+    end)
+    textLayoutCard:AddCheckboxRow(showStatIconsCheckbox)
+    controlRefs.showStatIconsCheckbox = showStatIconsCheckbox
+
+    local rowGapSlider = CreateSlider(addonName .. "RowGapSlider", textLayoutCard, Addon:S("Row spacing"), 0, 20, 1, function(_, value)
+        SetValue("rowGap", math.max(0, math.floor(value + 0.5)))
+        Addon:RefreshStats()
+    end)
+    textLayoutCard:AddSliderRow(Addon:S("Row spacing"), rowGapSlider)
+    controlRefs.rowGapSlider = rowGapSlider
+
+    local columnGapSlider = CreateSlider(addonName .. "ColumnGapSlider", textLayoutCard, Addon:S("Column spacing"), 0, 120, 1, function(_, value)
+        SetValue("columnGap", math.max(0, math.floor(value + 0.5)))
+        Addon:RefreshStats()
+    end)
+    textLayoutCard:AddSliderRow(Addon:S("Column spacing"), columnGapSlider)
+    controlRefs.columnGapSlider = columnGapSlider
 
     local fontDropDown = CreateDropDown(textLayoutCard, addonName .. "FontDropDown", 220, function()
         local items = {}
@@ -1132,6 +1153,14 @@ local function BuildStatsPage(content, addonName, statKeys)
     end)
     card:AddDropdownRow(Addon:S("Reference display"), referenceDropDown, 220)
     controlRefs.referenceDisplayDropDown = referenceDropDown
+
+    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(card, Addon:S("Always show current specialization main stat first"), Addon:S("Keeps the primary stat for your current specialization at the top of the display."), function(self)
+        SetValue("preferCurrentSpecMainStat", self:GetChecked())
+        Addon:RefreshStats()
+    end)
+    preferCurrentSpecMainStatCheckbox.label:SetWidth(420)
+    card:AddCheckboxRow(preferCurrentSpecMainStatCheckbox)
+    controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
 
     local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)

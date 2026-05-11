@@ -139,4 +139,7 @@ L["NE_STATS_ARCHON_NO_DATA"] = "Archon: 현재 전문화에 대한 데이터가 
 L["NE_STATS_ARCHON_TOP_HERO_PCT"] = "Archon: 주요 영웅 %s (%.1f%%)"
 L["NE_STATS_ARCHON_ACTIVITY_TOP_HERO"] = "Archon: %s, 주요 영웅 %s"
 L["NE_STATS_ARCHON_ACTIVITY_ONLY"] = "Archon: %s"
+L["Show stat icons"] = "능력치 아이콘 표시"
+L["Row spacing"] = "행 간격"
+L["Column spacing"] = "열 간격"
 L["NE_STATS_VALUE_UNKNOWN"] = "알 수 없음"

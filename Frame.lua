@@ -12,9 +12,50 @@ local priorityModeControls
 local isStatsFrameHovered = false
 local isLockButtonHovered = false
 local isPriorityModeHovered = false
+local renderRows = {}
 local lines = {}
 local lineOverlays = {}
 local measureLine
+local FRAME_CONTROLS_WIDTH = 84
+local FRAME_CONTROLS_HEIGHT = 20
+local FRAME_CONTROLS_GAP = 4
+
+local FRAME_ANCHOR_BY_TEXT_ALIGN = {
+    LEFT = "BOTTOMLEFT",
+    CENTER = "BOTTOM",
+    RIGHT = "BOTTOMRIGHT",
+}
+
+local function GetFrameAnchorPoint(profile, defaults)
+    local align = (profile and profile.textAlign) or (defaults and defaults.textAlign) or "LEFT"
+    return FRAME_ANCHOR_BY_TEXT_ALIGN[align] or "BOTTOMLEFT"
+end
+
+local function GetCurrentAnchorOffsets(frame, anchorPoint, relativeTo)
+    if not frame or not frame:GetLeft() then
+        return nil, nil
+    end
+
+    relativeTo = relativeTo or UIParent
+    local relLeft = relativeTo:GetLeft() or 0
+    local relRight = relativeTo:GetRight() or (relLeft + (relativeTo:GetWidth() or 0))
+    local relBottom = relativeTo:GetBottom() or 0
+    local frameLeft = frame:GetLeft() or 0
+    local frameRight = frame:GetRight() or frameLeft
+    local frameBottom = frame:GetBottom() or 0
+
+    if anchorPoint == "BOTTOMRIGHT" then
+        return frameRight - relRight, frameBottom - relBottom
+    end
+
+    if anchorPoint == "BOTTOM" then
+        local relCenter = relLeft + ((relativeTo:GetWidth() or 0) / 2)
+        local frameCenter = frameLeft + ((frameRight - frameLeft) / 2)
+        return frameCenter - relCenter, frameBottom - relBottom
+    end
+
+    return frameLeft - relLeft, frameBottom - relBottom
+end
 
 function Addon:GetFrameRefs()
     return statsFrame, statsAnchor, lockButton
@@ -24,8 +65,28 @@ function Addon:GetRenderWidgets()
     return lines, measureLine
 end
 
+function Addon:GetRenderRows()
+    return renderRows
+end
+
 function Addon:GetLineOverlays()
     return lineOverlays
+end
+
+function Addon:GetFrameControlsSize()
+    return FRAME_CONTROLS_WIDTH, FRAME_CONTROLS_HEIGHT, FRAME_CONTROLS_GAP
+end
+
+function Addon:LayoutFrameControls(xOffset, yOffset)
+    if not lockButton or not priorityModeControls then
+        return
+    end
+
+    priorityModeControls:ClearAllPoints()
+    priorityModeControls:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", xOffset, -yOffset)
+
+    lockButton:ClearAllPoints()
+    lockButton:SetPoint("TOPLEFT", priorityModeControls, "TOPRIGHT", 2, 0)
 end
 
 function Addon:SaveFramePosition()
@@ -35,12 +96,15 @@ function Addon:SaveFramePosition()
 
     local profile = self:GetProfile()
     local defaults = self.Defaults.profile
-    local point, relativeTo, relativePoint, x, y = statsAnchor:GetPoint(1)
-    profile.point = point or defaults.point
-    profile.relativeTo = relativeTo and relativeTo:GetName() or defaults.relativeTo
-    profile.relativePoint = relativePoint or defaults.relativePoint
-    profile.x = x or 0
-    profile.y = y or 0
+    local anchorPoint = GetFrameAnchorPoint(profile, defaults)
+    local _, relativeTo, _, x, y = statsAnchor:GetPoint(1)
+    local relativeFrame = relativeTo or (_G[defaults.relativeTo] or UIParent)
+    local anchorX, anchorY = GetCurrentAnchorOffsets(statsAnchor, anchorPoint, relativeFrame)
+    profile.point = anchorPoint
+    profile.relativeTo = relativeFrame and relativeFrame:GetName() or defaults.relativeTo
+    profile.relativePoint = anchorPoint
+    profile.x = anchorX or x or 0
+    profile.y = anchorY or y or 0
 end
 
 function Addon:UpdateFrameLockState()
@@ -81,7 +145,8 @@ function Addon:RefreshPriorityModeButtons()
     for mode, button in pairs(priorityModeButtons) do
         if button then
             local isActive = mode == activeMode
-            button:SetEnabled(not isActive)
+            button.isActiveMode = isActive
+            button:SetEnabled(true)
             button:SetAlpha(isActive and 1 or 0.45)
         end
     end
@@ -94,18 +159,30 @@ function Addon:ApplyFrameStyle()
 
     local profile = self:GetProfile()
     local defaults = self.Defaults.profile
+    local anchorPoint = GetFrameAnchorPoint(profile, defaults)
+    local relativeFrame = _G[profile.relativeTo or defaults.relativeTo] or UIParent
+    if (profile.point or defaults.point) ~= anchorPoint then
+        local x, y = GetCurrentAnchorOffsets(statsAnchor, anchorPoint, relativeFrame)
+        if x and y then
+            profile.x = x
+            profile.y = y
+        end
+        profile.point = anchorPoint
+        profile.relativePoint = anchorPoint
+    end
+
     statsFrame:SetScale(profile.scale or defaults.scale)
     statsFrame:SetAlpha(profile.alpha)
     statsAnchor:ClearAllPoints()
     statsAnchor:SetPoint(
-        profile.point or defaults.point,
-        _G[profile.relativeTo or defaults.relativeTo] or UIParent,
-        profile.relativePoint or defaults.relativePoint,
+        anchorPoint,
+        relativeFrame,
+        anchorPoint,
         profile.x or defaults.x,
         profile.y or defaults.y
     )
     statsFrame:ClearAllPoints()
-    statsFrame:SetPoint("TOPLEFT", statsAnchor, "TOPLEFT", 0, 0)
+    statsFrame:SetPoint(anchorPoint, statsAnchor, anchorPoint, 0, 0)
     self:UpdateFrameLockState()
 end
 
@@ -136,7 +213,7 @@ function Addon:UpdateTooltipOverlayVisibility()
     local archonMode = self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual") ~= "manual"
     local active = tooltipMode and archonMode
     for _, overlay in ipairs(lineOverlays) do
-        overlay:EnableMouse(active)
+        overlay:EnableMouse(active and overlay:IsShown())
     end
 end
 
@@ -181,7 +258,6 @@ function Addon:EnsureStatsFrame()
 
     lockButton = CreateFrame("Button", nil, statsFrame, "UIPanelButtonTemplate")
     lockButton:SetSize(20, 20)
-    lockButton:SetPoint("TOPRIGHT", -6, -6)
     lockButton:SetFrameLevel(statsAnchor:GetFrameLevel() + 10)
     lockButton:SetText("")
     lockButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -209,7 +285,6 @@ function Addon:EnsureStatsFrame()
 
     priorityModeControls = CreateFrame("Frame", nil, statsFrame)
     priorityModeControls:SetSize(62, 20)
-    priorityModeControls:SetPoint("TOPRIGHT", lockButton, "TOPLEFT", -2, 0)
     priorityModeControls:SetFrameLevel(statsAnchor:GetFrameLevel() + 10)
     priorityModeControls:SetScript("OnEnter", function()
         isPriorityModeHovered = true
@@ -259,9 +334,14 @@ function Addon:EnsureStatsFrame()
             GameTooltip:Show()
         end)
         button:SetScript("OnLeave", function()
+            isPriorityModeHovered = false
             GameTooltip:Hide()
+            Addon:UpdateFrameLockState()
         end)
         button:SetScript("OnClick", function(btn)
+            if btn.isActiveMode then
+                return
+            end
             Addon:SetStatPriorityMode(btn.mode)
         end)
         priorityModeButtons[config.id] = button
@@ -271,18 +351,32 @@ function Addon:EnsureStatsFrame()
 
     local statKeys = Addon.Constants.STAT_KEYS
     for index = 1, #statKeys + 1 do
-        local line = statsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        local row = CreateFrame("Frame", nil, statsFrame)
+        row:Hide()
+        renderRows[index] = row
+
+        local icon = row:CreateTexture(nil, "OVERLAY")
+        icon:SetPoint("LEFT", row, "LEFT", 0, 0)
+        icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        icon:Hide()
+        row.icon = icon
+
+        local line = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        line:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+        line:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
         line:SetJustifyH("LEFT")
         line:SetShadowOffset(1, -1)
+        row.text = line
         lines[index] = line
 
         -- Invisible overlay frame for tooltip hit-testing.
         -- EnableMouse is toggled by UpdateTooltipOverlayVisibility — off by default
         -- so it never blocks drag or lock button interaction.
-        local overlay = CreateFrame("Frame", nil, statsFrame)
-        overlay:SetAllPoints(line)
+        local overlay = CreateFrame("Frame", nil, row)
+        overlay:SetAllPoints(row)
         overlay:SetFrameLevel(statsFrame:GetFrameLevel() + 1)
         overlay:EnableMouse(false)
+        row.overlay = overlay
         overlay:SetScript("OnEnter", function(frame)
             local key = frame.statKey
             if not key then

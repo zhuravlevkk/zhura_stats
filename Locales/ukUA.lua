@@ -138,4 +138,7 @@ L["NE_STATS_ARCHON_NO_DATA"] = "Archon: немає даних для поточ�
 L["NE_STATS_ARCHON_TOP_HERO_PCT"] = "Archon: топ герой %s (%.1f%%)"
 L["NE_STATS_ARCHON_ACTIVITY_TOP_HERO"] = "Archon: %s, топ герой %s"
 L["NE_STATS_ARCHON_ACTIVITY_ONLY"] = "Archon: %s"
+L["Show stat icons"] = "Показувати іконки характеристик"
+L["Row spacing"] = "Відступ між рядками"
+L["Column spacing"] = "Відступ між стовпцями"
 L["NE_STATS_VALUE_UNKNOWN"] = "невідомо"
