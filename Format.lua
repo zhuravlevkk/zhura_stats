@@ -209,6 +209,18 @@ function Addon:PopulateReferenceStatTooltip(owner, statKey, statResult, profile)
     GameTooltip:Show()
 end
 
+local function GetStatLabelOverride(profile, statKey)
+    if type(profile) ~= "table" or type(profile.stats) ~= "table" then
+        return nil
+    end
+    for _, entry in ipairs(profile.stats) do
+        if type(entry) == "table" and entry.key == statKey and type(entry.nameOverride) == "string" and entry.nameOverride ~= "" then
+            return entry.nameOverride
+        end
+    end
+    return nil
+end
+
 function Addon:FormatStatValue(statKey, statResult, profile, def)
     local defaults = self.Defaults.profile
     local resolvedDef = def or (self.StatDefinitions and self.StatDefinitions[statKey])
@@ -216,7 +228,7 @@ function Addon:FormatStatValue(statKey, statResult, profile, def)
         return ""
     end
 
-    local statLabel = self:S(resolvedDef.label)
+    local statLabel = GetStatLabelOverride(profile, statKey) or self:S(resolvedDef.label)
     local labelPart = profile.showLabels and (statLabel .. " ") or ""
     local precision = math.max(0, math.min(3, profile.percentPrecision or defaults.percentPrecision))
     local value = statResult and statResult.value or 0

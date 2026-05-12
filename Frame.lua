@@ -16,8 +16,10 @@ local renderRows = {}
 local lines = {}
 local lineOverlays = {}
 local measureLine
-local FRAME_CONTROLS_WIDTH = 84
-local FRAME_CONTROLS_HEIGHT = 20
+local PRIORITY_BUTTON_SIZE = 18
+local PRIORITY_BUTTON_GAP = 3
+local LOCK_BUTTON_SIZE = 20
+local LOCK_BUTTON_GAP = 2
 local FRAME_CONTROLS_GAP = 4
 
 local FRAME_ANCHOR_BY_TEXT_ALIGN = {
@@ -74,7 +76,15 @@ function Addon:GetLineOverlays()
 end
 
 function Addon:GetFrameControlsSize()
-    return FRAME_CONTROLS_WIDTH, FRAME_CONTROLS_HEIGHT, FRAME_CONTROLS_GAP
+    local direction = self:GetProfileValue("frameControlsDirection") or self.Defaults.profile.frameControlsDirection
+    local priorityCount = 3
+    if direction == "VERTICAL" then
+        local priorityHeight = (priorityCount * PRIORITY_BUTTON_SIZE) + ((priorityCount - 1) * PRIORITY_BUTTON_GAP)
+        return LOCK_BUTTON_SIZE, priorityHeight + LOCK_BUTTON_GAP + LOCK_BUTTON_SIZE, FRAME_CONTROLS_GAP
+    end
+
+    local priorityWidth = (priorityCount * PRIORITY_BUTTON_SIZE) + ((priorityCount - 1) * PRIORITY_BUTTON_GAP)
+    return priorityWidth + LOCK_BUTTON_GAP + LOCK_BUTTON_SIZE, LOCK_BUTTON_SIZE, FRAME_CONTROLS_GAP
 end
 
 function Addon:LayoutFrameControls(xOffset, yOffset)
@@ -82,11 +92,38 @@ function Addon:LayoutFrameControls(xOffset, yOffset)
         return
     end
 
+    local direction = self:GetProfileValue("frameControlsDirection") or self.Defaults.profile.frameControlsDirection
+    local priorityCount = 3
+    local priorityWidth = (priorityCount * PRIORITY_BUTTON_SIZE) + ((priorityCount - 1) * PRIORITY_BUTTON_GAP)
+    local priorityHeight = PRIORITY_BUTTON_SIZE
+    if direction == "VERTICAL" then
+        priorityWidth = PRIORITY_BUTTON_SIZE
+        priorityHeight = (priorityCount * PRIORITY_BUTTON_SIZE) + ((priorityCount - 1) * PRIORITY_BUTTON_GAP)
+    end
+
     priorityModeControls:ClearAllPoints()
+    priorityModeControls:SetSize(priorityWidth, priorityHeight)
     priorityModeControls:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", xOffset, -yOffset)
 
+    local orderedModes = { "manual", "archon_raid", "archon_mplus" }
+    for index, mode in ipairs(orderedModes) do
+        local button = priorityModeButtons[mode]
+        if button then
+            button:ClearAllPoints()
+            if direction == "VERTICAL" then
+                button:SetPoint("TOPLEFT", priorityModeControls, "TOPLEFT", 0, -((index - 1) * (PRIORITY_BUTTON_SIZE + PRIORITY_BUTTON_GAP)))
+            else
+                button:SetPoint("LEFT", priorityModeControls, "LEFT", (index - 1) * (PRIORITY_BUTTON_SIZE + PRIORITY_BUTTON_GAP), 0)
+            end
+        end
+    end
+
     lockButton:ClearAllPoints()
-    lockButton:SetPoint("TOPLEFT", priorityModeControls, "TOPRIGHT", 2, 0)
+    if direction == "VERTICAL" then
+        lockButton:SetPoint("TOPLEFT", priorityModeControls, "BOTTOMLEFT", 0, -LOCK_BUTTON_GAP)
+    else
+        lockButton:SetPoint("TOPLEFT", priorityModeControls, "TOPRIGHT", LOCK_BUTTON_GAP, 0)
+    end
 end
 
 function Addon:SaveFramePosition()
@@ -319,8 +356,8 @@ function Addon:EnsureStatsFrame()
 
     for index, config in ipairs(modeButtons) do
         local button = CreateFrame("Button", nil, priorityModeControls, "UIPanelButtonTemplate")
-        button:SetSize(18, 18)
-        button:SetPoint("LEFT", priorityModeControls, "LEFT", (index - 1) * 21, 0)
+        button:SetSize(PRIORITY_BUTTON_SIZE, PRIORITY_BUTTON_SIZE)
+        button:SetPoint("LEFT", priorityModeControls, "LEFT", (index - 1) * (PRIORITY_BUTTON_SIZE + PRIORITY_BUTTON_GAP), 0)
         button:SetText(config.text)
         button.mode = config.id
         button.tooltipTitle = config.title

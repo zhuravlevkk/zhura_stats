@@ -40,7 +40,7 @@ describe("Database", function()
     it("sets statsMigrationVersion and preserves stat keys order", function()
       local profile = copy_profile({ statsMigrationVersion = 0 })
       Addon:MigrateProfile(profile)
-      assert.are.equal(5, profile.statsMigrationVersion)
+      assert.are.equal(6, profile.statsMigrationVersion)
       local keys = Addon.Constants.STAT_KEYS
       assert.are.equal(#keys, #profile.stats)
       for i = 1, #keys do
@@ -107,6 +107,42 @@ describe("Database", function()
       assert.are.equal(Addon.Defaults.profile.textAlign, profile.textAlign)
     end)
 
+    it("normalizes invalid frameControlsPosition to default", function()
+      local profile = copy_profile({
+        statsMigrationVersion = 0,
+        frameControlsPosition = "CENTER",
+      })
+      Addon:MigrateProfile(profile)
+      assert.are.equal(Addon.Defaults.profile.frameControlsPosition, profile.frameControlsPosition)
+    end)
+
+    it("preserves valid frameControlsPosition", function()
+      local profile = copy_profile({
+        statsMigrationVersion = 0,
+        frameControlsPosition = "LEFT",
+      })
+      Addon:MigrateProfile(profile)
+      assert.are.equal("LEFT", profile.frameControlsPosition)
+    end)
+
+    it("normalizes invalid frameControlsDirection to default", function()
+      local profile = copy_profile({
+        statsMigrationVersion = 0,
+        frameControlsDirection = "DIAGONAL",
+      })
+      Addon:MigrateProfile(profile)
+      assert.are.equal(Addon.Defaults.profile.frameControlsDirection, profile.frameControlsDirection)
+    end)
+
+    it("preserves valid frameControlsDirection", function()
+      local profile = copy_profile({
+        statsMigrationVersion = 0,
+        frameControlsDirection = "VERTICAL",
+      })
+      Addon:MigrateProfile(profile)
+      assert.are.equal("VERTICAL", profile.frameControlsDirection)
+    end)
+
     it("clears legacy nil fields", function()
       local profile = copy_profile({
         statsMigrationVersion = 0,
@@ -121,7 +157,7 @@ describe("Database", function()
     it("is idempotent when stats already at current migration version", function()
       local profile = copy_profile({ statsMigrationVersion = 0 })
       Addon:MigrateProfile(profile)
-      assert.are.equal(5, profile.statsMigrationVersion)
+      assert.are.equal(6, profile.statsMigrationVersion)
       local keys = Addon.Constants.STAT_KEYS
       local snap = {}
       for i = 1, #profile.stats do
@@ -131,12 +167,32 @@ describe("Database", function()
         }
       end
       Addon:MigrateProfile(profile)
-      assert.are.equal(5, profile.statsMigrationVersion)
+      assert.are.equal(6, profile.statsMigrationVersion)
       assert.are.equal(#keys, #profile.stats)
       for i = 1, #keys do
         assert.are.equal(snap[i].key, profile.stats[i].key)
         assert.are.equal(snap[i].enabled, profile.stats[i].enabled)
       end
+    end)
+
+    it("preserves stat name overrides during migration", function()
+      local profile = copy_profile({
+        statsMigrationVersion = 5,
+        stats = {
+          { key = "STR", enabled = true, color = { 1, 0, 0 }, nameOverride = "Power" },
+        },
+      })
+      Addon:MigrateProfile(profile)
+      assert.are.equal(6, profile.statsMigrationVersion)
+      assert.are.equal("Power", profile.stats[1].nameOverride)
+    end)
+
+    it("clears blank stat name overrides", function()
+      local profile = copy_profile({ statsMigrationVersion = 0 })
+      Addon:MigrateProfile(profile)
+      profile.stats[1].nameOverride = "   "
+      Addon:MigrateProfile(profile)
+      assert.is_nil(profile.stats[1].nameOverride)
     end)
   end)
 end)

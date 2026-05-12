@@ -35,6 +35,18 @@ local REFERENCE_DISPLAY_OPTIONS = {
     { value = "tooltip", label = "NE_STATS_REFERENCE_DISPLAY_TOOLTIP" },
 }
 
+local FRAME_CONTROLS_POSITION_LABELS = {
+    BOTTOM = "Bottom",
+    TOP = "Top",
+    LEFT = "Left",
+    RIGHT = "Right",
+}
+
+local FRAME_CONTROLS_DIRECTION_LABELS = {
+    HORIZONTAL = "Horizontal",
+    VERTICAL = "Vertical",
+}
+
 local PAGE_X = 16
 local PAGE_Y = -112
 local PAGE_WIDTH = 620
@@ -135,6 +147,33 @@ local function CreateSlider(name, parent, label, minValue, maxValue, step, onVal
     _G[name .. "Text"]:SetText(label)
     slider:SetScript("OnValueChanged", onValueChanged)
     return slider
+end
+
+local function CreateEditBox(parent, width, onCommit)
+    local editBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    editBox:SetSize(width or 120, 22)
+    editBox:SetAutoFocus(false)
+    editBox:SetScript("OnEnterPressed", function(self)
+        if onCommit then
+            onCommit(self)
+        end
+        self:ClearFocus()
+    end)
+    editBox:SetScript("OnEscapePressed", function(self)
+        self.skipNextCommit = true
+        self:ClearFocus()
+        Addon:RefreshOptionRows()
+    end)
+    editBox:SetScript("OnEditFocusLost", function(self)
+        if self.skipNextCommit then
+            self.skipNextCommit = nil
+            return
+        end
+        if onCommit then
+            onCommit(self)
+        end
+    end)
+    return editBox
 end
 
 local function OpenColorPicker(entry)
@@ -551,6 +590,9 @@ function Addon:RefreshOptionRows()
             row.index = index
             row.checkbox:SetChecked(entry.enabled)
             row.label:SetText(self:S(def.label))
+            if row.nameOverride then
+                row.nameOverride:SetText(entry.nameOverride or "")
+            end
             row.swatch.texture:SetColorTexture(entry.color[1], entry.color[2], entry.color[3], 1)
             row.up:SetEnabled(CanMoveStat(index, -1))
             row.down:SetEnabled(CanMoveStat(index, 1))
@@ -582,6 +624,12 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.goldSeparatorDropDown then controlRefs.goldSeparatorDropDown:Refresh(profile.goldSeparator or defaults.goldSeparator) end
     if controlRefs.lockCheckbox then controlRefs.lockCheckbox:SetChecked(profile.locked) end
     if controlRefs.showLockOnHoverCheckbox then controlRefs.showLockOnHoverCheckbox:SetChecked(profile.showLockOnHover) end
+    if controlRefs.frameControlsPositionDropDown then
+        controlRefs.frameControlsPositionDropDown:Refresh(profile.frameControlsPosition or defaults.frameControlsPosition)
+    end
+    if controlRefs.frameControlsDirectionDropDown then
+        controlRefs.frameControlsDirectionDropDown:Refresh(profile.frameControlsDirection or defaults.frameControlsDirection)
+    end
     if controlRefs.preferCurrentSpecMainStatCheckbox then controlRefs.preferCurrentSpecMainStatCheckbox:SetChecked(profile.preferCurrentSpecMainStat) end
     if controlRefs.alphaSlider then controlRefs.alphaSlider:SetValue(profile.alpha or defaults.alpha) end
     if controlRefs.scaleSlider then controlRefs.scaleSlider:SetValue(profile.scale or defaults.scale) end
@@ -658,6 +706,8 @@ function Addon:RefreshLocalizedUI()
     if controlRefs.goldUseSeparatorCheckbox then controlRefs.goldUseSeparatorCheckbox.label:SetText(self:S("Use separator for gold")) end
     if controlRefs.lockCheckbox then controlRefs.lockCheckbox.label:SetText(self:S("Lock frame")) end
     if controlRefs.showLockOnHoverCheckbox then controlRefs.showLockOnHoverCheckbox.label:SetText(self:S("Show lock icon only on hover")) end
+    if controlRefs.frameControlsPositionLabel then controlRefs.frameControlsPositionLabel:SetText(self:S("Button position")) end
+    if controlRefs.frameControlsDirectionLabel then controlRefs.frameControlsDirectionLabel:SetText(self:S("Button direction")) end
     if controlRefs.preferCurrentSpecMainStatCheckbox then controlRefs.preferCurrentSpecMainStatCheckbox.label:SetText(self:S("Always show current specialization main stat first")) end
 
     if controlRefs.precisionSlider then _G[controlRefs.precisionSlider:GetName() .. "Text"]:SetText("") end
@@ -1021,6 +1071,34 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     frameCard:AddCheckboxRow(showLockOnHoverCheckbox)
     controlRefs.showLockOnHoverCheckbox = showLockOnHoverCheckbox
 
+    local frameControlsPositionDropDown = CreateDropDown(frameCard, addonName .. "FrameControlsPositionDropDown", 160, function()
+        local items = {}
+        for _, position in ipairs(Addon.Constants.FRAME_CONTROLS_POSITION_OPTIONS) do
+            table.insert(items, { value = position, text = Addon:S(FRAME_CONTROLS_POSITION_LABELS[position] or position) })
+        end
+        return items
+    end, function(value)
+        SetValue("frameControlsPosition", value)
+        Addon:RefreshStats()
+    end)
+    local frameControlsPositionLabel = frameCard:AddDropdownRow(Addon:S("Button position"), frameControlsPositionDropDown, 160)
+    controlRefs.frameControlsPositionDropDown = frameControlsPositionDropDown
+    controlRefs.frameControlsPositionLabel = frameControlsPositionLabel
+
+    local frameControlsDirectionDropDown = CreateDropDown(frameCard, addonName .. "FrameControlsDirectionDropDown", 160, function()
+        local items = {}
+        for _, direction in ipairs(Addon.Constants.FRAME_CONTROLS_DIRECTION_OPTIONS) do
+            table.insert(items, { value = direction, text = Addon:S(FRAME_CONTROLS_DIRECTION_LABELS[direction] or direction) })
+        end
+        return items
+    end, function(value)
+        SetValue("frameControlsDirection", value)
+        Addon:RefreshStats()
+    end)
+    local frameControlsDirectionLabel = frameCard:AddDropdownRow(Addon:S("Button direction"), frameControlsDirectionDropDown, 160)
+    controlRefs.frameControlsDirectionDropDown = frameControlsDirectionDropDown
+    controlRefs.frameControlsDirectionLabel = frameControlsDirectionLabel
+
     local alphaSlider = CreateSlider(addonName .. "AlphaSlider", frameCard, Addon:S("Background Opacity"), 0.1, 1, 0.05, function(_, value)
         SetValue("alpha", value)
         Addon:ApplyFrameStyle()
@@ -1199,13 +1277,30 @@ local function BuildStatsPage(content, addonName, statKeys)
 
         local label = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
-        label:SetWidth(170)
+        label:SetWidth(110)
         label:SetJustifyH("LEFT")
         row.label = label
 
+        local nameOverride = CreateEditBox(row, 110, function(self)
+            local text = strtrim(self:GetText() or "")
+            row.entry.nameOverride = text ~= "" and text or nil
+            self:SetText(row.entry.nameOverride or "")
+            Addon:RefreshStats()
+        end)
+        nameOverride:SetPoint("LEFT", label, "RIGHT", 8, 0)
+        nameOverride:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(Addon:S("Name override"), 1, 0.82, 0, true)
+            GameTooltip:Show()
+        end)
+        nameOverride:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+        row.nameOverride = nameOverride
+
         local swatch = CreateFrame("Button", nil, row, "BackdropTemplate")
         swatch:SetSize(16, 16)
-        swatch:SetPoint("LEFT", label, "RIGHT", 8, 0)
+        swatch:SetPoint("LEFT", nameOverride, "RIGHT", 8, 0)
         swatch:SetBackdrop({
             bgFile = "Interface/Buttons/WHITE8x8",
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
