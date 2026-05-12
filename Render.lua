@@ -276,8 +276,8 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
     local contentAreaWidth = math.max(contentWidth, reservedContentWidth)
     local controlsX = LAYOUT.leftPadding
     local controlsY = LAYOUT.topPadding
-    local frameContentWidth = contentAreaWidth
-    local frameContentHeight = contentHeight
+    local frameContentWidth
+    local frameContentHeight
 
     if controlsOnLeft then
         frameContentWidth = controlsWidth + controlsGap + contentAreaWidth
