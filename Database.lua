@@ -10,7 +10,7 @@ local AceDB = LibStub and LibStub("AceDB-3.0", true)
 local db
 local profileStateChangeCounter = 0
 local newProfileInitCounter = 0
-local STATS_MIGRATION_VERSION = 5
+local STATS_MIGRATION_VERSION = 6
 local PRIMARY_STATS = {
     STR = true,
     AGI = true,
@@ -214,10 +214,12 @@ function Addon:MigrateProfile(profile)
 
             local enabled
             local color
+            local nameOverride
 
             if type(oldEntry) == "table" then
                 enabled = oldEntry.enabled
                 color = oldEntry.color
+                nameOverride = oldEntry.nameOverride
             end
 
             if enabled == nil then
@@ -232,11 +234,26 @@ function Addon:MigrateProfile(profile)
                 key = key,
                 enabled = enabled ~= false,
                 color = color,
+                nameOverride = type(nameOverride) == "string" and strtrim(nameOverride) or nil,
             }
         end
 
         profile.stats = migrated
         profile.statsMigrationVersion = STATS_MIGRATION_VERSION
+    end
+    if type(profile.stats) == "table" then
+        for _, entry in ipairs(profile.stats) do
+            if type(entry) == "table" then
+                if type(entry.nameOverride) == "string" then
+                    entry.nameOverride = strtrim(entry.nameOverride)
+                    if entry.nameOverride == "" then
+                        entry.nameOverride = nil
+                    end
+                else
+                    entry.nameOverride = nil
+                end
+            end
+        end
     end
     profile.alpha = profile.alpha or defaults.alpha
     profile.scale = profile.scale or defaults.scale
@@ -278,6 +295,15 @@ function Addon:MigrateProfile(profile)
     end
     profile.locked = profile.locked or false
     profile.showLockOnHover = profile.showLockOnHover == true
+    profile.frameControlsPosition = profile.frameControlsPosition or defaults.frameControlsPosition
+    if profile.frameControlsPosition ~= "BOTTOM" and profile.frameControlsPosition ~= "TOP"
+        and profile.frameControlsPosition ~= "LEFT" and profile.frameControlsPosition ~= "RIGHT" then
+        profile.frameControlsPosition = defaults.frameControlsPosition
+    end
+    profile.frameControlsDirection = profile.frameControlsDirection or defaults.frameControlsDirection
+    if profile.frameControlsDirection ~= "HORIZONTAL" and profile.frameControlsDirection ~= "VERTICAL" then
+        profile.frameControlsDirection = defaults.frameControlsDirection
+    end
     profile.preferCurrentSpecMainStat = profile.preferCurrentSpecMainStat == true
     profile.specProfiles = profile.specProfiles or {}
     profile.point = profile.point or defaults.point
