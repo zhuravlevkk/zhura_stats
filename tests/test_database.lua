@@ -59,7 +59,7 @@ describe("Database", function()
 
       Addon:MigrateProfile(profile)
 
-      assert.are.equal(5, profile.statsMigrationVersion)
+      assert.are.equal(6, profile.statsMigrationVersion)
       assert.are.equal("GOLD", profile.stats[1].key)
       assert.are.equal("ILVL", profile.stats[2].key)
       assert.are.equal("CRIT", profile.stats[3].key)
@@ -68,14 +68,14 @@ describe("Database", function()
     end)
 
     it("keeps a complete saved custom stat order valid", function()
-      local profile = copy_profile({ statsMigrationVersion = 5 })
+      local profile = copy_profile({ statsMigrationVersion = 6 })
       local original = Addon.DeepCopy(profile.stats)
       profile.stats[1], profile.stats[13] = profile.stats[13], profile.stats[1]
       profile.stats[2], profile.stats[12] = profile.stats[12], profile.stats[2]
 
       Addon:MigrateProfile(profile)
 
-      assert.are.equal(5, profile.statsMigrationVersion)
+      assert.are.equal(6, profile.statsMigrationVersion)
       assert.are.equal(original[13].key, profile.stats[1].key)
       assert.are.equal(original[12].key, profile.stats[2].key)
       assert.are.equal(original[1].key, profile.stats[13].key)
