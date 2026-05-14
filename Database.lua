@@ -136,18 +136,28 @@ function Addon:MigrateProfile(profile)
         if type(stats) ~= "table" then
             return false
         end
+        if #stats ~= #statKeys then
+            return false
+        end
+        local seen = {}
         for i = 1, #statKeys do
             local entry = stats[i]
             if type(entry) ~= "table" then
                 return false
             end
-            if entry.key ~= statKeys[i] then
+            if type(entry.key) ~= "string" or not statDefinitions[entry.key] or seen[entry.key] then
                 return false
             end
+            seen[entry.key] = true
             if entry.enabled == nil then
                 return false
             end
             if type(entry.color) ~= "table" then
+                return false
+            end
+        end
+        for _, key in ipairs(statKeys) do
+            if not seen[key] then
                 return false
             end
         end
@@ -158,6 +168,8 @@ function Addon:MigrateProfile(profile)
         local oldStats = type(profile.stats) == "table" and profile.stats or nil
         local oldByKey = {}
         local oldPriorityByKey = {}
+        local oldOrder = {}
+        local oldOrderSeen = {}
 
         for index = 1, #statKeys do
             local entry = oldStats and oldStats[index] or nil
@@ -183,6 +195,10 @@ function Addon:MigrateProfile(profile)
                     oldByKey[key] = entry
                     oldPriorityByKey[key] = priority
                 end
+                if not oldOrderSeen[key] then
+                    table.insert(oldOrder, key)
+                    oldOrderSeen[key] = true
+                end
             end
         end
 
@@ -203,13 +219,24 @@ function Addon:MigrateProfile(profile)
                         oldByKey[key] = entry
                         oldPriorityByKey[key] = priority
                     end
+                    if not oldOrderSeen[key] then
+                        table.insert(oldOrder, key)
+                        oldOrderSeen[key] = true
+                    end
                 end
             end
         end
 
+        for _, key in ipairs(statKeys) do
+            if not oldOrderSeen[key] then
+                table.insert(oldOrder, key)
+                oldOrderSeen[key] = true
+            end
+        end
+
         local migrated = {}
-        for i = 1, #statKeys do
-            local key = statKeys[i]
+        for i = 1, #oldOrder do
+            local key = oldOrder[i]
             local oldEntry = oldByKey[key]
 
             local enabled
