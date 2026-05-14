@@ -48,6 +48,40 @@ describe("Database", function()
       end
     end)
 
+    it("preserves custom stat order during migration", function()
+      local profile = copy_profile({ statsMigrationVersion = 0 })
+      profile.stats = {
+        { key = "GOLD", enabled = true, color = { 1, 0.82, 0 } },
+        { key = "ILVL", enabled = true, color = { 1, 1, 1 } },
+        { key = "CRIT", enabled = true, color = { 1, 0, 0 } },
+        { key = "HASTE", enabled = true, color = { 0, 1, 0 } },
+      }
+
+      Addon:MigrateProfile(profile)
+
+      assert.are.equal(6, profile.statsMigrationVersion)
+      assert.are.equal("GOLD", profile.stats[1].key)
+      assert.are.equal("ILVL", profile.stats[2].key)
+      assert.are.equal("CRIT", profile.stats[3].key)
+      assert.are.equal("HASTE", profile.stats[4].key)
+      assert.are.equal(#Addon.Constants.STAT_KEYS, #profile.stats)
+    end)
+
+    it("keeps a complete saved custom stat order valid", function()
+      local profile = copy_profile({ statsMigrationVersion = 6 })
+      local original = Addon.DeepCopy(profile.stats)
+      profile.stats[1], profile.stats[13] = profile.stats[13], profile.stats[1]
+      profile.stats[2], profile.stats[12] = profile.stats[12], profile.stats[2]
+
+      Addon:MigrateProfile(profile)
+
+      assert.are.equal(6, profile.statsMigrationVersion)
+      assert.are.equal(original[13].key, profile.stats[1].key)
+      assert.are.equal(original[12].key, profile.stats[2].key)
+      assert.are.equal(original[1].key, profile.stats[13].key)
+      assert.are.equal(original[2].key, profile.stats[12].key)
+    end)
+
     it("maps legacy showDiminishingReturns true to drDisplayMode penalty", function()
       local profile = copy_profile({
         statsMigrationVersion = 0,
