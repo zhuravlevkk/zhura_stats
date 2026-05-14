@@ -40,6 +40,8 @@ local function BuildLayoutSignature(addon, profile, defaults, fontSize, textAlig
         tostring(profile.rowsPerColumn or defaults.rowsPerColumn),
         tostring(profile.rowGap or defaults.rowGap),
         tostring(profile.columnGap or defaults.columnGap),
+        tostring(profile.frameControlsPosition or defaults.frameControlsPosition),
+        tostring(profile.frameControlsDirection or defaults.frameControlsDirection),
         tostring(#visibleStats),
         tostring(profile.referenceDisplay or defaults.referenceDisplay or "inline"),
         tostring(addon:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual")),
@@ -224,9 +226,16 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
     local rowHeight = math.max(maxLineHeight, fontSize)
     local rowGap = math.max(0, math.floor(profile.rowGap or defaults.rowGap or 0))
     local columnGap = math.max(0, math.floor(profile.columnGap or defaults.columnGap or 0))
+    local controlsPosition = profile.frameControlsPosition or defaults.frameControlsPosition or "BOTTOM"
+    local controlsOnLeft = controlsPosition == "LEFT"
+    local controlsOnRight = controlsPosition == "RIGHT"
+    local controlsOnTop = controlsPosition == "TOP"
+    local controlsOnBottom = not controlsOnLeft and not controlsOnRight and not controlsOnTop
     local rows = {}
     local itemIndex = 1
-    local currentXOffset = LAYOUT.leftPadding
+    local contentX = LAYOUT.leftPadding + (controlsOnLeft and (controlsWidth + controlsGap) or 0)
+    local contentY = LAYOUT.topPadding + (controlsOnTop and (controlsHeight + controlsGap) or 0)
+    local currentXOffset = contentX
 
     for columnIndex = 1, actualColumns do
         local rowCount = columnItemCounts[columnIndex] or 0
@@ -238,7 +247,7 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
                     index = itemIndex,
                     measured = measured,
                     x = currentXOffset,
-                    y = LAYOUT.topPadding + (rowIndex - 1) * (rowHeight + rowGap),
+                    y = contentY + (rowIndex - 1) * (rowHeight + rowGap),
                     width = columnWidth,
                     height = rowHeight,
                 })
@@ -264,14 +273,34 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
         contentHeight = maxRows * rowHeight + math.max(0, maxRows - 1) * rowGap
     end
 
-    local controlsYOffset = LAYOUT.topPadding + contentHeight + controlsGap
-    local frameContentWidth = math.max(contentWidth, reservedContentWidth, controlsWidth)
-    local frameContentHeight = contentHeight + controlsGap + controlsHeight
+    local contentAreaWidth = math.max(contentWidth, reservedContentWidth)
+    local controlsX = LAYOUT.leftPadding
+    local controlsY = LAYOUT.topPadding
+    local frameContentWidth
+    local frameContentHeight
+
+    if controlsOnLeft then
+        frameContentWidth = controlsWidth + controlsGap + contentAreaWidth
+    elseif controlsOnRight then
+        controlsX = LAYOUT.leftPadding + contentAreaWidth + controlsGap
+        frameContentWidth = contentAreaWidth + controlsGap + controlsWidth
+    else
+        frameContentWidth = math.max(contentAreaWidth, controlsWidth)
+    end
+
+    if controlsOnTop then
+        frameContentHeight = controlsHeight + controlsGap + contentHeight
+    elseif controlsOnBottom then
+        controlsY = LAYOUT.topPadding + contentHeight + controlsGap
+        frameContentHeight = contentHeight + controlsGap + controlsHeight
+    else
+        frameContentHeight = math.max(contentHeight, controlsHeight)
+    end
 
     return {
         rows = rows,
-        controlsX = LAYOUT.leftPadding,
-        controlsY = controlsYOffset,
+        controlsX = controlsX,
+        controlsY = controlsY,
         frameWidth = math.max(LAYOUT.minFrameSize, math.ceil(frameContentWidth) + LAYOUT.leftPadding + LAYOUT.rightPadding),
         frameHeight = math.max(LAYOUT.minFrameSize, math.ceil(LAYOUT.topPadding + frameContentHeight + LAYOUT.bottomPadding)),
     }

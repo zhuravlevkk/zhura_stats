@@ -29,6 +29,8 @@ local STAT_KEYS = {
 
 local TEXT_ALIGN_OPTIONS = { "LEFT", "CENTER", "RIGHT" }
 local GOLD_SEPARATOR_OPTIONS = { " ", ",", ".", "'", "_" }
+local FRAME_CONTROLS_POSITION_OPTIONS = { "BOTTOM", "TOP", "LEFT", "RIGHT" }
+local FRAME_CONTROLS_DIRECTION_OPTIONS = { "HORIZONTAL", "VERTICAL" }
 
 local defaults = {
     useSpecProfiles = false,
@@ -51,6 +53,8 @@ local defaults = {
     goldSeparator = " ",
     locked = false,
     showLockOnHover = false,
+    frameControlsPosition = "BOTTOM",
+    frameControlsDirection = "HORIZONTAL",
     preferCurrentSpecMainStat = false,
     statPriorityMode = "manual",
     referenceDisplay = "inline",
@@ -80,6 +84,8 @@ Addon.Constants.PRIMARY_STAT_KEY_BY_ID = PRIMARY_STAT_KEY_BY_ID
 Addon.Constants.STAT_KEYS = STAT_KEYS
 Addon.Constants.TEXT_ALIGN_OPTIONS = TEXT_ALIGN_OPTIONS
 Addon.Constants.GOLD_SEPARATOR_OPTIONS = GOLD_SEPARATOR_OPTIONS
+Addon.Constants.FRAME_CONTROLS_POSITION_OPTIONS = FRAME_CONTROLS_POSITION_OPTIONS
+Addon.Constants.FRAME_CONTROLS_DIRECTION_OPTIONS = FRAME_CONTROLS_DIRECTION_OPTIONS
 
 Addon.Defaults = Addon.Defaults or {}
 Addon.Defaults.profile = defaults

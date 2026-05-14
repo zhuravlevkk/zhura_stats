@@ -196,6 +196,21 @@ describe("Format", function()
       assert.is_true(out:find(label, 1, true) ~= nil)
     end)
 
+    it("uses stat name override when labels are shown", function()
+      local p = Addon._test_profile
+      p.showLabels = true
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 2
+      p.drDisplayMode = "off"
+      p.stats = {
+        { key = "CRIT", nameOverride = "Boom" },
+      }
+      local out = Addon:FormatStatValue("CRIT", { value = 12.34, rating = 400 }, p, Addon.StatDefinitions.CRIT)
+      assert.is_true(out:find("Boom", 1, true) == 1)
+      assert.is_nil(out:find("Crit", 1, true))
+    end)
+
     it("with showValues false and showPercent false output has no digits", function()
       local p = Addon._test_profile
       p.showLabels = true
