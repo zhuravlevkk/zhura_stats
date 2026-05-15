@@ -11,6 +11,10 @@ function UnitStat(unit, index)
   return 0, 0
 end
 
+function issecretvalue(value)
+  return type(value) == "table" and value.__secret == true
+end
+
 function GetCombatRating(ratingIndex)
   return 0
 end
@@ -130,6 +134,7 @@ package.preload["LocaleData_enUS"] = function()
 end
 
 register_preload("Locale", "Locale.lua", { "Defaults", "LocaleData_enUS" })
+register_preload("Stats", "Stats.lua", nil)
 
 package.preload["Format"] = function()
   require("Defaults")

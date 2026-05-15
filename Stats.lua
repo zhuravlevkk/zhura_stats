@@ -44,6 +44,9 @@ local function IsSecret(value)
 end
 
 local function AsNumber(value)
+    if IsSecret(value) then
+        return nil
+    end
     if type(value) ~= "number" then
         return nil
     end

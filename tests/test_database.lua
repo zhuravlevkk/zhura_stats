@@ -36,6 +36,34 @@ describe("Database", function()
     end)
   end)
 
+  describe("GetCurrentPrimaryStatKey", function()
+    it("keeps the last valid primary stat when specialization info is temporarily unavailable", function()
+      local oldGetSpecialization = _G.GetSpecialization
+      local oldGetSpecializationInfo = _G.GetSpecializationInfo
+
+      _G.GetSpecialization = function()
+        return 1
+      end
+      _G.GetSpecializationInfo = function(index)
+        return 63, "Fire", "", "", "DAMAGER", 2
+      end
+      assert.are.equal("AGI", Addon:GetCurrentPrimaryStatKey())
+
+      _G.GetSpecializationInfo = function(index)
+        return 63, "Fire", "", "", "DAMAGER", nil
+      end
+      assert.are.equal("AGI", Addon:GetCurrentPrimaryStatKey())
+
+      _G.GetSpecializationInfo = function(index)
+        error("specialization info unavailable")
+      end
+      assert.are.equal("AGI", Addon:GetCurrentPrimaryStatKey())
+
+      _G.GetSpecialization = oldGetSpecialization
+      _G.GetSpecializationInfo = oldGetSpecializationInfo
+    end)
+  end)
+
   describe("MigrateProfile", function()
     it("sets statsMigrationVersion and preserves stat keys order", function()
       local profile = copy_profile({ statsMigrationVersion = 0 })

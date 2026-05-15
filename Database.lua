@@ -10,6 +10,7 @@ local AceDB = LibStub and LibStub("AceDB-3.0", true)
 local db
 local profileStateChangeCounter = 0
 local newProfileInitCounter = 0
+local cachedPrimaryStatKey = nil
 local STATS_MIGRATION_VERSION = 6
 local PRIMARY_STATS = {
     STR = true,
@@ -60,16 +61,16 @@ function Addon:GetCurrentPrimaryStatKey()
     local constants = self.Constants
     local primaryStatKeyById = constants and constants.PRIMARY_STAT_KEY_BY_ID
     if type(primaryStatKeyById) ~= "table" then
-        return nil
+        return cachedPrimaryStatKey
     end
 
     if type(GetSpecialization) ~= "function" or type(GetSpecializationInfo) ~= "function" then
-        return nil
+        return cachedPrimaryStatKey
     end
 
     local okSpec, specIndex = pcall(GetSpecialization)
     if not okSpec or type(specIndex) ~= "number" then
-        return nil
+        return cachedPrimaryStatKey
     end
 
     -- pcall returns ok first, then GetSpecializationInfo values:
@@ -77,10 +78,14 @@ function Addon:GetCurrentPrimaryStatKey()
     -- Therefore primaryStat is the variable after five ignored return values.
     local okInfo, _, _, _, _, _, primaryStat = pcall(GetSpecializationInfo, specIndex)
     if not okInfo then
-        return nil
+        return cachedPrimaryStatKey
     end
 
-    return primaryStatKeyById[primaryStat]
+    local primaryStatKey = primaryStatKeyById[primaryStat]
+    if primaryStatKey then
+        cachedPrimaryStatKey = primaryStatKey
+    end
+    return cachedPrimaryStatKey
 end
 
 function Addon:InitializePrimaryStatForProfile(profile)
