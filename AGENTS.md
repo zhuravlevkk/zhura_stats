@@ -269,6 +269,9 @@ The stats frame must feel anchored and predictable during live stat updates.
 ## Testing Checklist (MANDATORY)
 
 After ANY change:
+* Run automated tests via `.\scripts\run-tests.ps1 tests --verbose`
+* Run Lua syntax check via `.\scripts\check-lua-syntax.ps1`
+* Run luacheck via `.\scripts\run-luacheck.ps1`
 * Deploy addon to the game folder with addons (if possible)
 * `/reload` → no Lua errors
 * Frame appears
@@ -305,6 +308,11 @@ After deploy, reload the game UI with `/reload`.
 ### Iteration Routine (MANDATORY)
 
 After each implementation iteration (even small patches):
+* Run tests via `.\scripts\run-tests.ps1 tests --verbose`
+  * Do NOT run bare `busted` on Windows. The installed shim may be a Lua script without a file extension, which causes Windows to open an "choose an app" dialog instead of executing tests.
+* Run syntax and lint checks:
+  * `.\scripts\check-lua-syntax.ps1`
+  * `.\scripts\run-luacheck.ps1`
 * Deploy addon locally via `scripts/deploy-local.ps1`
 * Regenerate review diff file from the repo root: `cmd /c "git diff > temp-review.diff"` (Windows). This preserves UTF-8 from Git; avoid `git diff | Out-File` in PowerShell, which corrupts non-ASCII strings in locale diffs. On Unix shells, `git diff > temp-review.diff` is sufficient.
 
