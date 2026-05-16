@@ -99,6 +99,19 @@ local function MakeResult(key, value, rating, ratingBonus, extra)
     return result
 end
 
+local function SumKnownNumbers(...)
+    local total = 0
+    local hasValue = false
+    for index = 1, select("#", ...) do
+        local value = select(index, ...)
+        if value ~= nil then
+            total = total + value
+            hasValue = true
+        end
+    end
+    return hasValue and total or nil
+end
+
 function Stats.ReverseDR(ratingBonus)
     ratingBonus = AsNumber(ratingBonus) or 0
     if ratingBonus <= 0 then return 0 end
@@ -217,16 +230,16 @@ local function ReadVersatility()
     -- GetVersatilityBonus returns bonus % from passives/talents/auras (on top of rating)
     local passiveBonus = CallNumber(function()
         return GetVersatilityBonus and GetVersatilityBonus(ratingId) or 0
-    end) or 0
-    local value = (ratingBonus or 0) + passiveBonus
+    end)
+    local value = SumKnownNumbers(ratingBonus, passiveBonus)
 
     local mitigationRatingBonus = mitigationRatingId and CallNumber(function()
         return GetCombatRatingBonus(mitigationRatingId)
     end)
     local mitigationPassiveBonus = CallNumber(function()
         return GetVersatilityBonus and GetVersatilityBonus(mitigationRatingId) or 0
-    end) or 0
-    local mitigationValue = (mitigationRatingBonus or 0) + mitigationPassiveBonus
+    end)
+    local mitigationValue = SumKnownNumbers(mitigationRatingBonus, mitigationPassiveBonus)
 
     return MakeResult("VERS", value, rating, ratingBonus, {
         mitigation = mitigationValue,
@@ -258,7 +271,7 @@ end
 
 local function GetMovementSpeedPercent()
     if not GetUnitSpeed then
-        return 0
+        return nil
     end
 
     local currentSpeed, runSpeed, flightSpeed, swimSpeed = GetUnitSpeed("player")
@@ -277,7 +290,7 @@ local function GetMovementSpeedPercent()
     end
 
     if type(speed) ~= "number" or speed <= 0 then
-        return 0
+        return nil
     end
 
     return (speed / 7) * 100
@@ -305,7 +318,7 @@ end
 
 local function ReadItemLevel()
     local _, equippedLevel = GetAverageItemLevel()
-    return MakeResult("ILVL", AsNumber(equippedLevel) or 0)
+    return MakeResult("ILVL", AsNumber(equippedLevel))
 end
 
 local function ReadGold()
