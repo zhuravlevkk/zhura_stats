@@ -2,19 +2,25 @@
 
 Functions whose return value becomes a **Secret** under the given condition. In tainted addon code you must call `issecretvalue(v)` before any comparison, arithmetic, or table-index on the result -- otherwise the game raises a Lua error.
 
+Predicate descriptions come from `SecretPredicatesDocumentation.lua`. See also `ADDON-RESTRICTIONS.md` for restriction types such as Challenge Mode (Mythic+).
+
 Total: 286 entries across 20 conditions.
 
 ## `SecretInActivePvPMatch` (2)
 
-- `GetScoreInfo` -- PvpInfo
-- `GetScoreInfoByPlayerGuid` -- PvpInfo
+> Guarded APIs and events produce secret values when PvP match addon restrictions are in effect.
+
+- `GetScoreInfo` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetScoreInfoByPlayerGuid` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretInChatMessagingLockdown` (107)
 
-- `EventGetInvite` -- Calendar
-- `EventGetInviteResponseTime` -- Calendar
-- `GetClubCalendarEvents` -- Calendar
-- `GetDayEvent` -- Calendar
+> Guarded APIs and events produce secret values when encounter, challenge mode, or PvP match addon restrictions are in effect, and when the player is on a communication-restricted map such as a dungeon or raid.
+
+- `EventGetInvite` -- Calendar (`SecretArguments`: AllowedWhenUntainted)
+- `EventGetInviteResponseTime` -- Calendar (`SecretArguments`: AllowedWhenUntainted)
+- `GetClubCalendarEvents` -- Calendar (`SecretArguments`: AllowedWhenUntainted)
+- `GetDayEvent` -- Calendar (`SecretArguments`: AllowedWhenUntainted)
 - `ChatMsgAfk` -- ChatInfo
 - `ChatMsgBn` -- ChatInfo
 - `ChatMsgBnInlineToastAlert` -- ChatInfo
@@ -71,40 +77,40 @@ Total: 286 entries across 20 conditions.
 - `ChatMsgWhisper` -- ChatInfo
 - `ChatMsgWhisperInform` -- ChatInfo
 - `ChatMsgYell` -- ChatInfo
-- `GetChatLineSenderGUID` -- ChatInfo
-- `GetChatLineSenderName` -- ChatInfo
-- `GetChatLineText` -- ChatInfo
-- `GetClubInfo` -- Club
-- `GetClubMembers` -- Club
+- `GetChatLineSenderGUID` -- ChatInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetChatLineSenderName` -- ChatInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetChatLineText` -- ChatInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetClubInfo` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `GetClubMembers` -- Club (`SecretArguments`: AllowedWhenUntainted)
 - `GetInfoFromLastCommunityChatLine` -- Club
-- `GetMemberInfo` -- Club
-- `GetMessageInfo` -- Club
-- `GetMessageRanges` -- Club
-- `GetMessagesBefore` -- Club
-- `GetMessagesInRange` -- Club
-- `GetStreamInfo` -- Club
-- `GetStreams` -- Club
+- `GetMemberInfo` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `GetMessageInfo` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `GetMessageRanges` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `GetMessagesBefore` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `GetMessagesInRange` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `GetStreamInfo` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `GetStreams` -- Club (`SecretArguments`: AllowedWhenUntainted)
 - `GetSubscribedClubs` -- Club
-- `IsBeginningOfStream` -- Club
-- `RequestMoreMessagesBefore` -- Club
+- `IsBeginningOfStream` -- Club (`SecretArguments`: AllowedWhenUntainted)
+- `RequestMoreMessagesBefore` -- Club (`SecretArguments`: AllowedWhenUntainted)
 - `GuildMotd` -- GuildInfo
 - `GetActiveEntryInfo` -- LFGListInfo
-- `GetApplicantInfo` -- LFGListInfo
-- `GetSearchResultInfo` -- LFGListInfo
-- `GetSearchResultLeaderInfo` -- LFGListInfo
-- `GetSearchResultPlayerInfo` -- LFGListInfo
+- `GetApplicantInfo` -- LFGListInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetSearchResultInfo` -- LFGListInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetSearchResultLeaderInfo` -- LFGListInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetSearchResultPlayerInfo` -- LFGListInfo (`SecretArguments`: AllowedWhenUntainted)
 - `ReadyCheck` -- PartyInfo
-- `UnitIsAFK` -- Unit
-- `UnitIsDND` -- Unit
-- `GetChannel` -- VoiceChat
-- `GetChannelForChannelType` -- VoiceChat
-- `GetChannelForCommunityStream` -- VoiceChat
-- `GetMemberGUID` -- VoiceChat
-- `GetMemberID` -- VoiceChat
-- `GetMemberInfo` -- VoiceChat
-- `GetMemberName` -- VoiceChat
-- `IsMemberMutedForAll` -- VoiceChat
-- `IsMemberSilenced` -- VoiceChat
+- `UnitIsAFK` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitIsDND` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `GetChannel` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `GetChannelForChannelType` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `GetChannelForCommunityStream` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `GetMemberGUID` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `GetMemberID` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `GetMemberInfo` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `GetMemberName` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `IsMemberMutedForAll` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
+- `IsMemberSilenced` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)
 - `VoiceChatChannelDisplayNameChanged` -- VoiceChat
 - `VoiceChatChannelMemberActiveStateChanged` -- VoiceChat
 - `VoiceChatChannelMemberAdded` -- VoiceChat
@@ -121,157 +127,181 @@ Total: 286 entries across 20 conditions.
 
 ## `SecretWhenAnchoringSecret` (23)
 
-- `CalculateScreenAreaFromCharacterSpan` -- SimpleFontString
-- `FindCharacterIndexAtCoordinate` -- SimpleFontString
+> Guarded APIs and events produce secret values when an object has secret anchoring information.
+
+- `CalculateScreenAreaFromCharacterSpan` -- SimpleFontString (`SecretArguments`: AllowedWhenUntainted)
+- `FindCharacterIndexAtCoordinate` -- SimpleFontString (`SecretArguments`: AllowedWhenUntainted)
 - `GetNumLines` -- SimpleFontString
 - `GetStringHeight` -- SimpleFontString
 - `GetStringWidth` -- SimpleFontString
 - `GetUnboundedStringWidth` -- SimpleFontString
-- `GetUnboundedStringWidthForText` -- SimpleFontString
+- `GetUnboundedStringWidthForText` -- SimpleFontString (`SecretArguments`: AllowedWhenUntainted)
 - `GetWrappedWidth` -- SimpleFontString
 - `IsTruncated` -- SimpleFontString
 - `GetBottom` -- SimpleScriptRegion
 - `GetCenter` -- SimpleScriptRegion
-- `GetHeight` -- SimpleScriptRegion
+- `GetHeight` -- SimpleScriptRegion (`SecretArguments`: AllowedWhenUntainted)
 - `GetLeft` -- SimpleScriptRegion
 - `GetRect` -- SimpleScriptRegion
 - `GetRight` -- SimpleScriptRegion
 - `GetScaledRect` -- SimpleScriptRegion
-- `GetSize` -- SimpleScriptRegion
+- `GetSize` -- SimpleScriptRegion (`SecretArguments`: AllowedWhenUntainted)
 - `GetTop` -- SimpleScriptRegion
-- `GetWidth` -- SimpleScriptRegion
-- `Intersects` -- SimpleScriptRegion
-- `IsMouseOver` -- SimpleScriptRegion
-- `GetPoint` -- SimpleScriptRegionResizing
-- `GetPointByName` -- SimpleScriptRegionResizing
+- `GetWidth` -- SimpleScriptRegion (`SecretArguments`: AllowedWhenUntainted)
+- `Intersects` -- SimpleScriptRegion (`SecretArguments`: AllowedWhenUntainted)
+- `IsMouseOver` -- SimpleScriptRegion (`SecretArguments`: AllowedWhenUntainted)
+- `GetPoint` -- SimpleScriptRegionResizing (`SecretArguments`: AllowedWhenUntainted)
+- `GetPointByName` -- SimpleScriptRegionResizing (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenCooldownsRestricted` (14)
 
-- `GetActionCharges` -- ActionBarFrame
-- `GetActionCooldown` -- ActionBarFrame
-- `GetActionDisplayCount` -- ActionBarFrame
-- `GetActionLossOfControlCooldownInfo` -- ActionBarFrame
-- `GetActionUseCount` -- ActionBarFrame
-- `GetSpellCastCount` -- Spell
-- `GetSpellCharges` -- Spell
-- `GetSpellCooldown` -- Spell
-- `GetSpellDisplayCount` -- Spell
-- `GetSpellLossOfControlCooldownInfo` -- Spell
-- `GetSpellBookItemCastCount` -- SpellBook
-- `GetSpellBookItemCharges` -- SpellBook
-- `GetSpellBookItemCooldown` -- SpellBook
-- `GetSpellBookItemLossOfControlCooldownInfo` -- SpellBook
+> Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect. Individual spells may be flagged as never or always secret, which takes priority over restrictions.
+
+- `GetActionCharges` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
+- `GetActionCooldown` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
+- `GetActionDisplayCount` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
+- `GetActionLossOfControlCooldownInfo` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
+- `GetActionUseCount` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
+- `GetSpellCastCount` -- Spell (`SecretArguments`: AllowedWhenTainted)
+- `GetSpellCharges` -- Spell (`SecretArguments`: AllowedWhenTainted)
+- `GetSpellCooldown` -- Spell (`SecretArguments`: AllowedWhenTainted)
+- `GetSpellDisplayCount` -- Spell (`SecretArguments`: AllowedWhenUntainted)
+- `GetSpellLossOfControlCooldownInfo` -- Spell (`SecretArguments`: AllowedWhenTainted)
+- `GetSpellBookItemCastCount` -- SpellBook (`SecretArguments`: AllowedWhenUntainted)
+- `GetSpellBookItemCharges` -- SpellBook (`SecretArguments`: AllowedWhenUntainted)
+- `GetSpellBookItemCooldown` -- SpellBook (`SecretArguments`: AllowedWhenUntainted)
+- `GetSpellBookItemLossOfControlCooldownInfo` -- SpellBook (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenCurveSecret` (8)
 
-- `EvaluateElapsedDuration` -- LuaDurationObject
-- `EvaluateElapsedPercent` -- LuaDurationObject
-- `EvaluateRemainingDuration` -- LuaDurationObject
-- `EvaluateRemainingPercent` -- LuaDurationObject
-- `EvaluateTotalDuration` -- LuaDurationObject
-- `UnitHealthPercent` -- Unit
-- `UnitPowerPercent` -- Unit
-- `GetAuraDispelTypeColor` -- UnitAura
+- `EvaluateElapsedDuration` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
+- `EvaluateElapsedPercent` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
+- `EvaluateRemainingDuration` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
+- `EvaluateRemainingPercent` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
+- `EvaluateTotalDuration` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
+- `UnitHealthPercent` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitPowerPercent` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `GetAuraDispelTypeColor` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenEncounterEvent` (2)
 
 - `EncounterTimelineEventAdded` -- EncounterTimeline
-- `GetEventInfo` -- EncounterTimeline
+- `GetEventInfo` -- EncounterTimeline (`SecretArguments`: NotAllowed)
 
 ## `SecretWhenInCombat` (4)
 
-- `GetCombatSessionFromID` -- DamageMeter
-- `GetCombatSessionFromType` -- DamageMeter
-- `GetCombatSessionSourceFromID` -- DamageMeter
-- `GetCombatSessionSourceFromType` -- DamageMeter
+> Guarded APIs and events produce secret values when combat addon restrictions are in effect.
+
+- `GetCombatSessionFromID` -- DamageMeter (`SecretArguments`: AllowedWhenUntainted)
+- `GetCombatSessionFromType` -- DamageMeter (`SecretArguments`: AllowedWhenUntainted)
+- `GetCombatSessionSourceFromID` -- DamageMeter (`SecretArguments`: AllowedWhenUntainted)
+- `GetCombatSessionSourceFromType` -- DamageMeter (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenLossOfControlInfoRestricted` (3)
 
-- `GetActiveLossOfControlDataByUnit` -- LossOfControl
-- `GetArenaCrowdControlInfo` -- PvpInfo
+> Guarded APIs and events produce secret values if the subject unit is not the active player, unless they are an active spectator or commentator of a PvP match.
+
+- `GetActiveLossOfControlDataByUnit` -- LossOfControl (`SecretArguments`: AllowedWhenUntainted)
+- `GetArenaCrowdControlInfo` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
 - `ArenaCrowdControlSpellUpdate` -- Unit
 
 ## `SecretWhenNumericFormatterSecret` (3)
 
-- `FormatElapsedDuration` -- LuaDurationObject
-- `FormatRemainingDuration` -- LuaDurationObject
-- `FormatTotalDuration` -- LuaDurationObject
+- `FormatElapsedDuration` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
+- `FormatRemainingDuration` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
+- `FormatTotalDuration` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenTotemSlotSecret` (2)
 
-- `GetTotemInfo` -- Totem
-- `GetTotemTimeLeft` -- Totem
+> Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect. Individual totem spell auras may be flagged as never or always secret, which takes priority over restrictions.
+
+- `GetTotemInfo` -- Totem (`SecretArguments`: AllowedWhenUntainted)
+- `GetTotemTimeLeft` -- Totem (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenUnitAuraRestricted` (20)
 
-- `GetSpellMaxCumulativeAuraApplications` -- Spell
-- `GetUnitAura` -- TooltipInfo
-- `GetUnitAuraByAuraInstanceID` -- TooltipInfo
-- `GetUnitBuff` -- TooltipInfo
-- `GetUnitBuffByAuraInstanceID` -- TooltipInfo
-- `GetUnitDebuff` -- TooltipInfo
-- `GetUnitDebuffByAuraInstanceID` -- TooltipInfo
-- `DoesAuraHaveExpirationTime` -- UnitAura
-- `GetAuraApplicationDisplayCount` -- UnitAura
-- `GetAuraBaseDuration` -- UnitAura
-- `GetAuraDataByAuraInstanceID` -- UnitAura
-- `GetAuraDataByIndex` -- UnitAura
-- `GetAuraDataBySlot` -- UnitAura
-- `GetAuraDataBySpellName` -- UnitAura
-- `GetAuraDispelTypeColor` -- UnitAura
-- `GetBuffDataByIndex` -- UnitAura
-- `GetDebuffDataByIndex` -- UnitAura
-- `GetPlayerAuraBySpellID` -- UnitAura
-- `GetRefreshExtendedDuration` -- UnitAura
-- `GetUnitAuraBySpellID` -- UnitAura
+> Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect. Individual spells may be flagged as never or always secret, which takes priority over restrictions.
+
+- `GetSpellMaxCumulativeAuraApplications` -- Spell (`SecretArguments`: AllowedWhenTainted)
+- `GetUnitAura` -- TooltipInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitAuraByAuraInstanceID` -- TooltipInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitBuff` -- TooltipInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitBuffByAuraInstanceID` -- TooltipInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitDebuff` -- TooltipInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitDebuffByAuraInstanceID` -- TooltipInfo (`SecretArguments`: AllowedWhenUntainted)
+- `DoesAuraHaveExpirationTime` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetAuraApplicationDisplayCount` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetAuraBaseDuration` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
+- `GetAuraDataByAuraInstanceID` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetAuraDataByIndex` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetAuraDataBySlot` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetAuraDataBySpellName` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetAuraDispelTypeColor` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetBuffDataByIndex` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetDebuffDataByIndex` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
+- `GetPlayerAuraBySpellID` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
+- `GetRefreshExtendedDuration` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
+- `GetUnitAuraBySpellID` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
 
 ## `SecretWhenUnitComparisonRestricted` (1)
 
-- `UnitIsUnit` -- Unit
+> Guarded APIs and events produce secret values based upon supplied unit tokens. Comparisons involving compound unit tokens (eg. 'boss1target') are always secret. This restriction only applies when the player is on an addon-restricted map.
+
+- `UnitIsUnit` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenUnitHealthMaxRestricted` (1)
 
-- `UnitHealthMax` -- Unit
+> Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid.
+
+- `UnitHealthMax` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenUnitIdentityRestricted` (15)
 
-- `GetUnitCriteriaProgressValues` -- ScenarioInfo
+> Guarded APIs and events produce secret values when the unit isn't player-controlled or in the party/raid. For compound tokens (eg. 'boss1target'), results are secret if any unit in the chain fails this.
+
+- `GetUnitCriteriaProgressValues` -- ScenarioInfo (`SecretArguments`: AllowedWhenUntainted)
 - `PartyKill` -- Unit
 - `PlayerSoftInteractChanged` -- Unit
-- `UnitCreatureFamily` -- Unit
-- `UnitCreatureID` -- Unit
-- `UnitCreatureType` -- Unit
+- `UnitCreatureFamily` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitCreatureID` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitCreatureType` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitDied` -- Unit
-- `UnitFullName` -- Unit
-- `UnitGUID` -- Unit
-- `UnitName` -- Unit
-- `UnitNameFromGUID` -- Unit
-- `UnitNameUnmodified` -- Unit
-- `UnitOwnerGUID` -- Unit
-- `UnitPVPName` -- Unit
-- `UnitTokenFromGUID` -- Unit
+- `UnitFullName` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitGUID` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitName` -- Unit (`SecretArguments`: AllowedWhenTainted)
+- `UnitNameFromGUID` -- Unit (`SecretArguments`: AllowedWhenTainted)
+- `UnitNameUnmodified` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitOwnerGUID` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitPVPName` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitTokenFromGUID` -- Unit (`SecretArguments`: AllowedWhenTainted)
 
 ## `SecretWhenUnitPowerMaxRestricted` (1)
 
-- `UnitPowerMax` -- Unit
+> Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid. Individual power types may be flagged as never or always secret, which takes priority.
+
+- `UnitPowerMax` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenUnitPowerRestricted` (7)
 
-- `GetComboPoints` -- Unit
-- `GetUnitChargedPowerPoints` -- Unit
-- `UnitPartialPower` -- Unit
-- `UnitPower` -- Unit
-- `UnitPowerMissing` -- Unit
-- `UnitPowerPercent` -- Unit
+> Guarded APIs and events produce secret values for power types not explicitly flagged as being never secret, unless the subject unit does not have a power of this type.
+
+- `GetComboPoints` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitChargedPowerPoints` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitPartialPower` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitPower` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitPowerMissing` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitPowerPercent` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitPowerPointCharge` -- Unit
 
 ## `SecretWhenUnitSpellCastRestricted` (21)
 
-- `GetUnitEmpowerHoldAtMaxTime` -- Unit
-- `GetUnitEmpowerMinHoldTime` -- Unit
-- `GetUnitEmpowerStageDuration` -- Unit
-- `UnitCastingInfo` -- Unit
-- `UnitChannelInfo` -- Unit
+> Guarded APIs and events produce secret values if the unit being queried for cast information is not the player or their pet. Individual spells may be flagged as never or always secret, which takes priority.
+
+- `GetUnitEmpowerHoldAtMaxTime` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitEmpowerMinHoldTime` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `GetUnitEmpowerStageDuration` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitCastingInfo` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitChannelInfo` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitSpellcastChannelStart` -- Unit
 - `UnitSpellcastChannelStop` -- Unit
 - `UnitSpellcastChannelUpdate` -- Unit
@@ -291,11 +321,15 @@ Total: 286 entries across 20 conditions.
 
 ## `SecretWhenUnitStatsRestricted` (50)
 
-- `GetAttackPowerForStat` -- PlayerScript
+> Guarded APIs and events produce secret values when access to unit auras would generally produce secret values.
+
+> **Related:** `SecretWhenUnitAuraRestricted`: Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect. Individual spells may be flagged as never or always secret, which takes priority over restrictions.
+
+- `GetAttackPowerForStat` -- PlayerScript (`SecretArguments`: AllowedWhenUntainted)
 - `GetAvoidance` -- PlayerScript
 - `GetBlockChance` -- PlayerScript
-- `GetCombatRating` -- PlayerScript
-- `GetCombatRatingBonus` -- PlayerScript
+- `GetCombatRating` -- PlayerScript (`SecretArguments`: AllowedWhenUntainted)
+- `GetCombatRatingBonus` -- PlayerScript (`SecretArguments`: AllowedWhenUntainted)
 - `GetCritChance` -- PlayerScript
 - `GetDodgeChance` -- PlayerScript
 - `GetDodgeChanceFromAttribute` -- PlayerScript
@@ -316,39 +350,43 @@ Total: 286 entries across 20 conditions.
 - `GetPetMeleeHaste` -- PlayerScript
 - `GetPetSpellBonusDamage` -- PlayerScript
 - `GetPowerRegen` -- PlayerScript
-- `GetPowerRegenForPowerType` -- PlayerScript
+- `GetPowerRegenForPowerType` -- PlayerScript (`SecretArguments`: AllowedWhenUntainted)
 - `GetPvpPowerDamage` -- PlayerScript
 - `GetPvpPowerHealing` -- PlayerScript
 - `GetRangedCritChance` -- PlayerScript
 - `GetRangedHaste` -- PlayerScript
 - `GetShieldBlock` -- PlayerScript
 - `GetSpeed` -- PlayerScript
-- `GetSpellBonusDamage` -- PlayerScript
+- `GetSpellBonusDamage` -- PlayerScript (`SecretArguments`: AllowedWhenUntainted)
 - `GetSpellBonusHealing` -- PlayerScript
 - `GetSpellCritChance` -- PlayerScript
 - `GetSpellHitModifier` -- PlayerScript
 - `GetSpellPenetration` -- PlayerScript
 - `GetSturdiness` -- PlayerScript
-- `GetVersatilityBonus` -- PlayerScript
+- `GetVersatilityBonus` -- PlayerScript (`SecretArguments`: AllowedWhenUntainted)
 - `PlayerEffectiveAttackPower` -- PlayerScript
-- `GetUnitSpeed` -- Unit
-- `UnitArmor` -- Unit
-- `UnitAttackPower` -- Unit
-- `UnitAttackSpeed` -- Unit
-- `UnitDamage` -- Unit
-- `UnitRangedAttackPower` -- Unit
-- `UnitRangedDamage` -- Unit
-- `UnitSpellHaste` -- Unit
-- `UnitStat` -- Unit
-- `UnitWeaponAttackPower` -- Unit
+- `GetUnitSpeed` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitArmor` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitAttackPower` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitAttackSpeed` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitDamage` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitRangedAttackPower` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitRangedDamage` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitSpellHaste` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitStat` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitWeaponAttackPower` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenUnitThreatStateRestricted` (2)
 
-- `UnitThreatLeadSituation` -- Unit
-- `UnitThreatSituation` -- Unit
+> Guarded APIs and events produce secret values based upon supplied unit tokens. Queries where only one unit token is specified, or where one unit token is the player, their pet, or an ally while the other is a nameplate, boss, target, etc., are generally not secret.
+
+- `UnitThreatLeadSituation` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitThreatSituation` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenUnitThreatValuesRestricted` (2)
 
-- `UnitDetailedThreatSituation` -- Unit
-- `UnitThreatPercentageOfLead` -- Unit
+> Guarded APIs and events produce secret values based upon supplied unit tokens. Queries where only one unit token is specified, or where one unit token is the player, their pet, or an ally while the other is a non-boss or nameplate target, are generally not secret.
+
+- `UnitDetailedThreatSituation` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitThreatPercentageOfLead` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 

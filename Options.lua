@@ -809,6 +809,9 @@ function Addon:RefreshLocalizedUI()
     if controlRefs.referenceDisplayHint then
         controlRefs.referenceDisplayHint:SetText(self:S("NE_STATS_REFERENCE_MODE_HINT"))
     end
+    if controlRefs.combatRestrictionHint then
+        controlRefs.combatRestrictionHint:SetText(self:S("NE_STATS_COMBAT_RESTRICTION_HINT"))
+    end
     if controlRefs.priorityHint then
         controlRefs.priorityHint:SetText(self:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"))
     end
@@ -1303,6 +1306,16 @@ local function BuildStatsPage(content, addonName, statKeys)
 
     local card = CreateCard(page, "Stats", FORM_Y)
 
+    local hintWidth = PAGE_WIDTH - (FORM_X * 2) - (LABEL_X * 2)
+
+    local combatRestrictionHint = CreateLabel(card, Addon:S("NE_STATS_COMBAT_RESTRICTION_HINT"), "GameFontDisableSmall")
+    BindLocalizedText(combatRestrictionHint, "NE_STATS_COMBAT_RESTRICTION_HINT")
+    combatRestrictionHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+    combatRestrictionHint:SetWidth(hintWidth)
+    combatRestrictionHint:SetJustifyH("LEFT")
+    controlRefs.combatRestrictionHint = combatRestrictionHint
+    card:Advance(FORM_ROW_H)
+
     local priorityDropDown = CreateDropDown(card, addonName .. "PriorityModeDropDown", 220, function()
         local items = {}
         for _, option in ipairs(PRIORITY_MODE_OPTIONS) do
@@ -1335,7 +1348,6 @@ local function BuildStatsPage(content, addonName, statKeys)
     card:AddCheckboxRow(preferCurrentSpecMainStatCheckbox)
     controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
 
-    local hintWidth = PAGE_WIDTH - (FORM_X * 2) - (LABEL_X * 2)
     preferCurrentSpecMainStatCheckbox.label:SetWidth(hintWidth - 30)
 
     local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontDisableSmall")

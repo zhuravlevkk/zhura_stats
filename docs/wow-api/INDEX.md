@@ -1,6 +1,6 @@
 # WoW API Index (build 12.0.5.67823)
 
-Generated from a `wow-ui-source` clone on 2026-05-30 10:54 UTC.
+Generated from a `wow-ui-source` clone on 2026-05-30 13:40 UTC.
 Systems: 567 | Functions/events: 9866 | Conditionally-secret entries: 286
 
 Regenerate with `python scripts/gen_api_index.py`.
@@ -8,8 +8,11 @@ Regenerate with `python scripts/gen_api_index.py`.
 ## How to use this
 
 - Find a function: search this file or `api-index.json` for its name.
-- The **system** maps to `Blizzard_APIDocumentationGenerated/<System>Documentation.lua` in the clone -- open that file for full Arguments/Returns signatures.
-- If an entry appears in `SECRET-VALUES.md`, its return becomes a Secret value under the listed condition. Guard with `issecretvalue()` before comparing, doing arithmetic, or using it as a table key.
+- The **system** maps to `Blizzard_APIDocumentationGenerated/<System>Documentation.lua` in the clone -- open that file only when you need more than the digest provides.
+- **`SECRET-VALUES.md`** -- functions whose return becomes Secret, grouped by condition, with Blizzard predicate descriptions.
+- **`ADDON-RESTRICTIONS.md`** -- `AddOnRestrictionType` / `AddOnRestrictionState` enums and key restriction events/APIs.
+- **`api-index.json`** -- machine-readable digest including predicate docs, restriction enums, and Arguments/Returns signatures.
+- If an entry appears in `SECRET-VALUES.md`, guard with `issecretvalue()` before comparing, doing arithmetic, or using it as a table key.
 
 ## Systems
 

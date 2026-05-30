@@ -323,13 +323,26 @@ After each implementation iteration (even small patches):
 A generated, patch-accurate API index lives in `docs/wow-api/`. Use it instead
 of guessing function signatures or whether a value is Secret.
 
+**Use the generated digest in `docs/wow-api/`** — built from `wow-ui-source` by
+`scripts/gen_api_index.py`. For WoW API questions and code changes, check the
+digest first; do not guess from memory or training data. **Do not open the
+`wow-ui-source` clone when the digest is sufficient.**
+
+Open the clone only when the digest is not enough: stale build (mismatch with
+`wow-ui-source/version.txt`), or non-API Blizzard UI behavior. Path:
+`C:\dev\wow-ui-source\Interface\AddOns\Blizzard_APIDocumentationGenerated\`.
+
 * **`docs/wow-api/INDEX.md`** — all systems with function counts; each maps to
   `<System>Documentation.lua` in the local `wow-ui-source` clone
   (`C:\dev\wow-ui-source\Interface\AddOns\Blizzard_APIDocumentationGenerated`).
 * **`docs/wow-api/SECRET-VALUES.md`** — every function whose return becomes a
-  **Secret** value, grouped by the condition that triggers it. THIS IS THE
-  IMPORTANT ONE for this addon.
-* **`docs/wow-api/api-index.json`** — machine-readable version for grep/scripts.
+  **Secret** value, grouped by condition, with Blizzard predicate descriptions.
+  THIS IS THE IMPORTANT ONE for this addon.
+* **`docs/wow-api/ADDON-RESTRICTIONS.md`** — `AddOnRestrictionType` /
+  `AddOnRestrictionState` enums (e.g. Challenge Mode = 2) and key restriction
+  APIs/events.
+* **`docs/wow-api/api-index.json`** — machine-readable digest: secret flags,
+  predicate docs, restriction enums, and Arguments/Returns signatures.
 
 ### Rules when touching API calls
 
@@ -337,8 +350,9 @@ of guessing function signatures or whether a value is Secret.
   `SECRET-VALUES.md`. If it is listed under `SecretWhenUnitStatsRestricted`
   (e.g. `UnitStat`, `GetCombatRating`, `GetCombatRatingBonus`, `GetHaste`,
   `GetCritChance`, `GetMasteryEffect`, `GetUnitSpeed`, `GetAvoidance`,
-  `GetParryChance`, `GetDodgeChance`, `GetLifesteal`), its return is Secret in
-  combat / encounter / Mythic+ / PvP.
+  `GetParryChance`, `GetDodgeChance`, `GetLifesteal`), its return is Secret when
+  combat, encounter, challenge mode (M+), or PvP restrictions are active — see
+  the predicate notes in `SECRET-VALUES.md` and `ADDON-RESTRICTIONS.md`.
 * NEVER compare, do arithmetic on, or use as a table key a value that may be
   Secret without first calling `issecretvalue(v)`. Doing so raises a Lua error.
   Route every such value through the existing `IsSecret` / `AsNumber` /
