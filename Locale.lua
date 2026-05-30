@@ -82,29 +82,29 @@ end
 
 function Addon:GetLocaleDisplayName(localeCode)
     if localeCode == CLIENT_LANGUAGE_VALUE then
-        return string.format("%s (%s)", self:S("Client language"), LOCALE_DISPLAY_NAMES[CLIENT_LOCALE] or CLIENT_LOCALE)
+        return string.format("%s (%s)", self:S("NE_STATS_CLIENT_LANGUAGE"), LOCALE_DISPLAY_NAMES[CLIENT_LOCALE] or CLIENT_LOCALE)
     end
     return LOCALE_DISPLAY_NAMES[localeCode] or localeCode
 end
 
 function Addon:GetTextAlignDisplayName(value)
-    if value == "CENTER" then return self:S("Center") end
-    if value == "RIGHT" then return self:S("Right") end
-    return self:S("Left")
+    if value == "CENTER" then return self:S("NE_STATS_ALIGN_CENTER") end
+    if value == "RIGHT" then return self:S("NE_STATS_ALIGN_RIGHT") end
+    return self:S("NE_STATS_ALIGN_LEFT")
 end
 
 function Addon:GetGoldSeparatorDisplayName(value)
-    if value == " " then return self:S("Space") end
-    if value == "," then return self:S("Comma") end
-    if value == "." then return self:S("Dot") end
-    if value == "'" then return self:S("Apostrophe") end
-    if value == "_" then return self:S("Underscore") end
+    if value == " " then return self:S("NE_STATS_GOLD_SEP_SPACE") end
+    if value == "," then return self:S("NE_STATS_GOLD_SEP_COMMA") end
+    if value == "." then return self:S("NE_STATS_GOLD_SEP_DOT") end
+    if value == "'" then return self:S("NE_STATS_GOLD_SEP_APOSTROPHE") end
+    if value == "_" then return self:S("NE_STATS_GOLD_SEP_UNDERSCORE") end
     return tostring(value or " ")
 end
 
 function Addon:GetDisplayProfileName(profileName)
     if profileName == "Default" then
-        return self:S("Default")
+        return self:S("NE_STATS_DEFAULT")
     end
     return profileName
 end

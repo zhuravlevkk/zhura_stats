@@ -19,6 +19,7 @@ globals = {
 
 -- WoW API and libraries used across modules (CI runs luacheck on all root *.lua).
 read_globals = {
+   "C_ChallengeMode",
    "C_ClassTalents",
    "C_Timer",
    "C_UnitAuras",
@@ -50,6 +51,7 @@ read_globals = {
    "GetCombatRating",
    "GetCombatRatingBonus",
    "GetCritChance",
+   "GetCursorPosition",
    "GetDodgeChance",
    "GetHaste",
    "GetInventoryItemDurability",
@@ -72,6 +74,7 @@ read_globals = {
    "InterfaceOptionsFrame_OpenToCategory",
    "issecretvalue",
    "LibStub",
+   "MinimalSliderWithSteppersMixin",
    "Settings",
    "STANDARD_TEXT_FONT",
    "STATICPOPUP_NUMDIALOGS",

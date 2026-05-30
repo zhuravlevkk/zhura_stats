@@ -7,6 +7,8 @@ local Addon = ns.ZhuraStats
 local MIN_DYNAMIC_FONT_SIZE = 8
 local combatStatRefreshHandle
 local COMBAT_STAT_REFRESH_SEC = 0.35
+-- Row brightness multiplier for stale / snapshot values (not live).
+local STALE_DIM_FACTOR = 0.70
 local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
 local stableLayoutSignature = nil
@@ -342,6 +344,13 @@ local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlay
             if (profile.drDisplayMode or "off") ~= "off" and measured.drPenalty then
                 lineR, lineG, lineB = addon:GetDRColor(measured.entry.color, measured.drPenalty)
             end
+            -- Dim the whole row when the value isn't live (Secret in
+            -- combat/M+/encounter/PvP), so a stale snapshot reads as
+            -- "last known", not a current number.
+            local sr = measured.statResult
+            if sr and (sr.source == "snapshot" or sr.source == "cache" or sr.stale == true) then
+                lineR, lineG, lineB = lineR * STALE_DIM_FACTOR, lineG * STALE_DIM_FACTOR, lineB * STALE_DIM_FACTOR
+            end
             line:SetTextColor(lineR, lineG, lineB, 1)
             line:SetText(measured.text)
             line.statKey = measured.entry.key
@@ -501,7 +510,7 @@ function Addon:RefreshStats()
         if displayError ~= "" and displayError ~= "nil" then
             local now = (GetTime and GetTime()) or 0
             if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 30 then
-                print(self:S("NE Stats: refresh failed: %s", displayError))
+                print(self:S("NE_STATS_REFRESH_FAILED", displayError))
                 lastRefreshErrorMessage = displayError
                 lastRefreshErrorAt = now
             end

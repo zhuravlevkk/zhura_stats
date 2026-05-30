@@ -287,16 +287,25 @@ function Addon:MigrateProfile(profile)
             end
         end
     end
-    profile.alpha = profile.alpha or defaults.alpha
-    profile.scale = profile.scale or defaults.scale
-    profile.fontSize = profile.fontSize or defaults.fontSize
-    profile.fontKey = profile.fontKey or defaults.fontKey
-    profile.columnCount = math.max(1, math.floor(profile.columnCount or defaults.columnCount))
-    profile.rowsPerColumn = math.max(0, math.floor(profile.rowsPerColumn or defaults.rowsPerColumn))
-    profile.rowGap = math.max(0, math.floor(profile.rowGap or defaults.rowGap))
-    profile.columnGap = math.max(0, math.floor(profile.columnGap or defaults.columnGap))
+    -- Coerce numeric fields back to numbers. Guards against profiles corrupted
+    -- by an older bug that stored non-number values into these slider-backed keys.
+    local function CoerceNumber(value, fallback)
+        if type(value) == "number" then
+            return value
+        end
+        return tonumber(value) or fallback
+    end
+
+    profile.alpha = CoerceNumber(profile.alpha, defaults.alpha)
+    profile.scale = CoerceNumber(profile.scale, defaults.scale)
+    profile.fontSize = CoerceNumber(profile.fontSize, defaults.fontSize)
+    profile.fontKey = type(profile.fontKey) == "string" and profile.fontKey or defaults.fontKey
+    profile.columnCount = math.max(1, math.floor(CoerceNumber(profile.columnCount, defaults.columnCount)))
+    profile.rowsPerColumn = math.max(0, math.floor(CoerceNumber(profile.rowsPerColumn, defaults.rowsPerColumn)))
+    profile.rowGap = math.max(0, math.floor(CoerceNumber(profile.rowGap, defaults.rowGap)))
+    profile.columnGap = math.max(0, math.floor(CoerceNumber(profile.columnGap, defaults.columnGap)))
     profile.showPercent = profile.showPercent ~= false
-    profile.percentPrecision = profile.percentPrecision or profile.decimalPrecision or defaults.percentPrecision
+    profile.percentPrecision = CoerceNumber(profile.percentPrecision or profile.decimalPrecision, defaults.percentPrecision)
     if profile.drDisplayMode == nil then
         if profile.showDiminishingReturns == true then
             profile.drDisplayMode = "penalty"
@@ -387,7 +396,27 @@ function Addon:EnsureDatabase()
     end
 
     db.global.addonLocale = db.global.addonLocale or self.Constants.CLIENT_LANGUAGE_VALUE
+    self:WireStatSnapshotStore()
     self:ApplyLocale()
+end
+
+-- Bridges the per-character snapshot table (db.char.statSnapshot, keyed by
+-- spec) into the Stats module so MakeResult can persist and fall back to it.
+function Addon:WireStatSnapshotStore()
+    local Stats = ns.Stats
+    if not Stats or not Stats.SetSnapshotStore or not db or not db.char then
+        return
+    end
+    db.char.statSnapshot = db.char.statSnapshot or {}
+    Stats.SetSnapshotStore(db.char.statSnapshot, function()
+        if type(GetSpecialization) == "function" then
+            local ok, specIndex = pcall(GetSpecialization)
+            if ok and type(specIndex) == "number" and specIndex > 0 then
+                return specIndex
+            end
+        end
+        return "default"
+    end)
 end
 
 function Addon:RestoreMissingProfilesFromBackup()
@@ -497,7 +526,7 @@ function Addon:SelectRootProfile(profileName)
         db:SetProfile(profileName)
     end)
     if not ok then
-        print(self:S("NE Stats: profile could not be applied."))
+        print(self:S("NE_STATS_PROFILE_APPLY_FAILED"))
         return
     end
     if profileStateChangeCounter == callbackStateBefore then
@@ -522,7 +551,7 @@ function Addon:CreateProfile(profileName)
         db:SetProfile(profileName)
     end)
     if not ok then
-        print(self:S("NE Stats: profile could not be created."))
+        print(self:S("NE_STATS_PROFILE_CREATE_FAILED"))
         return "invalid", nil
     end
     if db and db.profile and newProfileInitCounter == newProfileInitStateBefore then

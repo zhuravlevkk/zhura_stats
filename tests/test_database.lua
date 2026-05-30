@@ -256,5 +256,24 @@ describe("Database", function()
       Addon:MigrateProfile(profile)
       assert.is_nil(profile.stats[1].nameOverride)
     end)
+
+    it("coerces string numeric profile fields during migration", function()
+      local profile = copy_profile({
+        statsMigrationVersion = 6,
+        alpha = "0.75",
+        scale = "1.5",
+        fontSize = "14",
+        columnCount = "2",
+        rowGap = "4",
+        percentPrecision = "3",
+      })
+      Addon:MigrateProfile(profile)
+      assert.are.equal(0.75, profile.alpha)
+      assert.are.equal(1.5, profile.scale)
+      assert.are.equal(14, profile.fontSize)
+      assert.are.equal(2, profile.columnCount)
+      assert.are.equal(4, profile.rowGap)
+      assert.are.equal(3, profile.percentPrecision)
+    end)
   end)
 end)

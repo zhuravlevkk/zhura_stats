@@ -8,27 +8,27 @@ local pendingRenameProfileName
 
 function Addon:RefreshStaticPopupTexts()
     if StaticPopupDialogs["NE_STATS_CREATE_PROFILE"] then
-        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].text = self:S("Create a new profile for this account")
-        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].button1 = self:S("Create")
-        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].button2 = self:S("Cancel")
+        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].text = self:S("NE_STATS_CREATE_A_NEW_PROFILE_FOR_THIS_ACCOUNT")
+        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].button1 = self:S("NE_STATS_CREATE")
+        StaticPopupDialogs["NE_STATS_CREATE_PROFILE"].button2 = self:S("NE_STATS_CANCEL")
     end
     if StaticPopupDialogs["NE_STATS_RENAME_PROFILE"] then
-        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].text = self:S("Rename profile %s")
-        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].button1 = self:S("Rename")
-        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].button2 = self:S("Cancel")
+        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].text = self:S("NE_STATS_RENAME_PROFILE_FMT")
+        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].button1 = self:S("NE_STATS_RENAME")
+        StaticPopupDialogs["NE_STATS_RENAME_PROFILE"].button2 = self:S("NE_STATS_CANCEL")
     end
     if StaticPopupDialogs["NE_STATS_DELETE_PROFILE"] then
-        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].text = self:S("Delete profile %s?")
-        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].button1 = self:S("Delete")
-        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].button2 = self:S("Cancel")
+        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].text = self:S("NE_STATS_DELETE_PROFILE_FMT")
+        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].button1 = self:S("NE_STATS_DELETE")
+        StaticPopupDialogs["NE_STATS_DELETE_PROFILE"].button2 = self:S("NE_STATS_CANCEL")
     end
 end
 
 function Addon:InitializePopups()
     StaticPopupDialogs["NE_STATS_CREATE_PROFILE"] = {
-        text = self:S("Create a new profile for this account"),
-        button1 = self:S("Create"),
-        button2 = self:S("Cancel"),
+        text = self:S("NE_STATS_CREATE_A_NEW_PROFILE_FOR_THIS_ACCOUNT"),
+        button1 = self:S("NE_STATS_CREATE"),
+        button2 = self:S("NE_STATS_CANCEL"),
         hasEditBox = true,
         maxLetters = 24,
         timeout = 0,
@@ -39,9 +39,9 @@ function Addon:InitializePopups()
             local text = dialog.editBox and dialog.editBox:GetText() or ""
             local status, profileName = Addon:CreateProfile(text)
             if status == "created" and profileName then
-                print(Addon:S("NE Stats: created profile %s.", profileName))
+                print(Addon:S("NE_STATS_PROFILE_CREATED", profileName))
             elseif status == "exists" then
-                print(Addon:S("NE Stats: profile already exists."))
+                print(Addon:S("NE_STATS_PROFILE_ALREADY_EXISTS"))
             end
             Addon:RefreshStats()
             Addon:RefreshOptionRows()
@@ -49,9 +49,9 @@ function Addon:InitializePopups()
     }
 
     StaticPopupDialogs["NE_STATS_RENAME_PROFILE"] = {
-        text = self:S("Rename profile %s"),
-        button1 = self:S("Rename"),
-        button2 = self:S("Cancel"),
+        text = self:S("NE_STATS_RENAME_PROFILE_FMT"),
+        button1 = self:S("NE_STATS_RENAME"),
+        button2 = self:S("NE_STATS_CANCEL"),
         hasEditBox = true,
         maxLetters = 24,
         timeout = 0,
@@ -65,11 +65,11 @@ function Addon:InitializePopups()
             local status, profileName = Addon:RenameProfile(data, newName)
             pendingRenameProfileName = nil
             if status == "exists" then
-                print(Addon:S("NE Stats: profile already exists."))
+                print(Addon:S("NE_STATS_PROFILE_ALREADY_EXISTS"))
             elseif status == "invalid" then
-                print(Addon:S("NE Stats: profile could not be renamed: %s", tostring(profileName)))
+                print(Addon:S("NE_STATS_PROFILE_RENAME_FAILED_DETAIL", tostring(profileName)))
             elseif status == "renamed" and profileName then
-                print(Addon:S("NE Stats: renamed profile to %s.", profileName))
+                print(Addon:S("NE_STATS_PROFILE_RENAMED", profileName))
             end
         end,
         OnCancel = function()
@@ -78,9 +78,9 @@ function Addon:InitializePopups()
     }
 
     StaticPopupDialogs["NE_STATS_DELETE_PROFILE"] = {
-        text = self:S("Delete profile %s?"),
-        button1 = self:S("Delete"),
-        button2 = self:S("Cancel"),
+        text = self:S("NE_STATS_DELETE_PROFILE_FMT"),
+        button1 = self:S("NE_STATS_DELETE"),
+        button2 = self:S("NE_STATS_CANCEL"),
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
@@ -88,9 +88,9 @@ function Addon:InitializePopups()
         OnAccept = function(dialog)
             local data = dialog.data
             if Addon:DeleteProfile(data) then
-                print(Addon:S("NE Stats: deleted profile %s.", data))
+                print(Addon:S("NE_STATS_PROFILE_DELETED", data))
             else
-                print(Addon:S("NE Stats: profile could not be deleted."))
+                print(Addon:S("NE_STATS_PROFILE_DELETE_FAILED"))
             end
         end,
     }

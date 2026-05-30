@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   update:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -45,7 +45,7 @@ jobs:
       - name: Scrape archon.gg and regenerate WoWLogsStatsPrio.lua
         if: steps.freshness.outputs.skip != 'true'
         shell: pwsh
-        run: .\scripts\Get-AllStats.ps1 -OutFile ".\WoWLogsStatsPrio.lua" -Threads 15
+        run: ./scripts/Get-AllStats.ps1 -OutFile "./WoWLogsStatsPrio.lua" -Threads 15
 
       - name: Bump version, commit, and push if data changed
         if: steps.freshness.outputs.skip != 'true'

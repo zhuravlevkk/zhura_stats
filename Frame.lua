@@ -229,9 +229,9 @@ function Addon:ToggleLockState()
     self:UpdateFrameLockState()
 
     if locked then
-        print(self:S("NE Stats: frame locked. Use settings to unlock and adjust it."))
+        print(self:S("NE_STATS_FRAME_LOCKED"))
     else
-        print(self:S("NE Stats: frame unlocked. Drag it, then lock when ready."))
+        print(self:S("NE_STATS_FRAME_UNLOCKED"))
     end
 
     local refs = self:GetControlRefs()
@@ -302,9 +302,9 @@ function Addon:EnsureStatsFrame()
         isLockButtonHovered = true
         Addon:UpdateFrameLockState()
         GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
-        GameTooltip:SetText(Addon:S("Lock button"), 1, 0.82, 0)
-        GameTooltip:AddLine(Addon:S("Left-click: lock or unlock the frame."), 1, 1, 1, true)
-        GameTooltip:AddLine(Addon:S("Right-click: open addon settings."), 1, 1, 1, true)
+        GameTooltip:SetText(Addon:S("NE_STATS_LOCK_BUTTON"), 1, 0.82, 0)
+        GameTooltip:AddLine(Addon:S("NE_STATS_LEFT_CLICK_LOCK_OR_UNLOCK_THE_FRAME"), 1, 1, 1, true)
+        GameTooltip:AddLine(Addon:S("NE_STATS_RIGHT_CLICK_OPEN_ADDON_SETTINGS"), 1, 1, 1, true)
         GameTooltip:Show()
     end)
     lockButton:SetScript("OnLeave", function()
@@ -337,20 +337,20 @@ function Addon:EnsureStatsFrame()
         {
             id = "manual",
             text = "U",
-            title = "User priority",
-            body = "Manual stat order from settings.",
+            title = "NE_STATS_USER_PRIORITY",
+            body = "NE_STATS_MANUAL_PRIORITY_HINT",
         },
         {
             id = "archon_raid",
             text = "R",
-            title = "Archon Raid",
-            body = "Use Archon Raid stat priority for display order.",
+            title = "NE_STATS_ARCHON_RAID",
+            body = "NE_STATS_ARCHON_RAID_PRIORITY_HINT",
         },
         {
             id = "archon_mplus",
             text = "M",
-            title = "Archon Mythic+",
-            body = "Use Archon Mythic+ stat priority for display order.",
+            title = "NE_STATS_ARCHON_MYTHIC",
+            body = "NE_STATS_ARCHON_MPLUS_PRIORITY_HINT",
         },
     }
 

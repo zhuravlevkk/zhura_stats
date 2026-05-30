@@ -15,29 +15,37 @@ local STAT_IDS = {
 }
 
 local cache = {}
-local potionState = {
-    active = false,
-    name = nil,
-    expirationTime = 0,
-    lastUsedAt = 0,
-    lastUsedName = nil,
-}
 
--- A tiny seed list. The scanner also accepts registered IDs so new potion IDs
--- can be added without changing the display layer.
-local potionSpellIDs = {
-    -- Combat Potions (30 sec, 5 min CD)
-    [1236994] = true, -- Potion of Recklessness
-    [1238443] = true, -- Potion of Zealotry
-    [1236998] = true, -- Draught of Rampant Abandon
-    [1236616] = true, -- Light's Potential
+-- Persisted snapshot bridge. Core wires these to db.char (per-character,
+-- keyed by spec) so the last trustworthy reading survives /reload and can be
+-- shown — clearly marked — while live values are Secret (combat / M+ /
+-- encounter / PvP). See Stats.SetSnapshotStore.
+local snapshotStore = nil      -- table we read/write snapshot entries into
+local snapshotGetSpecKey = nil -- function() -> string|number spec key
 
-    -- Flasks (1 hour, persist through death)
-    [1235057] = true, -- Flask of Thalassian Resistance (+Versatility)
-    [1235110] = true, -- Flask of the Blood Knights (+Haste)
-    [1235108] = true, -- Flask of the Magisters (+Mastery)
-    [1235111] = true, -- Flask of the Shattered Sun (+Crit)
-}
+local function GetSnapshotTable(create)
+    if type(snapshotStore) ~= "table" then
+        return nil
+    end
+    local specKey = "default"
+    if type(snapshotGetSpecKey) == "function" then
+        local ok, key = pcall(snapshotGetSpecKey)
+        if ok and key ~= nil then
+            specKey = key
+        end
+    end
+    local bucket = snapshotStore[specKey]
+    if not bucket and create then
+        bucket = {}
+        snapshotStore[specKey] = bucket
+    end
+    return bucket
+end
+
+function Stats.SetSnapshotStore(store, getSpecKey)
+    snapshotStore = store
+    snapshotGetSpecKey = getSpecKey
+end
 
 local function IsSecret(value)
     return issecretvalue and issecretvalue(value)
@@ -66,6 +74,29 @@ local function CallNumber(fn)
     return AsNumber(value)
 end
 
+local SNAPSHOT_FIELDS = { "value", "rating", "ratingBonus", "dr", "coefficient", "mitigation", "passiveBonus" }
+
+local function StoreSnapshot(key, result)
+    local bucket = GetSnapshotTable(true)
+    if not bucket then
+        return
+    end
+    local entry = {}
+    for _, field in ipairs(SNAPSHOT_FIELDS) do
+        entry[field] = result[field]
+    end
+    entry.capturedAt = (GetTime and GetTime()) or 0
+    bucket[key] = entry
+end
+
+local function ReadSnapshot(key)
+    local bucket = GetSnapshotTable(false)
+    if not bucket then
+        return nil
+    end
+    return bucket[key]
+end
+
 local function MakeResult(key, value, rating, ratingBonus, extra)
     local result = extra or {}
     result.key = key
@@ -76,10 +107,16 @@ local function MakeResult(key, value, rating, ratingBonus, extra)
     result.source = "fresh"
 
     if value ~= nil then
+        -- Live, non-secret value. This is the only place we know the reading is
+        -- trustworthy, so persist it as the snapshot (approach (a): a value
+        -- that survived AsNumber cannot be a Secret).
         cache[key] = result
+        StoreSnapshot(key, result)
         return result
     end
 
+    -- No live value (Secret, or API unavailable). Prefer the in-memory cache
+    -- from earlier this session; it carries the full extra fields.
     local cached = cache[key]
     if cached then
         local copy = {}
@@ -88,6 +125,20 @@ local function MakeResult(key, value, rating, ratingBonus, extra)
         end
         copy.stale = true
         copy.source = "cache"
+        return copy
+    end
+
+    -- Nothing in memory (e.g. fresh /reload inside a Mythic+). Fall back to the
+    -- persisted snapshot so we show the last trustworthy reading instead of 0.
+    local snap = ReadSnapshot(key)
+    if snap and snap.value ~= nil then
+        local copy = {}
+        for snapKey, snapValue in pairs(snap) do
+            copy[snapKey] = snapValue
+        end
+        copy.key = key
+        copy.stale = true
+        copy.source = "snapshot"
         return copy
     end
 
@@ -274,7 +325,15 @@ local function GetMovementSpeedPercent()
         return nil
     end
 
-    local currentSpeed, runSpeed, flightSpeed, swimSpeed = GetUnitSpeed("player")
+    local rawCurrent, rawRun, rawFlight, rawSwim = GetUnitSpeed("player")
+    -- GetUnitSpeed is SecretWhenUnitStatsRestricted: in combat/M+/encounter/PvP
+    -- these come back as Secret values. Coerce through AsNumber so any Secret
+    -- (or non-number) collapses to nil instead of erroring on comparison.
+    local currentSpeed = AsNumber(rawCurrent)
+    local runSpeed = AsNumber(rawRun)
+    local flightSpeed = AsNumber(rawFlight)
+    local swimSpeed = AsNumber(rawSwim)
+
     local speed = runSpeed
 
     if type(speed) ~= "number" or speed <= 0 then
@@ -367,68 +426,6 @@ function Stats.ReadStat(key)
     end
 
     return MakeResult(key, nil)
-end
-
-function Stats.RegisterPotionSpell(spellId)
-    if spellId then
-        potionSpellIDs[spellId] = true
-    end
-end
-
-local function AuraLooksLikePotion(aura)
-    if not aura then return false end
-    local spellId = aura.spellId
-    if spellId and not IsSecret(spellId) then
-        return potionSpellIDs[spellId] == true
-    end
-    return false
-end
-
-function Stats.RefreshPotionState()
-    potionState.active = false
-    potionState.name = nil
-    potionState.expirationTime = 0
-
-    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        for index = 1, 60 do
-            local aura = C_UnitAuras.GetAuraDataByIndex("player", index, "HELPFUL")
-            if not aura then
-                break
-            end
-            if AuraLooksLikePotion(aura) then
-                potionState.active = true
-                potionState.name = aura.name
-                potionState.expirationTime = aura.expirationTime or 0
-                return potionState
-            end
-        end
-    end
-
-    return potionState
-end
-
-function Stats.HandleCombatLogEvent()
-    if not CombatLogGetCurrentEventInfo or not UnitGUID then
-        return
-    end
-
-    local _, subevent, _, sourceGUID, _, _, _, _, _, _, _, spellId, spellName = CombatLogGetCurrentEventInfo()
-    if sourceGUID ~= UnitGUID("player") then
-        return
-    end
-    if subevent ~= "SPELL_CAST_SUCCESS" and subevent ~= "SPELL_AURA_APPLIED" and subevent ~= "SPELL_AURA_REFRESH" then
-        return
-    end
-
-    if spellId and not IsSecret(spellId) and potionSpellIDs[spellId] then
-        potionState.lastUsedAt = GetTime and GetTime() or 0
-        potionState.lastUsedName = spellName
-    end
-end
-
-function Stats.GetPotionState()
-    Stats.RefreshPotionState()
-    return potionState
 end
 
 function Stats.GetMovementSpeedPercent()

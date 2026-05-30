@@ -318,6 +318,66 @@ After each implementation iteration (even small patches):
 
 ---
 
+## WoW API Reference (Midnight 12.0+)
+
+A generated, patch-accurate API index lives in `docs/wow-api/`. Use it instead
+of guessing function signatures or whether a value is Secret.
+
+**Use the generated digest in `docs/wow-api/`** — built from `wow-ui-source` by
+`scripts/gen_api_index.py`. For WoW API questions and code changes, check the
+digest first; do not guess from memory or training data. **Do not open the
+`wow-ui-source` clone when the digest is sufficient.**
+
+Open the clone only when the digest is not enough: stale build (mismatch with
+`wow-ui-source/version.txt`), or non-API Blizzard UI behavior. Path:
+`C:\dev\wow-ui-source\Interface\AddOns\Blizzard_APIDocumentationGenerated\`.
+
+* **`docs/wow-api/INDEX.md`** — all systems with function counts; each maps to
+  `<System>Documentation.lua` in the local `wow-ui-source` clone
+  (`C:\dev\wow-ui-source\Interface\AddOns\Blizzard_APIDocumentationGenerated`).
+* **`docs/wow-api/SECRET-VALUES.md`** — every function whose return becomes a
+  **Secret** value, grouped by condition, with Blizzard predicate descriptions.
+  THIS IS THE IMPORTANT ONE for this addon.
+* **`docs/wow-api/ADDON-RESTRICTIONS.md`** — `AddOnRestrictionType` /
+  `AddOnRestrictionState` enums (e.g. Challenge Mode = 2) and key restriction
+  APIs/events.
+* **`docs/wow-api/api-index.json`** — machine-readable digest: secret flags,
+  predicate docs, restriction enums, and Arguments/Returns signatures.
+
+### Rules when touching API calls
+
+* Before using any `Get*`/`Unit*` stat or combat function, check
+  `SECRET-VALUES.md`. If it is listed under `SecretWhenUnitStatsRestricted`
+  (e.g. `UnitStat`, `GetCombatRating`, `GetCombatRatingBonus`, `GetHaste`,
+  `GetCritChance`, `GetMasteryEffect`, `GetUnitSpeed`, `GetAvoidance`,
+  `GetParryChance`, `GetDodgeChance`, `GetLifesteal`), its return is Secret when
+  combat, encounter, challenge mode (M+), or PvP restrictions are active — see
+  the predicate notes in `SECRET-VALUES.md` and `ADDON-RESTRICTIONS.md`.
+* NEVER compare, do arithmetic on, or use as a table key a value that may be
+  Secret without first calling `issecretvalue(v)`. Doing so raises a Lua error.
+  Route every such value through the existing `IsSecret` / `AsNumber` /
+  `CallNumber` helpers in `Stats.lua`.
+* For the full Arguments/Returns signature of a function, open the
+  `<System>Documentation.lua` file named in `INDEX.md` and search for
+  `Name = "<FunctionName>"`.
+* `CombatLogGetCurrentEventInfo` / `COMBAT_LOG_EVENT_UNFILTERED` are restricted
+  in Midnight — do not build features on CLEU. Prefer `C_UnitAuras`,
+  `UNIT_SPELLCAST_SUCCEEDED`, and the documented replacement events.
+
+### Refreshing the reference (do after each game patch)
+
+1. Update the clone: `cd C:\dev\wow-ui-source && git pull`
+2. Regenerate: `python C:\dev\zhura_stats\scripts\gen_api_index.py`
+   (optional arg: path to a wow-ui-source clone; defaults to `C:\dev\wow-ui-source`)
+   The nightly `Update WoW API Docs` GitHub workflow does this automatically.
+3. The build string at the top of each generated file should match
+   `wow-ui-source/version.txt`.
+
+The generator is read-only against `wow-ui-source` and only writes into
+`docs/wow-api/`.
+
+---
+
 ## Anti-Patterns (STRICTLY FORBIDDEN)
 
 * Reintroducing monolithic files

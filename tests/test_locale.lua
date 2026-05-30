@@ -7,14 +7,14 @@ describe("Locale", function()
   before_each(function()
     Addon.db = { global = { addonLocale = "client" } }
     NE_STATS_LOCALES["enUS"] = NE_STATS_LOCALES["enUS"] or {}
-    NE_STATS_LOCALES["enUS"]["Default"] = "Default"
-    NE_STATS_LOCALES["enUS"]["Show percentages"] = "Show percentages"
-    NE_STATS_LOCALES["enUS"]["Client language"] = "Client language"
+    NE_STATS_LOCALES["enUS"]["NE_STATS_DEFAULT"] = "Default"
+    NE_STATS_LOCALES["enUS"]["NE_STATS_SHOW_PERCENTAGES"] = "Show percentages"
+    NE_STATS_LOCALES["enUS"]["NE_STATS_CLIENT_LANGUAGE"] = "Client language"
     Addon:ApplyLocale()
   end)
 
   it("resolves known keys from applied locale", function()
-    assert.are.equal("Default", Addon:S("Default"))
+    assert.are.equal("Default", Addon:S("NE_STATS_DEFAULT"))
   end)
 
   it("falls back to key string when translation missing", function()
@@ -30,7 +30,7 @@ describe("Locale", function()
   it("uses enUS when configured locale table is absent", function()
     Addon.db.global.addonLocale = "missingLocaleCode"
     Addon:ApplyLocale()
-    assert.are.equal("Default", Addon:S("Default"))
+    assert.are.equal("Default", Addon:S("NE_STATS_DEFAULT"))
   end)
 
   it("GetLocaleDisplayName for client language includes client label", function()
@@ -39,18 +39,18 @@ describe("Locale", function()
   end)
 
   it("GetTextAlignDisplayName maps alignment", function()
-    assert.are.equal(Addon:S("Left"), Addon:GetTextAlignDisplayName("LEFT"))
-    assert.are.equal(Addon:S("Center"), Addon:GetTextAlignDisplayName("CENTER"))
-    assert.are.equal(Addon:S("Right"), Addon:GetTextAlignDisplayName("RIGHT"))
+    assert.are.equal(Addon:S("NE_STATS_ALIGN_LEFT"), Addon:GetTextAlignDisplayName("LEFT"))
+    assert.are.equal(Addon:S("NE_STATS_ALIGN_CENTER"), Addon:GetTextAlignDisplayName("CENTER"))
+    assert.are.equal(Addon:S("NE_STATS_ALIGN_RIGHT"), Addon:GetTextAlignDisplayName("RIGHT"))
   end)
 
   it("GetGoldSeparatorDisplayName maps known separators", function()
-    assert.are.equal(Addon:S("Space"), Addon:GetGoldSeparatorDisplayName(" "))
-    assert.are.equal(Addon:S("Comma"), Addon:GetGoldSeparatorDisplayName(","))
+    assert.are.equal(Addon:S("NE_STATS_GOLD_SEP_SPACE"), Addon:GetGoldSeparatorDisplayName(" "))
+    assert.are.equal(Addon:S("NE_STATS_GOLD_SEP_COMMA"), Addon:GetGoldSeparatorDisplayName(","))
   end)
 
   it("GetDisplayProfileName localizes Default only", function()
-    assert.are.equal(Addon:S("Default"), Addon:GetDisplayProfileName("Default"))
+    assert.are.equal(Addon:S("NE_STATS_DEFAULT"), Addon:GetDisplayProfileName("Default"))
     assert.are.equal("Custom", Addon:GetDisplayProfileName("Custom"))
   end)
 end)
