@@ -72,12 +72,14 @@ jobs:
     steps:
       - name: Telegram
         run: |
+          MSG=$(printf '%s\n' \
+            '❌ *zhura_stats* · Unit Tests failed' \
+            "PR: ${{ github.event.pull_request.html_url }}" \
+            "Run: ${URL}")
           curl -sf -X POST "https://api.telegram.org/bot${BOT}/sendMessage" \
             -d "chat_id=${CHAT}" \
             -d "parse_mode=Markdown" \
-            --data-urlencode "text=❌ *zhura_stats* · Unit Tests failed
-PR: ${{ github.event.pull_request.html_url }}
-Run: ${URL}"
+            --data-urlencode "text=${MSG}"
         env:
           BOT:  ${{ secrets.TG_BOT_TOKEN }}
           CHAT: ${{ secrets.TG_CHAT_ID }}
