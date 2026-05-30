@@ -170,24 +170,24 @@ function Addon:PopulateReferenceStatTooltip(owner, statKey, statResult, profile)
     local d = playerR - archonR
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     GameTooltip:ClearLines()
-    GameTooltip:AddLine(self:S("NE_STATS_REFERENCE_TOOLTIP_TITLE", self:S(def.label), self:S("Archon reference (rating)")), 1, 0.82, 0)
-    GameTooltip:AddLine(self:S("Your rating: %d", playerR), 1, 1, 1)
+    GameTooltip:AddLine(self:S("NE_STATS_REFERENCE_TOOLTIP_TITLE", self:S(def.label), self:S("NE_STATS_ARCHON_REFERENCE_RATING")), 1, 0.82, 0)
+    GameTooltip:AddLine(self:S("NE_STATS_YOUR_RATING_FMT", playerR), 1, 1, 1)
     if profile.showPercent ~= false then
-        GameTooltip:AddLine(self:S("Your percent") .. ": " .. string.format("%." .. precision .. "f%%", pct), 1, 1, 1)
+        GameTooltip:AddLine(self:S("NE_STATS_YOUR_PERCENT") .. ": " .. string.format("%." .. precision .. "f%%", pct), 1, 1, 1)
     end
-    GameTooltip:AddLine(self:S("Archon typical rating: %d", archonR), 1, 1, 1)
+    GameTooltip:AddLine(self:S("NE_STATS_ARCHON_TYPICAL_RATING_FMT", archonR), 1, 1, 1)
     if d == 0 then
-        GameTooltip:AddLine(self:S("Rating delta: ok"), 1, 1, 1)
+        GameTooltip:AddLine(self:S("NE_STATS_RATING_DELTA_OK"), 1, 1, 1)
     elseif d < 0 then
-        GameTooltip:AddLine(self:S("Rating delta: need +%d vs Archon", -d), 1, 0.82, 0.4)
+        GameTooltip:AddLine(self:S("NE_STATS_RATING_DELTA_NEED_FMT", -d), 1, 0.82, 0.4)
     else
-        GameTooltip:AddLine(self:S("Rating delta: %d over Archon", d), 1, 0.9, 0.5)
+        GameTooltip:AddLine(self:S("NE_STATS_RATING_DELTA_OVER_FMT", d), 1, 0.9, 0.5)
     end
     if profile.showReferenceSource ~= false then
         GameTooltip:AddLine(self:S("NE_STATS_REFERENCE_SOURCE"), 0.7, 0.7, 0.7)
     end
     if payload.updated ~= "" then
-        GameTooltip:AddLine(self:S("Updated: %s", payload.updated), 0.7, 0.7, 0.7)
+        GameTooltip:AddLine(self:S("NE_STATS_UPDATED_FMT", payload.updated), 0.7, 0.7, 0.7)
     end
     if payload.activity ~= "" then
         local actKey = payload.activity
@@ -197,7 +197,7 @@ function Addon:PopulateReferenceStatTooltip(owner, statKey, statResult, profile)
         elseif actKey == "raid" then
             actLabel = self:S("NE_STATS_ACTIVITY_RAID")
         end
-        GameTooltip:AddLine(self:S("Activity: %s", actLabel), 0.7, 0.7, 0.7)
+        GameTooltip:AddLine(self:S("NE_STATS_ACTIVITY_FMT", actLabel), 0.7, 0.7, 0.7)
     end
     if profile.showDiminishingReturnHint == true and statResult and statResult.dr then
         local penalty = statResult.dr.penalty or 0

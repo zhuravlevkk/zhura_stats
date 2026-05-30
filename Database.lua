@@ -526,7 +526,7 @@ function Addon:SelectRootProfile(profileName)
         db:SetProfile(profileName)
     end)
     if not ok then
-        print(self:S("NE Stats: profile could not be applied."))
+        print(self:S("NE_STATS_PROFILE_APPLY_FAILED"))
         return
     end
     if profileStateChangeCounter == callbackStateBefore then
@@ -551,7 +551,7 @@ function Addon:CreateProfile(profileName)
         db:SetProfile(profileName)
     end)
     if not ok then
-        print(self:S("NE Stats: profile could not be created."))
+        print(self:S("NE_STATS_PROFILE_CREATE_FAILED"))
         return "invalid", nil
     end
     if db and db.profile and newProfileInitCounter == newProfileInitStateBefore then

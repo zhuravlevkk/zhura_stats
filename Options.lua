@@ -28,9 +28,9 @@ end
 
 local TAB_ORDER = { "profiles", "display", "stats" }
 local TAB_LABELS = {
-    profiles = "Profiles",
-    display = "Display",
-    stats = "Stats",
+    profiles = "NE_STATS_PROFILES",
+    display = "NE_STATS_DISPLAY",
+    stats = "NE_STATS_STATS",
 }
 
 local PRIORITY_MODE_OPTIONS = {
@@ -47,15 +47,15 @@ local REFERENCE_DISPLAY_OPTIONS = {
 }
 
 local FRAME_CONTROLS_POSITION_LABELS = {
-    BOTTOM = "Bottom",
-    TOP = "Top",
-    LEFT = "Left",
-    RIGHT = "Right",
+    BOTTOM = "NE_STATS_ALIGN_BOTTOM",
+    TOP = "NE_STATS_ALIGN_TOP",
+    LEFT = "NE_STATS_ALIGN_LEFT",
+    RIGHT = "NE_STATS_ALIGN_RIGHT",
 }
 
 local FRAME_CONTROLS_DIRECTION_LABELS = {
-    HORIZONTAL = "Horizontal",
-    VERTICAL = "Vertical",
+    HORIZONTAL = "NE_STATS_DIRECTION_HORIZONTAL",
+    VERTICAL = "NE_STATS_DIRECTION_VERTICAL",
 }
 
 -- Layout grid. The settings canvas is roughly 620px wide; a left navigation
@@ -517,7 +517,7 @@ local function CreateDropDown(parent, name, width, getItems, onSelect)
         end
         self.selectedValue = selectedValue
         if selectedValue == nil then
-            self:OverrideText(Addon:S("No available profiles"))
+            self:OverrideText(Addon:S("NE_STATS_NO_AVAILABLE_PROFILES"))
         else
             -- Re-enable selection-driven text after a possible OverrideText call.
             self.disableSelectionText = false
@@ -556,9 +556,9 @@ local function CreateProfileFromInput(editBox)
         return
     end
     if status == "exists" then
-        print(Addon:S("NE Stats: profile already exists."))
+        print(Addon:S("NE_STATS_PROFILE_ALREADY_EXISTS"))
     else
-        print(Addon:S("NE Stats: created profile %s.", profileName))
+        print(Addon:S("NE_STATS_PROFILE_CREATED", profileName))
     end
     editBox:SetText("")
     Addon:OnProfileStateChanged()
@@ -569,9 +569,9 @@ local function EnsureResetProfilePopup()
         return
     end
     StaticPopupDialogs["NE_STATS_RESET_PROFILE"] = {
-        text = Addon:S("Reset active profile %s?"),
-        button1 = Addon:S("Reset"),
-        button2 = Addon:S("Cancel"),
+        text = Addon:S("NE_STATS_RESET_PROFILE_FMT"),
+        button1 = Addon:S("NE_STATS_RESET"),
+        button2 = Addon:S("NE_STATS_CANCEL"),
         timeout = 0,
         whileDead = true,
         hideOnEscape = true,
@@ -579,7 +579,7 @@ local function EnsureResetProfilePopup()
         OnAccept = function()
             Addon:ResetActiveProfile()
             Addon:OnProfileStateChanged()
-            print(Addon:S("NE Stats: active profile reset."))
+            print(Addon:S("NE_STATS_PROFILE_RESET"))
         end,
     }
 end
@@ -591,7 +591,7 @@ local function RefreshProfileControls()
         controlRefs.profileDropDown:Refresh(activeName)
     end
     if controlRefs.profileInfo then
-        controlRefs.profileInfo:SetText(Addon:S("Active profile: %s", Addon:GetDisplayProfileName(activeName)))
+        controlRefs.profileInfo:SetText(Addon:S("NE_STATS_ACTIVE_PROFILE_FMT", Addon:GetDisplayProfileName(activeName)))
     end
     if controlRefs.profileCopySourceDropDown then
         controlRefs.profileCopySourceDropDown:Refresh(controlRefs.profileCopySourceDropDown.selectedValue)
@@ -746,7 +746,7 @@ function Addon:ApplyCurrentProfileStateImpl()
                 if controlRefs.fontPreview then
                     local path, flags = self:GetFontInfo(font.key)
                     controlRefs.fontPreview:SetFont(path or STANDARD_TEXT_FONT, 18, flags or "OUTLINE")
-                    controlRefs.fontPreview:SetText(font.label .. " - " .. self:S("The quick brown fox 123"))
+                    controlRefs.fontPreview:SetText(font.label .. " - " .. self:S("NE_STATS_FONT_PREVIEW"))
                 end
                 break
             end
@@ -767,11 +767,11 @@ function Addon:RefreshLocalizedUI()
         end
     end
 
-    if optionsPanel then optionsPanel.name = self:S("NE Stats") end
+    if optionsPanel then optionsPanel.name = self:S("NE_STATS_ADDON_NAME") end
 
     if controlRefs.profileInfo then
         local activeName = GetActiveProfileNameFromDB()
-        controlRefs.profileInfo:SetText(self:S("Active profile: %s", self:GetDisplayProfileName(activeName)))
+        controlRefs.profileInfo:SetText(self:S("NE_STATS_ACTIVE_PROFILE_FMT", self:GetDisplayProfileName(activeName)))
     end
 
     if controlRefs.languageDropDown then controlRefs.languageDropDown:Refresh(self:GetConfiguredLocale()) end
@@ -821,13 +821,13 @@ function Addon:RefreshLocalizedUI()
     RefreshArchonHint(self:GetProfile())
 
     if controlRefs.rowsPerColumnSlider and controlRefs.rowsPerColumnSlider.SetMinLabel then
-        controlRefs.rowsPerColumnSlider:SetMinLabel(self:S("Auto"))
+        controlRefs.rowsPerColumnSlider:SetMinLabel(self:S("NE_STATS_AUTO"))
     end
 
     if StaticPopupDialogs["NE_STATS_RESET_PROFILE"] then
-        StaticPopupDialogs["NE_STATS_RESET_PROFILE"].text = self:S("Reset active profile %s?")
-        StaticPopupDialogs["NE_STATS_RESET_PROFILE"].button1 = self:S("Reset")
-        StaticPopupDialogs["NE_STATS_RESET_PROFILE"].button2 = self:S("Cancel")
+        StaticPopupDialogs["NE_STATS_RESET_PROFILE"].text = self:S("NE_STATS_RESET_PROFILE_FMT")
+        StaticPopupDialogs["NE_STATS_RESET_PROFILE"].button1 = self:S("NE_STATS_RESET")
+        StaticPopupDialogs["NE_STATS_RESET_PROFILE"].button2 = self:S("NE_STATS_CANCEL")
     end
 
     self:RefreshOptions()
@@ -933,7 +933,7 @@ end
 local function BuildProfilesPage(content, addonName)
     local page = CreatePage(content, "profiles")
 
-    local card = CreateCard(page, "Profiles", FORM_Y)
+    local card = CreateCard(page, "NE_STATS_PROFILES", FORM_Y)
 
     local activeDropDown = CreateDropDown(card, addonName .. "ProfileDropDown", 150, function()
         return CreateProfileItems("active")
@@ -941,7 +941,7 @@ local function BuildProfilesPage(content, addonName)
         Addon:SelectRootProfile(profileName)
         Addon:OnProfileStateChanged()
     end)
-    card:AddDropdownRow("Current profile", activeDropDown, 150)
+    card:AddDropdownRow("NE_STATS_CURRENT_PROFILE", activeDropDown, 150)
     controlRefs.profileDropDown = activeDropDown
 
     local profileInfo = card:AddTextLine("", "GameFontHighlightSmall", 320)
@@ -954,10 +954,10 @@ local function BuildProfilesPage(content, addonName)
         CreateProfileFromInput(self)
         self:ClearFocus()
     end)
-    local createLabel = card:AddControlRow("Create profile", createEditBox)
+    local createLabel = card:AddControlRow("NE_STATS_CREATE_PROFILE", createEditBox)
     controlRefs.profileCreateLabel = createLabel
     controlRefs.profileCreateEditBox = createEditBox
-    local createButton = CreateButton(card, 78, "Create", function()
+    local createButton = CreateButton(card, 78, "NE_STATS_CREATE", function()
         CreateProfileFromInput(createEditBox)
     end)
     createButton:SetPoint("LEFT", createEditBox, "RIGHT", 6, 0)
@@ -966,20 +966,20 @@ local function BuildProfilesPage(content, addonName)
     local copyDropDown = CreateDropDown(card, addonName .. "ProfileCopySourceDropDown", 150, function()
         return CreateProfileItems("copySource")
     end)
-    card:AddDropdownRow("Copy into current", copyDropDown, 150)
+    card:AddDropdownRow("NE_STATS_COPY_INTO_CURRENT", copyDropDown, 150)
     controlRefs.profileCopySourceDropDown = copyDropDown
-    local copyButton = CreateButton(card, 78, "Copy", function()
+    local copyButton = CreateButton(card, 78, "NE_STATS_COPY", function()
         local sourceProfileName = copyDropDown.selectedValue
         if not sourceProfileName then
-            print(Addon:S("NE Stats: source profile is not selected."))
+            print(Addon:S("NE_STATS_SOURCE_PROFILE_NOT_SELECTED"))
             return
         end
         local activeName = GetActiveProfileNameFromDB()
         if Addon:CopyProfile(sourceProfileName) then
-            print(Addon:S("NE Stats: copied profile %s into active profile %s.", Addon:GetDisplayProfileName(sourceProfileName), Addon:GetDisplayProfileName(activeName)))
+            print(Addon:S("NE_STATS_PROFILE_COPIED", Addon:GetDisplayProfileName(sourceProfileName), Addon:GetDisplayProfileName(activeName)))
             Addon:OnProfileStateChanged()
         else
-            print(Addon:S("NE Stats: profile could not be copied."))
+            print(Addon:S("NE_STATS_PROFILE_COPY_FAILED"))
         end
     end)
     copyButton:SetPoint("LEFT", copyDropDown, "RIGHT", 6, 0)
@@ -988,12 +988,12 @@ local function BuildProfilesPage(content, addonName)
     local renameDropDown = CreateDropDown(card, addonName .. "ProfileRenameTargetDropDown", 150, function()
         return CreateProfileItems("renameTarget")
     end)
-    card:AddDropdownRow("Rename profile", renameDropDown, 150)
+    card:AddDropdownRow("NE_STATS_RENAME_PROFILE", renameDropDown, 150)
     controlRefs.profileRenameTargetDropDown = renameDropDown
-    local renameButton = CreateButton(card, 78, "Rename", function()
+    local renameButton = CreateButton(card, 78, "NE_STATS_RENAME", function()
         local profileName = renameDropDown.selectedValue
         if not profileName or not Addon:CanModifyProfile(profileName) then
-            print(Addon:S("NE Stats: profile could not be renamed."))
+            print(Addon:S("NE_STATS_PROFILE_RENAME_FAILED"))
             return
         end
         local dialog = StaticPopup_Show("NE_STATS_RENAME_PROFILE", Addon:GetDisplayProfileName(profileName), nil, profileName)
@@ -1007,12 +1007,12 @@ local function BuildProfilesPage(content, addonName)
     local deleteDropDown = CreateDropDown(card, addonName .. "ProfileDeleteTargetDropDown", 150, function()
         return CreateProfileItems("deleteTarget")
     end)
-    card:AddDropdownRow("Delete profile", deleteDropDown, 150)
+    card:AddDropdownRow("NE_STATS_DELETE_PROFILE", deleteDropDown, 150)
     controlRefs.profileDeleteTargetDropDown = deleteDropDown
-    local deleteButton = CreateButton(card, 78, "Delete", function()
+    local deleteButton = CreateButton(card, 78, "NE_STATS_DELETE", function()
         local profileName = deleteDropDown.selectedValue
         if not profileName or not Addon:CanModifyProfile(profileName) or profileName == GetActiveProfileNameFromDB() then
-            print(Addon:S("NE Stats: profile could not be deleted."))
+            print(Addon:S("NE_STATS_PROFILE_DELETE_FAILED"))
             return
         end
         StaticPopup_Show("NE_STATS_DELETE_PROFILE", Addon:GetDisplayProfileName(profileName), nil, profileName)
@@ -1021,7 +1021,7 @@ local function BuildProfilesPage(content, addonName)
     controlRefs.profileDeleteButton = deleteButton
 
     card:Advance(8)
-    local resetButton = CreateButton(card, 200, "Reset Current", function()
+    local resetButton = CreateButton(card, 200, "NE_STATS_RESET_CURRENT", function()
         EnsureResetProfilePopup()
         StaticPopup_Show("NE_STATS_RESET_PROFILE", Addon:GetDisplayProfileName(GetActiveProfileNameFromDB()))
     end)
@@ -1038,7 +1038,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
 
     local currentTopY = FORM_Y
 
-    local generalCard = CreateCard(page, "General", currentTopY)
+    local generalCard = CreateCard(page, "NE_STATS_GENERAL", currentTopY)
 
     local languageDropDown = CreateDropDown(generalCard, addonName .. "LanguageDropDown", 220, function()
         local localeOptions = { "client", "enUS", "deDE", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "ukUA", "zhCN", "zhTW" }
@@ -1055,21 +1055,21 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         Addon:UpdateFrameLockState()
         Addon:RefreshStats()
     end)
-    generalCard:AddDropdownRow("Addon language", languageDropDown, 220)
+    generalCard:AddDropdownRow("NE_STATS_ADDON_LANGUAGE", languageDropDown, 220)
     controlRefs.languageDropDown = languageDropDown
 
     local drModeDropDown = CreateDropDown(generalCard, addonName .. "DRModeDropDown", 220, function()
         return {
-            { value = "off", text = Addon:S("Off") },
-            { value = "penalty", text = Addon:S("DR penalty (%)") },
-            { value = "loss", text = Addon:S("Rating lost to DR") },
-            { value = "full", text = Addon:S("Full DR info") },
+            { value = "off", text = Addon:S("NE_STATS_OFF") },
+            { value = "penalty", text = Addon:S("NE_STATS_DR_PENALTY") },
+            { value = "loss", text = Addon:S("NE_STATS_RATING_LOST_TO_DR") },
+            { value = "full", text = Addon:S("NE_STATS_FULL_DR_INFO") },
         }
     end, function(mode)
         SetValue("drDisplayMode", mode)
         Addon:RefreshStats()
     end)
-    generalCard:AddDropdownRow("Diminishing returns", drModeDropDown, 220)
+    generalCard:AddDropdownRow("NE_STATS_DIMINISHING_RETURNS", drModeDropDown, 220)
     controlRefs.drModeDropDown = drModeDropDown
 
     local textAlignDropDown = CreateDropDown(generalCard, addonName .. "TextAlignDropDown", 160, function()
@@ -1093,42 +1093,42 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
             end)
         end
     end)
-    generalCard:AddDropdownRow("Text alignment", textAlignDropDown, 160)
+    generalCard:AddDropdownRow("NE_STATS_TEXT_ALIGNMENT", textAlignDropDown, 160)
     controlRefs.textAlignDropDown = textAlignDropDown
 
     currentTopY = generalCard:Finish() - GROUP_GAP
 
-    local numbersCard = CreateCard(page, "Numbers", currentTopY)
+    local numbersCard = CreateCard(page, "NE_STATS_NUMBERS", currentTopY)
 
-    local showPercentCheckbox = CreateCheckbox(numbersCard, "Show percentages", nil, function(self)
+    local showPercentCheckbox = CreateCheckbox(numbersCard, "NE_STATS_SHOW_PERCENTAGES", nil, function(self)
         SetValue("showPercent", self:GetChecked())
         Addon:RefreshStats()
     end)
     numbersCard:AddCheckboxRow(showPercentCheckbox)
     controlRefs.showPercentCheckbox = showPercentCheckbox
 
-    local precisionSlider = CreateSlider(addonName .. "PercentPrecisionSlider", numbersCard, Addon:S("Percent Decimals"), 0, 3, 1, function(_, value)
+    local precisionSlider = CreateSlider(addonName .. "PercentPrecisionSlider", numbersCard, Addon:S("NE_STATS_PERCENT_DECIMALS"), 0, 3, 1, function(_, value)
         SetValue("percentPrecision", value)
         Addon:RefreshStats()
     end)
-    numbersCard:AddSliderRow("Percent Decimals", precisionSlider)
+    numbersCard:AddSliderRow("NE_STATS_PERCENT_DECIMALS", precisionSlider)
     controlRefs.precisionSlider = precisionSlider
 
-    local showLabelsCheckbox = CreateCheckbox(numbersCard, "Show stat names", nil, function(self)
+    local showLabelsCheckbox = CreateCheckbox(numbersCard, "NE_STATS_SHOW_STAT_NAMES", nil, function(self)
         SetValue("showLabels", self:GetChecked())
         Addon:RefreshStats()
     end)
     numbersCard:AddCheckboxRow(showLabelsCheckbox)
     controlRefs.showLabelsCheckbox = showLabelsCheckbox
 
-    local showValuesCheckbox = CreateCheckbox(numbersCard, "Show values", nil, function(self)
+    local showValuesCheckbox = CreateCheckbox(numbersCard, "NE_STATS_SHOW_VALUES", nil, function(self)
         SetValue("showValues", self:GetChecked())
         Addon:RefreshStats()
     end)
     numbersCard:AddCheckboxRow(showValuesCheckbox)
     controlRefs.showValuesCheckbox = showValuesCheckbox
 
-    local goldUseSeparatorCheckbox = CreateCheckbox(numbersCard, "Use separator for gold", nil, function(self)
+    local goldUseSeparatorCheckbox = CreateCheckbox(numbersCard, "NE_STATS_USE_SEPARATOR_FOR_GOLD", nil, function(self)
         SetValue("goldUseSeparator", self:GetChecked())
         Addon:RefreshStats()
     end)
@@ -1145,26 +1145,26 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("goldSeparator", separator)
         Addon:RefreshStats()
     end)
-    numbersCard:AddDropdownRow("Gold separator", goldSeparatorDropDown, 160)
+    numbersCard:AddDropdownRow("NE_STATS_GOLD_SEPARATOR", goldSeparatorDropDown, 160)
     controlRefs.goldSeparatorDropDown = goldSeparatorDropDown
 
     currentTopY = numbersCard:Finish() - GROUP_GAP
 
-    local frameCard = CreateCard(page, "Frame", currentTopY)
+    local frameCard = CreateCard(page, "NE_STATS_FRAME", currentTopY)
 
-    local lockCheckbox = CreateCheckbox(frameCard, "Lock frame", nil, function(self)
+    local lockCheckbox = CreateCheckbox(frameCard, "NE_STATS_LOCK_FRAME", nil, function(self)
         SetValue("locked", self:GetChecked())
         Addon:UpdateFrameLockState()
         if self:GetChecked() then
-            print(Addon:S("NE Stats: frame locked. Use settings to unlock and adjust it."))
+            print(Addon:S("NE_STATS_FRAME_LOCKED"))
         else
-            print(Addon:S("NE Stats: frame unlocked. Drag it, then lock when ready."))
+            print(Addon:S("NE_STATS_FRAME_UNLOCKED"))
         end
     end)
     frameCard:AddCheckboxRow(lockCheckbox)
     controlRefs.lockCheckbox = lockCheckbox
 
-    local showLockOnHoverCheckbox = CreateCheckbox(frameCard, "Show lock icon only on hover", "Shows the lock button only while the mouse is over the frame.", function(self)
+    local showLockOnHoverCheckbox = CreateCheckbox(frameCard, "NE_STATS_SHOW_LOCK_ICON_ONLY_ON_HOVER", "NE_STATS_LOCK_ON_HOVER_HINT", function(self)
         SetValue("showLockOnHover", self:GetChecked())
         Addon:UpdateFrameLockState()
     end)
@@ -1181,7 +1181,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("frameControlsPosition", value)
         Addon:RefreshStats()
     end)
-    local frameControlsPositionLabel = frameCard:AddDropdownRow("Button position", frameControlsPositionDropDown, 160)
+    local frameControlsPositionLabel = frameCard:AddDropdownRow("NE_STATS_BUTTON_POSITION", frameControlsPositionDropDown, 160)
     controlRefs.frameControlsPositionDropDown = frameControlsPositionDropDown
     controlRefs.frameControlsPositionLabel = frameControlsPositionLabel
 
@@ -1195,26 +1195,26 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("frameControlsDirection", value)
         Addon:RefreshStats()
     end)
-    local frameControlsDirectionLabel = frameCard:AddDropdownRow("Button direction", frameControlsDirectionDropDown, 160)
+    local frameControlsDirectionLabel = frameCard:AddDropdownRow("NE_STATS_BUTTON_DIRECTION", frameControlsDirectionDropDown, 160)
     controlRefs.frameControlsDirectionDropDown = frameControlsDirectionDropDown
     controlRefs.frameControlsDirectionLabel = frameControlsDirectionLabel
 
-    local alphaSlider = CreateSlider(addonName .. "AlphaSlider", frameCard, Addon:S("Background Opacity"), 0.1, 1, 0.05, function(_, value)
+    local alphaSlider = CreateSlider(addonName .. "AlphaSlider", frameCard, Addon:S("NE_STATS_BACKGROUND_OPACITY"), 0.1, 1, 0.05, function(_, value)
         SetValue("alpha", value)
         Addon:ApplyFrameStyle()
     end)
-    frameCard:AddSliderRow("Background Opacity", alphaSlider)
+    frameCard:AddSliderRow("NE_STATS_BACKGROUND_OPACITY", alphaSlider)
     controlRefs.alphaSlider = alphaSlider
 
-    local scaleSlider = CreateSlider(addonName .. "ScaleSlider", frameCard, Addon:S("UI Scale"), 0.5, 3, 0.05, function(_, value)
+    local scaleSlider = CreateSlider(addonName .. "ScaleSlider", frameCard, Addon:S("NE_STATS_UI_SCALE"), 0.5, 3, 0.05, function(_, value)
         SetValue("scale", value)
         Addon:ApplyFrameStyle()
         Addon:RefreshStats()
     end)
-    frameCard:AddSliderRow("UI Scale", scaleSlider)
+    frameCard:AddSliderRow("NE_STATS_UI_SCALE", scaleSlider)
     controlRefs.scaleSlider = scaleSlider
 
-    local resetButton = CreateButton(frameCard, 180, "Reset Position", function()
+    local resetButton = CreateButton(frameCard, 180, "NE_STATS_RESET_POSITION", function()
         local profile = Profile()
         profile.point = defaults.point
         profile.relativeTo = defaults.relativeTo
@@ -1223,56 +1223,56 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         profile.y = defaults.y
         Addon:ApplyFrameStyle()
         Addon:RefreshStats()
-        print(Addon:S("NE Stats: frame position reset."))
+        print(Addon:S("NE_STATS_FRAME_POSITION_RESET"))
     end)
     frameCard:AddButtonRow(resetButton)
     controlRefs.resetButton = resetButton
 
     currentTopY = frameCard:Finish() - GROUP_GAP
 
-    local textLayoutCard = CreateCard(page, "Text & Layout", currentTopY)
+    local textLayoutCard = CreateCard(page, "NE_STATS_TEXT_AND_LAYOUT", currentTopY)
 
-    local fontSizeSlider = CreateSlider(addonName .. "FontSizeSlider", textLayoutCard, Addon:S("Font Size"), 10, 32, 1, function(_, value)
+    local fontSizeSlider = CreateSlider(addonName .. "FontSizeSlider", textLayoutCard, Addon:S("NE_STATS_FONT_SIZE"), 10, 32, 1, function(_, value)
         SetValue("fontSize", value)
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow("Font Size", fontSizeSlider)
+    textLayoutCard:AddSliderRow("NE_STATS_FONT_SIZE", fontSizeSlider)
     controlRefs.fontSizeSlider = fontSizeSlider
 
-    local columnCountSlider = CreateSlider(addonName .. "ColumnCountSlider", textLayoutCard, Addon:S("Columns"), 1, #statKeys, 1, function(_, value)
+    local columnCountSlider = CreateSlider(addonName .. "ColumnCountSlider", textLayoutCard, Addon:S("NE_STATS_COLUMNS"), 1, #statKeys, 1, function(_, value)
         SetValue("columnCount", math.max(1, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow("Columns", columnCountSlider)
+    textLayoutCard:AddSliderRow("NE_STATS_COLUMNS", columnCountSlider)
     controlRefs.columnCountSlider = columnCountSlider
 
-    local rowsPerColumnSlider = CreateSlider(addonName .. "RowsPerColumnSlider", textLayoutCard, Addon:S("Max Rows per Column"), 0, #statKeys, 1, function(_, value)
+    local rowsPerColumnSlider = CreateSlider(addonName .. "RowsPerColumnSlider", textLayoutCard, Addon:S("NE_STATS_MAX_ROWS_PER_COLUMN"), 0, #statKeys, 1, function(_, value)
         SetValue("rowsPerColumn", math.max(0, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    rowsPerColumnSlider:SetMinLabel(Addon:S("Auto"))
-    textLayoutCard:AddSliderRow("Max Rows per Column", rowsPerColumnSlider)
+    rowsPerColumnSlider:SetMinLabel(Addon:S("NE_STATS_AUTO"))
+    textLayoutCard:AddSliderRow("NE_STATS_MAX_ROWS_PER_COLUMN", rowsPerColumnSlider)
     controlRefs.rowsPerColumnSlider = rowsPerColumnSlider
 
-    local showStatIconsCheckbox = CreateCheckbox(textLayoutCard, "Show stat icons", nil, function(self)
+    local showStatIconsCheckbox = CreateCheckbox(textLayoutCard, "NE_STATS_SHOW_STAT_ICONS", nil, function(self)
         SetValue("showStatIcons", self:GetChecked())
         Addon:RefreshStats()
     end)
     textLayoutCard:AddCheckboxRow(showStatIconsCheckbox)
     controlRefs.showStatIconsCheckbox = showStatIconsCheckbox
 
-    local rowGapSlider = CreateSlider(addonName .. "RowGapSlider", textLayoutCard, Addon:S("Row spacing"), 0, 20, 1, function(_, value)
+    local rowGapSlider = CreateSlider(addonName .. "RowGapSlider", textLayoutCard, Addon:S("NE_STATS_ROW_SPACING"), 0, 20, 1, function(_, value)
         SetValue("rowGap", math.max(0, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow("Row spacing", rowGapSlider)
+    textLayoutCard:AddSliderRow("NE_STATS_ROW_SPACING", rowGapSlider)
     controlRefs.rowGapSlider = rowGapSlider
 
-    local columnGapSlider = CreateSlider(addonName .. "ColumnGapSlider", textLayoutCard, Addon:S("Column spacing"), 0, 120, 1, function(_, value)
+    local columnGapSlider = CreateSlider(addonName .. "ColumnGapSlider", textLayoutCard, Addon:S("NE_STATS_COLUMN_SPACING"), 0, 120, 1, function(_, value)
         SetValue("columnGap", math.max(0, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow("Column spacing", columnGapSlider)
+    textLayoutCard:AddSliderRow("NE_STATS_COLUMN_SPACING", columnGapSlider)
     controlRefs.columnGapSlider = columnGapSlider
 
     local fontDropDown = CreateDropDown(textLayoutCard, addonName .. "FontDropDown", 220, function()
@@ -1286,14 +1286,14 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         if controlRefs.fontPreview then
             local path, flags = Addon:GetFontInfo(fontKey)
             controlRefs.fontPreview:SetFont(path or STANDARD_TEXT_FONT, 18, flags or "OUTLINE")
-            controlRefs.fontPreview:SetText((item and item.text or fontKey) .. " - " .. Addon:S("The quick brown fox 123"))
+            controlRefs.fontPreview:SetText((item and item.text or fontKey) .. " - " .. Addon:S("NE_STATS_FONT_PREVIEW"))
         end
         RefreshStatsDeferred()
     end)
-    textLayoutCard:AddDropdownRow("Font", fontDropDown, 220)
+    textLayoutCard:AddDropdownRow("NE_STATS_FONT", fontDropDown, 220)
     controlRefs.fontDropDown = fontDropDown
 
-    local fontPreview = textLayoutCard:AddTextLine(Addon:S("The quick brown fox 123"), "GameFontHighlight", 320)
+    local fontPreview = textLayoutCard:AddTextLine(Addon:S("NE_STATS_FONT_PREVIEW"), "GameFontHighlight", 320)
     controlRefs.fontPreview = fontPreview
     local bottomY = textLayoutCard:Finish()
     page.cursorY = bottomY - GROUP_GAP
@@ -1304,7 +1304,7 @@ end
 local function BuildStatsPage(content, addonName, statKeys)
     local page = CreatePage(content, "stats")
 
-    local card = CreateCard(page, "Stats", FORM_Y)
+    local card = CreateCard(page, "NE_STATS_STATS", FORM_Y)
 
     local hintWidth = PAGE_WIDTH - (FORM_X * 2) - (LABEL_X * 2)
 
@@ -1338,10 +1338,10 @@ local function BuildStatsPage(content, addonName, statKeys)
         SetValue("referenceDisplay", value)
         Addon:RefreshStats()
     end)
-    card:AddDropdownRow("Reference display", referenceDropDown, 220)
+    card:AddDropdownRow("NE_STATS_REFERENCE_DISPLAY", referenceDropDown, 220)
     controlRefs.referenceDisplayDropDown = referenceDropDown
 
-    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(card, "Always show current specialization main stat first", "Keeps the primary stat for your current specialization at the top of the display.", function(self)
+    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(card, "NE_STATS_ALWAYS_SHOW_CURRENT_SPECIALIZATION_MAIN_STAT_FIRST", "NE_STATS_PREFER_MAIN_STAT_HINT", function(self)
         SetValue("preferCurrentSpecMainStat", self:GetChecked())
         Addon:RefreshStats()
     end)
@@ -1541,7 +1541,7 @@ local function BuildStatsPage(content, addonName, statKeys)
         label:SetJustifyH("LEFT")
         row.label = label
 
-        local color = CreateButton(row, STAT_ROW_COLOR_BTN_W, "Color", function()
+        local color = CreateButton(row, STAT_ROW_COLOR_BTN_W, "NE_STATS_COLOR", function()
             OpenColorPicker(row.entry)
         end)
         color:SetPoint("RIGHT", row, "RIGHT", 0, 0)
@@ -1573,7 +1573,7 @@ local function BuildStatsPage(content, addonName, statKeys)
         nameOverride:SetPoint("RIGHT", swatch, "LEFT", -STAT_ROW_FIELD_GAP, 0)
         nameOverride:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(Addon:S("Name override"), 1, 0.82, 0)
+            GameTooltip:SetText(Addon:S("NE_STATS_NAME_OVERRIDE"), 1, 0.82, 0)
             GameTooltip:Show()
         end)
         nameOverride:SetScript("OnLeave", function()
@@ -1649,20 +1649,20 @@ function Addon:BuildOptionsPanel()
     local statKeys = self.Constants.STAT_KEYS
 
     optionsPanel = CreateFrame("Frame", addonName .. "OptionsPanel", UIParent)
-    optionsPanel.name = self:S("NE Stats")
+    optionsPanel.name = self:S("NE_STATS_ADDON_NAME")
     optionsPanel:SetSize(780, 620)
 
     -- Fixed header that stays in place while the content area scrolls.
     local title = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 20, -18)
-    BindLocalizedText(title, "NE Stats")
+    BindLocalizedText(title, "NE_STATS_ADDON_NAME")
     controlRefs.title = title
 
     local subtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
     subtitle:SetWidth(720)
     subtitle:SetJustifyH("LEFT")
-    BindLocalizedText(subtitle, "Profiles are shared across your account.\nYou can create multiple profiles to save different layouts, positions, and display settings.")
+    BindLocalizedText(subtitle, "NE_STATS_PROFILES_SHARED_HINT")
     controlRefs.subtitle = subtitle
 
     local divider = optionsPanel:CreateTexture(nil, "ARTWORK")
@@ -1722,7 +1722,7 @@ function Addon:BuildOptionsPanel()
     end)
 
     if Settings and Settings.RegisterCanvasLayoutCategory then
-        optionsCategory = Settings.RegisterCanvasLayoutCategory(optionsPanel, self:S("NE Stats"))
+        optionsCategory = Settings.RegisterCanvasLayoutCategory(optionsPanel, self:S("NE_STATS_ADDON_NAME"))
         optionsCategoryID = optionsCategory.GetID and optionsCategory:GetID() or nil
         Settings.RegisterAddOnCategory(optionsCategory)
     end
@@ -1776,9 +1776,9 @@ end
 function Addon:OpenAddonSettings()
     if not self:SafeBuildOptionsPanel() then
         if lastOptionsPanelError and lastOptionsPanelError ~= "" then
-            print(self:S("NE Stats: settings panel failed: %s", tostring(lastOptionsPanelError)))
+            print(self:S("NE_STATS_SETTINGS_PANEL_FAILED", tostring(lastOptionsPanelError)))
         else
-            print(self:S("NE Stats: settings panel is not available yet."))
+            print(self:S("NE_STATS_SETTINGS_NOT_AVAILABLE"))
         end
         return
     end
@@ -1795,5 +1795,5 @@ function Addon:OpenAddonSettings()
         InterfaceOptionsFrame_OpenToCategory(optionsPanel)
         return
     end
-    print(self:S("NE Stats: settings panel is not available yet."))
+    print(self:S("NE_STATS_SETTINGS_NOT_AVAILABLE"))
 end

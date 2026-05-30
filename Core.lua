@@ -106,7 +106,7 @@ local function SlashHandler(message)
     end
     if command == "reset" then
         Addon:ResetActiveProfile()
-        print(Addon:S("NE Stats: active profile reset."))
+        print(Addon:S("NE_STATS_PROFILE_RESET"))
         return
     end
 

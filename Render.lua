@@ -510,7 +510,7 @@ function Addon:RefreshStats()
         if displayError ~= "" and displayError ~= "nil" then
             local now = (GetTime and GetTime()) or 0
             if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 30 then
-                print(self:S("NE Stats: refresh failed: %s", displayError))
+                print(self:S("NE_STATS_REFRESH_FAILED", displayError))
                 lastRefreshErrorMessage = displayError
                 lastRefreshErrorAt = now
             end
