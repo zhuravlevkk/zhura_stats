@@ -14,6 +14,17 @@ local lastOptionsPanelError
 local rowControls = {}
 local controlRefs = {}
 local activeTab = "profiles"
+local statDragState = { active = false }
+local localizedWidgets = {}
+
+local function BindLocalizedText(widget, localeKey)
+    if not widget or not localeKey then
+        return widget
+    end
+    localizedWidgets[#localizedWidgets + 1] = { widget = widget, key = localeKey }
+    widget:SetText(Addon:S(localeKey))
+    return widget
+end
 
 local TAB_ORDER = { "profiles", "display", "stats" }
 local TAB_LABELS = {
@@ -47,18 +58,38 @@ local FRAME_CONTROLS_DIRECTION_LABELS = {
     VERTICAL = "Vertical",
 }
 
-local PAGE_X = 16
-local PAGE_Y = -112
-local PAGE_WIDTH = 620
+-- Layout grid. The settings canvas is roughly 620px wide; a left navigation
+-- rail plus a stretching content column fit comfortably within that budget.
+local SIDEBAR_W = 128
+local HEADER_H = 64
+local PAGE_X = 0
+local PAGE_Y = -6
+local PAGE_WIDTH = 470
 local ROW_H = 30
-local FORM_X = 24
-local FORM_Y = -70
-local LABEL_X = 24
-local CONTROL_X = 210
-local CONTROL_W = 240
-local FORM_ROW_H = 32
-local SLIDER_ROW_H = 52
-local GROUP_GAP = 14
+local FORM_X = 14
+local FORM_Y = -4
+local LABEL_X = 16
+local CONTROL_X = 168
+local CONTROL_W = 220
+local FORM_ROW_H = 34
+local SLIDER_ROW_H = 56
+local GROUP_GAP = 16
+
+-- Stat row column layout (stats options page).
+local STAT_ROW_LABEL_W = 72
+local STAT_ROW_COLOR_BTN_W = 46
+local STAT_ROW_SWATCH_SIZE = 16
+local STAT_ROW_COLOR_GAP = 8
+local STAT_ROW_FIELD_GAP = 8
+
+-- Shared visual palette for the redesigned panel.
+local COLOR_CARD_BG = { 0.09, 0.10, 0.13, 0.55 }
+local COLOR_CARD_BORDER = { 0.32, 0.35, 0.42, 0.85 }
+local COLOR_ACCENT = { 0.36, 0.62, 1.00 }
+local COLOR_NAV_ACTIVE = { 0.36, 0.62, 1.00, 0.22 }
+local COLOR_NAV_HOVER = { 1.00, 1.00, 1.00, 0.08 }
+local COLOR_ROW_STRIPE = { 1.00, 1.00, 1.00, 0.03 }
+local COLOR_DROP_LINE = { 0.36, 0.62, 1.00, 0.95 }
 
 function Addon:GetControlRefs()
     return controlRefs
@@ -88,15 +119,6 @@ local function GetActiveProfileNameFromDB()
     return "Default"
 end
 
-local function SetGenericDropDownSelection(dropDown, text, value)
-    if not dropDown then
-        return
-    end
-    UIDropDownMenu_SetText(dropDown, text or "")
-    UIDropDownMenu_SetSelectedName(dropDown, text or "")
-    UIDropDownMenu_SetSelectedValue(dropDown, value)
-end
-
 local function CreateLabel(parent, text, fontTemplate)
     local label = parent:CreateFontString(nil, "ARTWORK", fontTemplate or "GameFontNormalSmall")
     label:SetJustifyH("LEFT")
@@ -104,30 +126,30 @@ local function CreateLabel(parent, text, fontTemplate)
     return label
 end
 
-local function CreateButton(parent, width, text, onClick)
+local function CreateButton(parent, width, localeKey, onClick)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetSize(width or 120, 22)
-    button:SetText(text or "")
     if onClick then
         button:SetScript("OnClick", onClick)
     end
+    BindLocalizedText(button, localeKey)
     return button
 end
 
-local function CreateCheckbox(parent, label, tooltip, onClick)
+local function CreateCheckbox(parent, labelKey, tooltipKey, onClick)
     local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
     checkbox.label = checkbox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     checkbox.label:SetPoint("LEFT", checkbox, "RIGHT", 6, 0)
     checkbox.label:SetJustifyH("LEFT")
-    checkbox.label:SetText(label or "")
-    checkbox.tooltipText = tooltip
+    BindLocalizedText(checkbox.label, labelKey)
+    checkbox.tooltipKey = tooltipKey
     checkbox:SetScript("OnClick", onClick)
     checkbox:SetScript("OnEnter", function(self)
-        if not self.tooltipText then
+        if not self.tooltipKey then
             return
         end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(self.tooltipText, 1, 0.82, 0)
+        GameTooltip:SetText(Addon:S(self.tooltipKey), 1, 0.82, 0)
         GameTooltip:Show()
     end)
     checkbox:SetScript("OnLeave", function()
@@ -136,16 +158,49 @@ local function CreateCheckbox(parent, label, tooltip, onClick)
     return checkbox
 end
 
+-- Modern slider built on MinimalSliderWithSteppersTemplate. The wrapper keeps the
+-- legacy call contract (a :SetValue method and a function(self, value) callback)
+-- so the rest of Options.lua stays untouched.
 local function CreateSlider(name, parent, label, minValue, maxValue, step, onValueChanged)
-    local slider = CreateFrame("Slider", name, parent, "OptionsSliderTemplate")
-    slider:SetWidth(220)
-    slider:SetMinMaxValues(minValue, maxValue)
-    slider:SetValueStep(step)
-    slider:SetObeyStepOnDrag(true)
-    _G[name .. "Low"]:SetText(tostring(minValue))
-    _G[name .. "High"]:SetText(tostring(maxValue))
-    _G[name .. "Text"]:SetText(label)
-    slider:SetScript("OnValueChanged", onValueChanged)
+    local slider = CreateFrame("Frame", name, parent, "MinimalSliderWithSteppersTemplate")
+    local steps = math.max(1, math.floor(((maxValue - minValue) / step) + 0.5))
+    slider.useDecimals = step < 1
+    slider.minLabel = tostring(minValue)
+    slider.maxLabel = tostring(maxValue)
+
+    local function FormatTop(value)
+        if slider.useDecimals then
+            return string.format("%.2f", value)
+        end
+        return tostring(math.floor(value + 0.5))
+    end
+
+    local formatters = {
+        [MinimalSliderWithSteppersMixin.Label.Top] = FormatTop,
+        [MinimalSliderWithSteppersMixin.Label.Min] = function() return slider.minLabel end,
+        [MinimalSliderWithSteppersMixin.Label.Max] = function() return slider.maxLabel end,
+    }
+
+    slider:Init(minValue, minValue, maxValue, steps, formatters)
+    slider.onValueChanged = onValueChanged
+    -- CallbackRegistry invokes function callbacks as func(owner, ...), so the
+    -- registered owner arrives first and the slider value second.
+    slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(owner, value)
+        if owner.onValueChanged then
+            owner.onValueChanged(owner, value)
+        end
+    end, slider)
+
+    function slider:RefreshLabels()
+        local current = self.Slider and self.Slider:GetValue() or minValue
+        self:FormatValue(current)
+    end
+
+    function slider:SetMinLabel(text)
+        self.minLabel = text
+        self:RefreshLabels()
+    end
+
     return slider
 end
 
@@ -270,19 +325,7 @@ local function CanMoveStat(index, direction)
     return true
 end
 
-local function MoveStat(index, direction)
-    local profile = Profile()
-    if not profile or not profile.stats then
-        return
-    end
-    if not CanMoveStat(index, direction) then
-        return
-    end
-
-    local stats = profile.stats
-    local target = index + direction
-    stats[index], stats[target] = stats[target], stats[index]
-
+local function ApplyStatOrderChange()
     -- Force a full UI/display sync so the main stat frame rebuilds immediately.
     if Addon.ApplyCurrentProfileStateImpl then
         Addon:ApplyCurrentProfileStateImpl()
@@ -291,6 +334,37 @@ local function MoveStat(index, direction)
     else
         Addon:RefreshStats()
         Addon:RefreshOptionRows()
+    end
+end
+
+-- Moves a stat from one index to another by walking it one slot at a time. Each
+-- step reuses CanMoveStat, so priority-mode locks (Archon) are honored exactly
+-- like the up/down arrows: locked stats never move and are never displaced.
+local function ReorderStat(fromIndex, toIndex)
+    local profile = Profile()
+    if not profile or not profile.stats then
+        return
+    end
+    if not fromIndex or not toIndex or fromIndex == toIndex then
+        return
+    end
+
+    local stats = profile.stats
+    local direction = toIndex > fromIndex and 1 or -1
+    local index = fromIndex
+    local moved = false
+    while index ~= toIndex do
+        if not CanMoveStat(index, direction) then
+            break
+        end
+        local target = index + direction
+        stats[index], stats[target] = stats[target], stats[index]
+        index = target
+        moved = true
+    end
+
+    if moved then
+        ApplyStatOrderChange()
     end
 end
 
@@ -342,7 +416,8 @@ end
 local function CreatePage(parent, key)
     local page = CreateFrame("Frame", nil, parent)
     page:SetPoint("TOPLEFT", PAGE_X, PAGE_Y)
-    page:SetSize(PAGE_WIDTH, 480)
+    page:SetPoint("TOPRIGHT", -PAGE_X, PAGE_Y)
+    page:SetHeight(480)
     page.cursorY = 0
     page.maxBottom = 0
     page.key = key
@@ -394,61 +469,62 @@ local function CreatePage(parent, key)
     return page
 end
 
+-- Modern dropdown built on WowStyle1DropdownTemplate + the Menu system. The
+-- wrapper preserves the legacy surface (getItems, onSelect, selectedValue and a
+-- :Refresh(preferredValue) method) so callers and state sync code are unchanged.
 local function CreateDropDown(parent, name, width, getItems, onSelect)
-    local dropDown = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
-    UIDropDownMenu_SetWidth(dropDown, width or 220)
+    local dropDown = CreateFrame("DropdownButton", name, parent, "WowStyle1DropdownTemplate")
+    dropDown:SetWidth(width or 220)
     dropDown.selectedValue = nil
     dropDown.getItems = getItems
     dropDown.onSelect = onSelect
-    dropDown.initializeFunc = function(_, level)
-        local items = dropDown.getItems and dropDown.getItems() or {}
+
+    dropDown:SetupMenu(function(dd, rootDescription)
+        local items = dd.getItems and dd.getItems() or {}
         for _, item in ipairs(items) do
-            local info = UIDropDownMenu_CreateInfo()
-            info.text = item.text
-            info.value = item.value
-            info.disabled = item.disabled
-            info.checked = dropDown.selectedValue == item.value
-            info.func = function()
-                dropDown.selectedValue = item.value
-                SetGenericDropDownSelection(dropDown, item.text, item.value)
-                CloseDropDownMenus()
-                if dropDown.onSelect then
-                    dropDown.onSelect(item.value, item)
+            local radio = rootDescription:CreateRadio(item.text, function(value)
+                return dd.selectedValue == value
+            end, function(value)
+                dd.selectedValue = value
+                if dd.onSelect then
+                    dd.onSelect(value, item)
                 end
+            end, item.value)
+            if item.disabled then
+                radio:SetEnabled(false)
             end
-            UIDropDownMenu_AddButton(info, level)
         end
-    end
-    UIDropDownMenu_Initialize(dropDown, dropDown.initializeFunc)
-    dropDown.Refresh = function(self, preferredValue)
-        UIDropDownMenu_Initialize(self, self.initializeFunc)
+    end)
+
+    function dropDown:Refresh(preferredValue)
         local items = self.getItems and self.getItems() or {}
         local selectedValue = preferredValue or self.selectedValue
-        local selectedText
+        local valid = false
         for _, item in ipairs(items) do
             if item.value == selectedValue and not item.disabled then
-                selectedText = item.text
+                valid = true
                 break
             end
         end
-        if not selectedText then
+        if not valid then
             selectedValue = nil
             for _, item in ipairs(items) do
                 if not item.disabled then
                     selectedValue = item.value
-                    selectedText = item.text
                     break
                 end
             end
         end
         self.selectedValue = selectedValue
-        if selectedValue then
-            SetGenericDropDownSelection(self, selectedText, selectedValue)
+        if selectedValue == nil then
+            self:OverrideText(Addon:S("No available profiles"))
         else
-            UIDropDownMenu_SetSelectedValue(self, nil)
-            UIDropDownMenu_SetText(self, Addon:S("No available profiles"))
+            -- Re-enable selection-driven text after a possible OverrideText call.
+            self.disableSelectionText = false
+            self:GenerateMenu()
         end
     end
+
     return dropDown
 end
 
@@ -532,10 +608,16 @@ local function UpdateContentHeight()
     if not controlRefs.scrollContent or not controlRefs.pages then
         return
     end
+    if controlRefs.scrollFrame then
+        local width = controlRefs.scrollFrame:GetWidth()
+        if width and width > 1 then
+            controlRefs.scrollContent:SetWidth(width)
+        end
+    end
     local page = controlRefs.pages[activeTab]
-    local height = 600
+    local height = 480
     if page and page.ContentHeight then
-        height = math.max(600, page:ContentHeight())
+        height = math.max(480, page:ContentHeight())
     end
     controlRefs.scrollContent:SetHeight(height)
 end
@@ -553,10 +635,8 @@ local function ShowOptionsTab(tabName)
         end
     end
     for key, button in pairs(controlRefs.tabButtons or {}) do
-        if key == activeTab then
-            button:Disable()
-        else
-            button:Enable()
+        if button.SetActive then
+            button:SetActive(key == activeTab)
         end
     end
     UpdateContentHeight()
@@ -594,10 +674,19 @@ function Addon:RefreshOptionRows()
                 row.nameOverride:SetText(entry.nameOverride or "")
             end
             row.swatch.texture:SetColorTexture(entry.color[1], entry.color[2], entry.color[3], 1)
-            row.up:SetEnabled(CanMoveStat(index, -1))
-            row.down:SetEnabled(CanMoveStat(index, 1))
+            if row.handle then
+                local locked = IsStatOrderLockedByPriorityMode(entry.key)
+                row.handle:SetEnabled(not locked)
+                row.handle:SetAlpha(locked and 0.25 or 1)
+                if row.dragHighlight then
+                    row.dragHighlight:Hide()
+                end
+            end
             row.entry = entry
         end
+    end
+    if controlRefs.statDropIndicator then
+        controlRefs.statDropIndicator:Hide()
     end
     RefreshArchonHint(profile)
 end
@@ -671,13 +760,14 @@ end
 function Addon:RefreshLocalizedUI()
     local defaults = self.Defaults.profile
     self:RefreshStaticPopupTexts()
-    if optionsPanel then optionsPanel.name = self:S("NE Stats") end
-    if controlRefs.title then controlRefs.title:SetText(self:S("NE Stats")) end
-    if controlRefs.subtitle then controlRefs.subtitle:SetText(self:S("Profiles are shared across your account.\nYou can create multiple profiles to save different layouts, positions, and display settings.")) end
 
-    for key, button in pairs(controlRefs.tabButtons or {}) do
-        button:SetText(self:S(TAB_LABELS[key] or key))
+    for _, entry in ipairs(localizedWidgets) do
+        if entry.widget and entry.widget.SetText then
+            entry.widget:SetText(self:S(entry.key))
+        end
     end
+
+    if optionsPanel then optionsPanel.name = self:S("NE Stats") end
 
     if controlRefs.profileInfo then
         local activeName = GetActiveProfileNameFromDB()
@@ -694,33 +784,42 @@ function Addon:RefreshLocalizedUI()
     if controlRefs.referenceDisplayDropDown then
         controlRefs.referenceDisplayDropDown:Refresh(GetValue("referenceDisplay", defaults.referenceDisplay or "inline"))
     end
+    if controlRefs.frameControlsPositionDropDown then
+        controlRefs.frameControlsPositionDropDown:Refresh(GetValue("frameControlsPosition", defaults.frameControlsPosition))
+    end
+    if controlRefs.frameControlsDirectionDropDown then
+        controlRefs.frameControlsDirectionDropDown:Refresh(GetValue("frameControlsDirection", defaults.frameControlsDirection))
+    end
+    if controlRefs.profileDropDown then
+        controlRefs.profileDropDown:Refresh(GetActiveProfileNameFromDB())
+    end
+    if controlRefs.profileCopySourceDropDown then
+        controlRefs.profileCopySourceDropDown:Refresh(controlRefs.profileCopySourceDropDown.selectedValue)
+    end
+    if controlRefs.profileRenameTargetDropDown then
+        controlRefs.profileRenameTargetDropDown:Refresh(controlRefs.profileRenameTargetDropDown.selectedValue)
+    end
+    if controlRefs.profileDeleteTargetDropDown then
+        controlRefs.profileDeleteTargetDropDown:Refresh(controlRefs.profileDeleteTargetDropDown.selectedValue)
+    end
+    if controlRefs.fontDropDown then
+        controlRefs.fontDropDown:Refresh(GetValue("fontKey", defaults.fontKey))
+    end
+
     if controlRefs.referenceDisplayHint then
         controlRefs.referenceDisplayHint:SetText(self:S("NE_STATS_REFERENCE_MODE_HINT"))
     end
+    if controlRefs.priorityHint then
+        controlRefs.priorityHint:SetText(self:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"))
+    end
+    if controlRefs.statHint then
+        controlRefs.statHint:SetText(self:S("NE_STATS_REORDER_HINT"))
+    end
     RefreshArchonHint(self:GetProfile())
 
-    if controlRefs.showPercentCheckbox then controlRefs.showPercentCheckbox.label:SetText(self:S("Show percentages")) end
-    if controlRefs.showLabelsCheckbox then controlRefs.showLabelsCheckbox.label:SetText(self:S("Show stat names")) end
-    if controlRefs.showValuesCheckbox then controlRefs.showValuesCheckbox.label:SetText(self:S("Show values")) end
-    if controlRefs.showStatIconsCheckbox then controlRefs.showStatIconsCheckbox.label:SetText(self:S("Show stat icons")) end
-    if controlRefs.goldUseSeparatorCheckbox then controlRefs.goldUseSeparatorCheckbox.label:SetText(self:S("Use separator for gold")) end
-    if controlRefs.lockCheckbox then controlRefs.lockCheckbox.label:SetText(self:S("Lock frame")) end
-    if controlRefs.showLockOnHoverCheckbox then controlRefs.showLockOnHoverCheckbox.label:SetText(self:S("Show lock icon only on hover")) end
-    if controlRefs.frameControlsPositionLabel then controlRefs.frameControlsPositionLabel:SetText(self:S("Button position")) end
-    if controlRefs.frameControlsDirectionLabel then controlRefs.frameControlsDirectionLabel:SetText(self:S("Button direction")) end
-    if controlRefs.preferCurrentSpecMainStatCheckbox then controlRefs.preferCurrentSpecMainStatCheckbox.label:SetText(self:S("Always show current specialization main stat first")) end
-
-    if controlRefs.precisionSlider then _G[controlRefs.precisionSlider:GetName() .. "Text"]:SetText("") end
-    if controlRefs.alphaSlider then _G[controlRefs.alphaSlider:GetName() .. "Text"]:SetText("") end
-    if controlRefs.scaleSlider then _G[controlRefs.scaleSlider:GetName() .. "Text"]:SetText("") end
-    if controlRefs.fontSizeSlider then _G[controlRefs.fontSizeSlider:GetName() .. "Text"]:SetText("") end
-    if controlRefs.columnCountSlider then _G[controlRefs.columnCountSlider:GetName() .. "Text"]:SetText("") end
-    if controlRefs.rowsPerColumnSlider then
-        _G[controlRefs.rowsPerColumnSlider:GetName() .. "Text"]:SetText("")
-        _G[controlRefs.rowsPerColumnSlider:GetName() .. "Low"]:SetText(self:S("Auto"))
+    if controlRefs.rowsPerColumnSlider and controlRefs.rowsPerColumnSlider.SetMinLabel then
+        controlRefs.rowsPerColumnSlider:SetMinLabel(self:S("Auto"))
     end
-    if controlRefs.rowGapSlider then _G[controlRefs.rowGapSlider:GetName() .. "Text"]:SetText("") end
-    if controlRefs.columnGapSlider then _G[controlRefs.columnGapSlider:GetName() .. "Text"]:SetText("") end
 
     if StaticPopupDialogs["NE_STATS_RESET_PROFILE"] then
         StaticPopupDialogs["NE_STATS_RESET_PROFILE"].text = self:S("Reset active profile %s?")
@@ -728,77 +827,76 @@ function Addon:RefreshLocalizedUI()
         StaticPopupDialogs["NE_STATS_RESET_PROFILE"].button2 = self:S("Cancel")
     end
 
-    for _, row in ipairs(rowControls) do
-        if row.color then row.color:SetText(self:S("Color")) end
-    end
-
     self:RefreshOptions()
 end
 
-local function CreateCard(page, title, topY)
+local function CreateCard(page, titleKey, topY)
     local card = CreateFrame("Frame", nil, page, "BackdropTemplate")
     card:SetPoint("TOPLEFT", page, "TOPLEFT", FORM_X, topY)
-    card:SetWidth(PAGE_WIDTH - (FORM_X * 2))
+    card:SetPoint("TOPRIGHT", page, "TOPRIGHT", -FORM_X, topY)
     card:SetBackdrop({
         bgFile = "Interface/Buttons/WHITE8x8",
-        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-        tile = true,
-        tileSize = 8,
-        edgeSize = 8,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 },
+        edgeFile = "Interface/Buttons/WHITE8x8",
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
     })
-    card:SetBackdropColor(0.06, 0.06, 0.06, 0.22)
-    card:SetBackdropBorderColor(0.25, 0.25, 0.25, 0.6)
+    card:SetBackdropColor(unpack(COLOR_CARD_BG))
+    card:SetBackdropBorderColor(unpack(COLOR_CARD_BORDER))
 
-    local padding = 14
-    local currentY = -(padding + 22)
+    local padding = 16
+    local currentY = -(padding + 24)
 
-    local titleLabel = CreateLabel(card, title, "GameFontNormal")
-    titleLabel:SetPoint("TOPLEFT", card, "TOPLEFT", padding, -padding)
+    local accent = card:CreateTexture(nil, "ARTWORK")
+    accent:SetColorTexture(COLOR_ACCENT[1], COLOR_ACCENT[2], COLOR_ACCENT[3], 1)
+    accent:SetPoint("TOPLEFT", card, "TOPLEFT", padding, -padding - 1)
+    accent:SetSize(3, 14)
 
-    function card:AddDropdownRow(labelText, dropdown, width)
-        local label = CreateLabel(self, labelText, "GameFontNormalSmall")
-        label:SetPoint("TOPLEFT", self, "TOPLEFT", LABEL_X, currentY - 4)
+    local titleLabel = CreateLabel(card, Addon:S(titleKey), "GameFontNormal")
+    titleLabel:SetPoint("LEFT", accent, "RIGHT", 8, 0)
+    BindLocalizedText(titleLabel, titleKey)
+
+    function card:AddDropdownRow(labelKey, dropdown, width)
+        local label = CreateLabel(self, Addon:S(labelKey), "GameFontHighlightSmall")
+        BindLocalizedText(label, labelKey)
+        label:SetPoint("LEFT", self, "TOPLEFT", LABEL_X, currentY - 12)
         dropdown:ClearAllPoints()
-        dropdown:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY + 8)
-        UIDropDownMenu_SetWidth(dropdown, width or CONTROL_W)
+        dropdown:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY)
+        dropdown:SetWidth(width or CONTROL_W)
         currentY = currentY - FORM_ROW_H
         return label
     end
 
     function card:AddCheckboxRow(checkbox)
         checkbox:ClearAllPoints()
-        checkbox:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY + 8)
+        checkbox:SetPoint("TOPLEFT", self, "TOPLEFT", LABEL_X, currentY)
         currentY = currentY - FORM_ROW_H
     end
 
-    function card:AddSliderRow(labelText, slider)
-        local label = CreateLabel(self, labelText, "GameFontNormalSmall")
-        label:SetPoint("TOPLEFT", self, "TOPLEFT", LABEL_X, currentY - 4)
+    function card:AddSliderRow(labelKey, slider)
+        local label = CreateLabel(self, Addon:S(labelKey), "GameFontHighlightSmall")
+        BindLocalizedText(label, labelKey)
+        label:SetPoint("LEFT", self, "TOPLEFT", LABEL_X, currentY - 16)
         slider:ClearAllPoints()
-        slider:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY + 2)
+        slider:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY - 4)
         slider:SetWidth(CONTROL_W)
-        local titleText = _G[slider:GetName() .. "Text"]
-        if titleText then
-            titleText:SetText("")
-        end
         currentY = currentY - SLIDER_ROW_H
         return label
     end
 
-    function card:AddControlRow(labelText, control)
-        local label = CreateLabel(self, labelText, "GameFontNormalSmall")
-        label:SetPoint("TOPLEFT", self, "TOPLEFT", LABEL_X, currentY - 4)
+    function card:AddControlRow(labelKey, control)
+        local label = CreateLabel(self, Addon:S(labelKey), "GameFontHighlightSmall")
+        BindLocalizedText(label, labelKey)
+        label:SetPoint("LEFT", self, "TOPLEFT", LABEL_X, currentY - 12)
         control:ClearAllPoints()
-        control:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY + 8)
+        control:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY)
         currentY = currentY - FORM_ROW_H
         return label
     end
 
     function card:AddTextLine(text, fontTemplate, width)
         local textLine = CreateLabel(self, text, fontTemplate or "GameFontHighlightSmall")
-        textLine:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY + 2)
-        textLine:SetWidth(width or (CONTROL_W + 180))
+        textLine:SetPoint("TOPLEFT", self, "TOPLEFT", LABEL_X, currentY - 2)
+        textLine:SetWidth(width or (CONTROL_W + 120))
         textLine:SetJustifyH("LEFT")
         currentY = currentY - FORM_ROW_H
         return textLine
@@ -806,7 +904,7 @@ local function CreateCard(page, title, topY)
 
     function card:AddButtonRow(button)
         button:ClearAllPoints()
-        button:SetPoint("TOPLEFT", self, "TOPLEFT", CONTROL_X, currentY + 6)
+        button:SetPoint("TOPLEFT", self, "TOPLEFT", LABEL_X, currentY)
         currentY = currentY - FORM_ROW_H
     end
 
@@ -831,44 +929,43 @@ end
 
 local function BuildProfilesPage(content, addonName)
     local page = CreatePage(content, "profiles")
-    page:AddTitle(Addon:S("Profiles"))
 
-    local card = CreateCard(page, Addon:S("Profiles"), FORM_Y)
+    local card = CreateCard(page, "Profiles", FORM_Y)
 
-    local activeDropDown = CreateDropDown(card, addonName .. "ProfileDropDown", 190, function()
+    local activeDropDown = CreateDropDown(card, addonName .. "ProfileDropDown", 150, function()
         return CreateProfileItems("active")
     end, function(profileName)
         Addon:SelectRootProfile(profileName)
         Addon:OnProfileStateChanged()
     end)
-    card:AddDropdownRow(Addon:S("Current profile"), activeDropDown, 190)
+    card:AddDropdownRow("Current profile", activeDropDown, 150)
     controlRefs.profileDropDown = activeDropDown
 
     local profileInfo = card:AddTextLine("", "GameFontHighlightSmall", 320)
     controlRefs.profileInfo = profileInfo
 
     local createEditBox = CreateFrame("EditBox", nil, card, "InputBoxTemplate")
-    createEditBox:SetSize(220, 24)
+    createEditBox:SetSize(150, 24)
     createEditBox:SetAutoFocus(false)
     createEditBox:SetScript("OnEnterPressed", function(self)
         CreateProfileFromInput(self)
         self:ClearFocus()
     end)
-    local createLabel = card:AddControlRow(Addon:S("Create profile"), createEditBox)
+    local createLabel = card:AddControlRow("Create profile", createEditBox)
     controlRefs.profileCreateLabel = createLabel
     controlRefs.profileCreateEditBox = createEditBox
-    local createButton = CreateButton(card, 90, Addon:S("Create"), function()
+    local createButton = CreateButton(card, 78, "Create", function()
         CreateProfileFromInput(createEditBox)
     end)
     createButton:SetPoint("LEFT", createEditBox, "RIGHT", 6, 0)
     controlRefs.profileCreateButton = createButton
 
-    local copyDropDown = CreateDropDown(card, addonName .. "ProfileCopySourceDropDown", 190, function()
+    local copyDropDown = CreateDropDown(card, addonName .. "ProfileCopySourceDropDown", 150, function()
         return CreateProfileItems("copySource")
     end)
-    card:AddDropdownRow(Addon:S("Copy into current"), copyDropDown, 190)
+    card:AddDropdownRow("Copy into current", copyDropDown, 150)
     controlRefs.profileCopySourceDropDown = copyDropDown
-    local copyButton = CreateButton(card, 90, Addon:S("Copy"), function()
+    local copyButton = CreateButton(card, 78, "Copy", function()
         local sourceProfileName = copyDropDown.selectedValue
         if not sourceProfileName then
             print(Addon:S("NE Stats: source profile is not selected."))
@@ -885,12 +982,12 @@ local function BuildProfilesPage(content, addonName)
     copyButton:SetPoint("LEFT", copyDropDown, "RIGHT", 6, 0)
     controlRefs.profileCopyButton = copyButton
 
-    local renameDropDown = CreateDropDown(card, addonName .. "ProfileRenameTargetDropDown", 190, function()
+    local renameDropDown = CreateDropDown(card, addonName .. "ProfileRenameTargetDropDown", 150, function()
         return CreateProfileItems("renameTarget")
     end)
-    card:AddDropdownRow(Addon:S("Rename profile"), renameDropDown, 190)
+    card:AddDropdownRow("Rename profile", renameDropDown, 150)
     controlRefs.profileRenameTargetDropDown = renameDropDown
-    local renameButton = CreateButton(card, 90, Addon:S("Rename"), function()
+    local renameButton = CreateButton(card, 78, "Rename", function()
         local profileName = renameDropDown.selectedValue
         if not profileName or not Addon:CanModifyProfile(profileName) then
             print(Addon:S("NE Stats: profile could not be renamed."))
@@ -904,12 +1001,12 @@ local function BuildProfilesPage(content, addonName)
     renameButton:SetPoint("LEFT", renameDropDown, "RIGHT", 6, 0)
     controlRefs.profileRenameButton = renameButton
 
-    local deleteDropDown = CreateDropDown(card, addonName .. "ProfileDeleteTargetDropDown", 190, function()
+    local deleteDropDown = CreateDropDown(card, addonName .. "ProfileDeleteTargetDropDown", 150, function()
         return CreateProfileItems("deleteTarget")
     end)
-    card:AddDropdownRow(Addon:S("Delete profile"), deleteDropDown, 190)
+    card:AddDropdownRow("Delete profile", deleteDropDown, 150)
     controlRefs.profileDeleteTargetDropDown = deleteDropDown
-    local deleteButton = CreateButton(card, 90, Addon:S("Delete"), function()
+    local deleteButton = CreateButton(card, 78, "Delete", function()
         local profileName = deleteDropDown.selectedValue
         if not profileName or not Addon:CanModifyProfile(profileName) or profileName == GetActiveProfileNameFromDB() then
             print(Addon:S("NE Stats: profile could not be deleted."))
@@ -921,7 +1018,7 @@ local function BuildProfilesPage(content, addonName)
     controlRefs.profileDeleteButton = deleteButton
 
     card:Advance(8)
-    local resetButton = CreateButton(card, 200, Addon:S("Reset Current"), function()
+    local resetButton = CreateButton(card, 200, "Reset Current", function()
         EnsureResetProfilePopup()
         StaticPopup_Show("NE_STATS_RESET_PROFILE", Addon:GetDisplayProfileName(GetActiveProfileNameFromDB()))
     end)
@@ -935,11 +1032,10 @@ end
 
 local function BuildDisplayPage(content, addonName, defaults, statKeys)
     local page = CreatePage(content, "display")
-    page:AddTitle(Addon:S("Display"))
 
     local currentTopY = FORM_Y
 
-    local generalCard = CreateCard(page, Addon:S("General"), currentTopY)
+    local generalCard = CreateCard(page, "General", currentTopY)
 
     local languageDropDown = CreateDropDown(generalCard, addonName .. "LanguageDropDown", 220, function()
         local localeOptions = { "client", "enUS", "deDE", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "ukUA", "zhCN", "zhTW" }
@@ -954,8 +1050,9 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         Addon:RefreshLocalizedUI()
         Addon:ApplyCurrentProfileState()
         Addon:UpdateFrameLockState()
+        Addon:RefreshStats()
     end)
-    generalCard:AddDropdownRow(Addon:S("Addon language"), languageDropDown, 220)
+    generalCard:AddDropdownRow("Addon language", languageDropDown, 220)
     controlRefs.languageDropDown = languageDropDown
 
     local drModeDropDown = CreateDropDown(generalCard, addonName .. "DRModeDropDown", 220, function()
@@ -969,7 +1066,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("drDisplayMode", mode)
         Addon:RefreshStats()
     end)
-    generalCard:AddDropdownRow(Addon:S("Diminishing returns"), drModeDropDown, 220)
+    generalCard:AddDropdownRow("Diminishing returns", drModeDropDown, 220)
     controlRefs.drModeDropDown = drModeDropDown
 
     local textAlignDropDown = CreateDropDown(generalCard, addonName .. "TextAlignDropDown", 160, function()
@@ -993,14 +1090,14 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
             end)
         end
     end)
-    generalCard:AddDropdownRow(Addon:S("Text alignment"), textAlignDropDown, 160)
+    generalCard:AddDropdownRow("Text alignment", textAlignDropDown, 160)
     controlRefs.textAlignDropDown = textAlignDropDown
 
     currentTopY = generalCard:Finish() - GROUP_GAP
 
-    local numbersCard = CreateCard(page, Addon:S("Numbers"), currentTopY)
+    local numbersCard = CreateCard(page, "Numbers", currentTopY)
 
-    local showPercentCheckbox = CreateCheckbox(numbersCard, Addon:S("Show percentages"), nil, function(self)
+    local showPercentCheckbox = CreateCheckbox(numbersCard, "Show percentages", nil, function(self)
         SetValue("showPercent", self:GetChecked())
         Addon:RefreshStats()
     end)
@@ -1011,24 +1108,24 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("percentPrecision", value)
         Addon:RefreshStats()
     end)
-    numbersCard:AddSliderRow(Addon:S("Percent decimals"), precisionSlider)
+    numbersCard:AddSliderRow("Percent Decimals", precisionSlider)
     controlRefs.precisionSlider = precisionSlider
 
-    local showLabelsCheckbox = CreateCheckbox(numbersCard, Addon:S("Show stat names"), nil, function(self)
+    local showLabelsCheckbox = CreateCheckbox(numbersCard, "Show stat names", nil, function(self)
         SetValue("showLabels", self:GetChecked())
         Addon:RefreshStats()
     end)
     numbersCard:AddCheckboxRow(showLabelsCheckbox)
     controlRefs.showLabelsCheckbox = showLabelsCheckbox
 
-    local showValuesCheckbox = CreateCheckbox(numbersCard, Addon:S("Show values"), nil, function(self)
+    local showValuesCheckbox = CreateCheckbox(numbersCard, "Show values", nil, function(self)
         SetValue("showValues", self:GetChecked())
         Addon:RefreshStats()
     end)
     numbersCard:AddCheckboxRow(showValuesCheckbox)
     controlRefs.showValuesCheckbox = showValuesCheckbox
 
-    local goldUseSeparatorCheckbox = CreateCheckbox(numbersCard, Addon:S("Use separator for gold"), nil, function(self)
+    local goldUseSeparatorCheckbox = CreateCheckbox(numbersCard, "Use separator for gold", nil, function(self)
         SetValue("goldUseSeparator", self:GetChecked())
         Addon:RefreshStats()
     end)
@@ -1045,14 +1142,14 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("goldSeparator", separator)
         Addon:RefreshStats()
     end)
-    numbersCard:AddDropdownRow(Addon:S("Gold separator"), goldSeparatorDropDown, 160)
+    numbersCard:AddDropdownRow("Gold separator", goldSeparatorDropDown, 160)
     controlRefs.goldSeparatorDropDown = goldSeparatorDropDown
 
     currentTopY = numbersCard:Finish() - GROUP_GAP
 
-    local frameCard = CreateCard(page, Addon:S("Frame"), currentTopY)
+    local frameCard = CreateCard(page, "Frame", currentTopY)
 
-    local lockCheckbox = CreateCheckbox(frameCard, Addon:S("Lock frame"), nil, function(self)
+    local lockCheckbox = CreateCheckbox(frameCard, "Lock frame", nil, function(self)
         SetValue("locked", self:GetChecked())
         Addon:UpdateFrameLockState()
         if self:GetChecked() then
@@ -1064,7 +1161,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     frameCard:AddCheckboxRow(lockCheckbox)
     controlRefs.lockCheckbox = lockCheckbox
 
-    local showLockOnHoverCheckbox = CreateCheckbox(frameCard, Addon:S("Show lock icon only on hover"), Addon:S("Shows the lock button only while the mouse is over the frame."), function(self)
+    local showLockOnHoverCheckbox = CreateCheckbox(frameCard, "Show lock icon only on hover", "Shows the lock button only while the mouse is over the frame.", function(self)
         SetValue("showLockOnHover", self:GetChecked())
         Addon:UpdateFrameLockState()
     end)
@@ -1081,7 +1178,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("frameControlsPosition", value)
         Addon:RefreshStats()
     end)
-    local frameControlsPositionLabel = frameCard:AddDropdownRow(Addon:S("Button position"), frameControlsPositionDropDown, 160)
+    local frameControlsPositionLabel = frameCard:AddDropdownRow("Button position", frameControlsPositionDropDown, 160)
     controlRefs.frameControlsPositionDropDown = frameControlsPositionDropDown
     controlRefs.frameControlsPositionLabel = frameControlsPositionLabel
 
@@ -1095,7 +1192,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("frameControlsDirection", value)
         Addon:RefreshStats()
     end)
-    local frameControlsDirectionLabel = frameCard:AddDropdownRow(Addon:S("Button direction"), frameControlsDirectionDropDown, 160)
+    local frameControlsDirectionLabel = frameCard:AddDropdownRow("Button direction", frameControlsDirectionDropDown, 160)
     controlRefs.frameControlsDirectionDropDown = frameControlsDirectionDropDown
     controlRefs.frameControlsDirectionLabel = frameControlsDirectionLabel
 
@@ -1103,7 +1200,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("alpha", value)
         Addon:ApplyFrameStyle()
     end)
-    frameCard:AddSliderRow(Addon:S("Background opacity"), alphaSlider)
+    frameCard:AddSliderRow("Background Opacity", alphaSlider)
     controlRefs.alphaSlider = alphaSlider
 
     local scaleSlider = CreateSlider(addonName .. "ScaleSlider", frameCard, Addon:S("UI Scale"), 0.5, 3, 0.05, function(_, value)
@@ -1111,10 +1208,10 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         Addon:ApplyFrameStyle()
         Addon:RefreshStats()
     end)
-    frameCard:AddSliderRow(Addon:S("UI scale"), scaleSlider)
+    frameCard:AddSliderRow("UI Scale", scaleSlider)
     controlRefs.scaleSlider = scaleSlider
 
-    local resetButton = CreateButton(frameCard, 180, Addon:S("Reset Position"), function()
+    local resetButton = CreateButton(frameCard, 180, "Reset Position", function()
         local profile = Profile()
         profile.point = defaults.point
         profile.relativeTo = defaults.relativeTo
@@ -1130,31 +1227,31 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
 
     currentTopY = frameCard:Finish() - GROUP_GAP
 
-    local textLayoutCard = CreateCard(page, Addon:S("Text & Layout"), currentTopY)
+    local textLayoutCard = CreateCard(page, "Text & Layout", currentTopY)
 
     local fontSizeSlider = CreateSlider(addonName .. "FontSizeSlider", textLayoutCard, Addon:S("Font Size"), 10, 32, 1, function(_, value)
         SetValue("fontSize", value)
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow(Addon:S("Font size"), fontSizeSlider)
+    textLayoutCard:AddSliderRow("Font Size", fontSizeSlider)
     controlRefs.fontSizeSlider = fontSizeSlider
 
     local columnCountSlider = CreateSlider(addonName .. "ColumnCountSlider", textLayoutCard, Addon:S("Columns"), 1, #statKeys, 1, function(_, value)
         SetValue("columnCount", math.max(1, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow(Addon:S("Columns"), columnCountSlider)
+    textLayoutCard:AddSliderRow("Columns", columnCountSlider)
     controlRefs.columnCountSlider = columnCountSlider
 
     local rowsPerColumnSlider = CreateSlider(addonName .. "RowsPerColumnSlider", textLayoutCard, Addon:S("Max Rows per Column"), 0, #statKeys, 1, function(_, value)
         SetValue("rowsPerColumn", math.max(0, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    _G[rowsPerColumnSlider:GetName() .. "Low"]:SetText(Addon:S("Auto"))
-    textLayoutCard:AddSliderRow(Addon:S("Max rows per column"), rowsPerColumnSlider)
+    rowsPerColumnSlider:SetMinLabel(Addon:S("Auto"))
+    textLayoutCard:AddSliderRow("Max Rows per Column", rowsPerColumnSlider)
     controlRefs.rowsPerColumnSlider = rowsPerColumnSlider
 
-    local showStatIconsCheckbox = CreateCheckbox(textLayoutCard, Addon:S("Show stat icons"), nil, function(self)
+    local showStatIconsCheckbox = CreateCheckbox(textLayoutCard, "Show stat icons", nil, function(self)
         SetValue("showStatIcons", self:GetChecked())
         Addon:RefreshStats()
     end)
@@ -1165,14 +1262,14 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         SetValue("rowGap", math.max(0, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow(Addon:S("Row spacing"), rowGapSlider)
+    textLayoutCard:AddSliderRow("Row spacing", rowGapSlider)
     controlRefs.rowGapSlider = rowGapSlider
 
     local columnGapSlider = CreateSlider(addonName .. "ColumnGapSlider", textLayoutCard, Addon:S("Column spacing"), 0, 120, 1, function(_, value)
         SetValue("columnGap", math.max(0, math.floor(value + 0.5)))
         Addon:RefreshStats()
     end)
-    textLayoutCard:AddSliderRow(Addon:S("Column spacing"), columnGapSlider)
+    textLayoutCard:AddSliderRow("Column spacing", columnGapSlider)
     controlRefs.columnGapSlider = columnGapSlider
 
     local fontDropDown = CreateDropDown(textLayoutCard, addonName .. "FontDropDown", 220, function()
@@ -1190,7 +1287,7 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
         end
         RefreshStatsDeferred()
     end)
-    textLayoutCard:AddDropdownRow(Addon:S("Font"), fontDropDown, 220)
+    textLayoutCard:AddDropdownRow("Font", fontDropDown, 220)
     controlRefs.fontDropDown = fontDropDown
 
     local fontPreview = textLayoutCard:AddTextLine(Addon:S("The quick brown fox 123"), "GameFontHighlight", 320)
@@ -1203,9 +1300,8 @@ end
 
 local function BuildStatsPage(content, addonName, statKeys)
     local page = CreatePage(content, "stats")
-    page:AddTitle(Addon:S("Stats"))
 
-    local card = CreateCard(page, Addon:S("Stats"), FORM_Y)
+    local card = CreateCard(page, "Stats", FORM_Y)
 
     local priorityDropDown = CreateDropDown(card, addonName .. "PriorityModeDropDown", 220, function()
         local items = {}
@@ -1216,7 +1312,7 @@ local function BuildStatsPage(content, addonName, statKeys)
     end, function(mode)
         Addon:SetStatPriorityMode(mode)
     end)
-    card:AddDropdownRow(Addon:S("NE_STATS_DISPLAY_ORDER"), priorityDropDown, 220)
+    card:AddDropdownRow("NE_STATS_DISPLAY_ORDER", priorityDropDown, 220)
     controlRefs.priorityModeDropDown = priorityDropDown
 
     local referenceDropDown = CreateDropDown(card, addonName .. "ReferenceDisplayDropDown", 220, function()
@@ -1229,65 +1325,240 @@ local function BuildStatsPage(content, addonName, statKeys)
         SetValue("referenceDisplay", value)
         Addon:RefreshStats()
     end)
-    card:AddDropdownRow(Addon:S("Reference display"), referenceDropDown, 220)
+    card:AddDropdownRow("Reference display", referenceDropDown, 220)
     controlRefs.referenceDisplayDropDown = referenceDropDown
 
-    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(card, Addon:S("Always show current specialization main stat first"), Addon:S("Keeps the primary stat for your current specialization at the top of the display."), function(self)
+    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(card, "Always show current specialization main stat first", "Keeps the primary stat for your current specialization at the top of the display.", function(self)
         SetValue("preferCurrentSpecMainStat", self:GetChecked())
         Addon:RefreshStats()
     end)
-    preferCurrentSpecMainStatCheckbox.label:SetWidth(420)
     card:AddCheckboxRow(preferCurrentSpecMainStatCheckbox)
     controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
 
-    local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontHighlightSmall")
+    local hintWidth = PAGE_WIDTH - (FORM_X * 2) - (LABEL_X * 2)
+    preferCurrentSpecMainStatCheckbox.label:SetWidth(hintWidth - 30)
+
+    local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontDisableSmall")
+    BindLocalizedText(hint, "NE_STATS_ARCHON_LOCK_ORDER_HINT")
     hint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
-    hint:SetWidth(500)
+    hint:SetWidth(hintWidth)
     hint:SetJustifyH("LEFT")
     controlRefs.priorityHint = hint
     card:Advance(FORM_ROW_H)
 
-    local archonHint = CreateLabel(card, "", "GameFontHighlightSmall")
+    local archonHint = CreateLabel(card, "", "GameFontDisableSmall")
     archonHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
-    archonHint:SetWidth(500)
+    archonHint:SetWidth(hintWidth)
     archonHint:SetJustifyH("LEFT")
     controlRefs.archonHint = archonHint
     card:Advance(FORM_ROW_H)
 
-    local referenceModeHint = CreateLabel(card, Addon:S("NE_STATS_REFERENCE_MODE_HINT"), "GameFontHighlightSmall")
+    local referenceModeHint = CreateLabel(card, Addon:S("NE_STATS_REFERENCE_MODE_HINT"), "GameFontDisableSmall")
+    BindLocalizedText(referenceModeHint, "NE_STATS_REFERENCE_MODE_HINT")
     referenceModeHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
-    referenceModeHint:SetWidth(500)
+    referenceModeHint:SetWidth(hintWidth)
     referenceModeHint:SetJustifyH("LEFT")
     controlRefs.referenceDisplayHint = referenceModeHint
     card:Advance(FORM_ROW_H)
 
-    local header = CreateLabel(card, Addon:S("Check to show, set color, move with arrows"), "GameFontNormalSmall")
+    local header = CreateLabel(card, Addon:S("NE_STATS_REORDER_HINT"), "GameFontNormalSmall")
+    BindLocalizedText(header, "NE_STATS_REORDER_HINT")
     header:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+    header:SetWidth(hintWidth)
+    header:SetJustifyH("LEFT")
     controlRefs.statHint = header
     card:Advance(FORM_ROW_H)
 
+    -- Drop indicator drawn between rows while dragging.
+    local dropIndicator = card:CreateTexture(nil, "OVERLAY")
+    dropIndicator:SetColorTexture(unpack(COLOR_DROP_LINE))
+    dropIndicator:SetHeight(2)
+    dropIndicator:Hide()
+    controlRefs.statDropIndicator = dropIndicator
+
+    local function ComputeDropTarget()
+        local scale = card:GetEffectiveScale()
+        if not scale or scale == 0 then
+            return statDragState.fromIndex or 1
+        end
+        local _, cursorY = GetCursorPosition()
+        cursorY = cursorY / scale
+        local target = 1
+        for rowIndex, row in ipairs(rowControls) do
+            if row:IsShown() then
+                local mid = (row:GetTop() + row:GetBottom()) / 2
+                if cursorY < mid then
+                    target = rowIndex + 1
+                end
+            end
+        end
+        return target
+    end
+
+    local function UpdateDropIndicator(target)
+        local count = #rowControls
+        local anchorRow, edge
+        if target > count then
+            anchorRow = rowControls[count]
+            edge = "BOTTOM"
+        else
+            anchorRow = rowControls[target]
+            edge = "TOP"
+        end
+        if not anchorRow then
+            dropIndicator:Hide()
+            return
+        end
+        dropIndicator:ClearAllPoints()
+        dropIndicator:SetPoint("TOPLEFT", anchorRow, edge .. "LEFT", 0, 1)
+        dropIndicator:SetPoint("TOPRIGHT", anchorRow, edge .. "RIGHT", 0, 1)
+        dropIndicator:Show()
+    end
+
+    local function OnDragUpdate()
+        if not statDragState.active then
+            return
+        end
+        local target = ComputeDropTarget()
+        statDragState.targetIndex = target
+        UpdateDropIndicator(target)
+    end
+
+    local function BeginStatDrag(row)
+        if InCombatLockdown and InCombatLockdown() then
+            return
+        end
+        statDragState.active = true
+        statDragState.fromIndex = row.index
+        statDragState.targetIndex = row.index
+        if row.dragHighlight then
+            row.dragHighlight:Show()
+        end
+        card:SetScript("OnUpdate", OnDragUpdate)
+    end
+
+    local function EndStatDrag(row)
+        if not statDragState.active then
+            return
+        end
+        card:SetScript("OnUpdate", nil)
+        dropIndicator:Hide()
+        if row.dragHighlight then
+            row.dragHighlight:Hide()
+        end
+
+        local from = statDragState.fromIndex
+        local target = statDragState.targetIndex
+        statDragState.active = false
+        statDragState.fromIndex = nil
+        statDragState.targetIndex = nil
+
+        if not from or not target then
+            return
+        end
+
+        local dest = target
+        if dest > from then
+            dest = dest - 1
+        end
+        if dest < 1 then
+            dest = 1
+        end
+        if dest > #rowControls then
+            dest = #rowControls
+        end
+        ReorderStat(from, dest)
+    end
+
     for index = 1, #statKeys do
         local row = CreateFrame("Frame", nil, card)
-        row:SetSize(PAGE_WIDTH - (FORM_X * 2) - (LABEL_X * 2), 26)
-        row:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 6)
+        row:SetHeight(28)
+        row:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+        row:SetPoint("TOPRIGHT", card, "TOPRIGHT", -LABEL_X, card:GetCurrentY() + 4)
+
+        if index % 2 == 0 then
+            local stripe = row:CreateTexture(nil, "BACKGROUND")
+            stripe:SetAllPoints()
+            stripe:SetColorTexture(unpack(COLOR_ROW_STRIPE))
+        end
+
+        local dragHighlight = row:CreateTexture(nil, "BACKGROUND", nil, 1)
+        dragHighlight:SetAllPoints()
+        dragHighlight:SetColorTexture(COLOR_ACCENT[1], COLOR_ACCENT[2], COLOR_ACCENT[3], 0.16)
+        dragHighlight:Hide()
+        row.dragHighlight = dragHighlight
+
+        -- Drag handle (grip) on the far left.
+        local handle = CreateFrame("Button", nil, row)
+        handle:SetSize(14, 24)
+        handle:SetPoint("LEFT", row, "LEFT", 0, 0)
+        for line = 1, 3 do
+            local grip = handle:CreateTexture(nil, "ARTWORK")
+            grip:SetColorTexture(0.65, 0.68, 0.74, 0.9)
+            grip:SetSize(10, 2)
+            grip:SetPoint("CENTER", handle, "CENTER", 0, (line - 2) * 5)
+        end
+        local handleHighlight = handle:CreateTexture(nil, "HIGHLIGHT")
+        handleHighlight:SetAllPoints()
+        handleHighlight:SetColorTexture(1, 1, 1, 0.12)
+        handle:RegisterForDrag("LeftButton")
+        handle:SetScript("OnDragStart", function()
+            BeginStatDrag(row)
+        end)
+        handle:SetScript("OnDragStop", function()
+            EndStatDrag(row)
+        end)
+        handle:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(Addon:S("NE_STATS_DRAG_TO_REORDER"), 1, 0.82, 0)
+            GameTooltip:Show()
+        end)
+        handle:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+        row.handle = handle
 
         local checkbox = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
-        checkbox:SetPoint("LEFT", 0, 0)
+        checkbox:SetSize(22, 22)
+        checkbox:SetPoint("LEFT", handle, "RIGHT", 4, 0)
         row.checkbox = checkbox
 
         local label = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
-        label:SetWidth(110)
+        label:SetWidth(STAT_ROW_LABEL_W)
         label:SetJustifyH("LEFT")
         row.label = label
 
-        local nameOverride = CreateEditBox(row, 110, function(self)
+        local color = CreateButton(row, STAT_ROW_COLOR_BTN_W, "Color", function()
+            OpenColorPicker(row.entry)
+        end)
+        color:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+        row.color = color
+
+        local swatch = CreateFrame("Button", nil, row, "BackdropTemplate")
+        swatch:SetSize(STAT_ROW_SWATCH_SIZE, STAT_ROW_SWATCH_SIZE)
+        swatch:SetPoint("RIGHT", color, "LEFT", -STAT_ROW_COLOR_GAP, 0)
+        swatch:SetBackdrop({
+            bgFile = "Interface/Buttons/WHITE8x8",
+            edgeFile = "Interface/Buttons/WHITE8x8",
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 },
+        })
+        swatch:SetBackdropColor(0, 0, 0, 0.9)
+        swatch:SetBackdropBorderColor(0.4, 0.4, 0.45, 0.9)
+        swatch.texture = swatch:CreateTexture(nil, "ARTWORK")
+        swatch.texture:SetPoint("TOPLEFT", 2, -2)
+        swatch.texture:SetPoint("BOTTOMRIGHT", -2, 2)
+        row.swatch = swatch
+
+        local nameOverride = CreateEditBox(row, nil, function(self)
             local text = strtrim(self:GetText() or "")
             row.entry.nameOverride = text ~= "" and text or nil
             self:SetText(row.entry.nameOverride or "")
             Addon:RefreshStats()
         end)
-        nameOverride:SetPoint("LEFT", label, "RIGHT", 8, 0)
+        nameOverride:SetPoint("LEFT", label, "RIGHT", STAT_ROW_FIELD_GAP, 0)
+        nameOverride:SetPoint("RIGHT", swatch, "LEFT", -STAT_ROW_FIELD_GAP, 0)
         nameOverride:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(Addon:S("Name override"), 1, 0.82, 0)
@@ -1298,47 +1569,6 @@ local function BuildStatsPage(content, addonName, statKeys)
         end)
         row.nameOverride = nameOverride
 
-        local swatch = CreateFrame("Button", nil, row, "BackdropTemplate")
-        swatch:SetSize(16, 16)
-        swatch:SetPoint("LEFT", nameOverride, "RIGHT", 8, 0)
-        swatch:SetBackdrop({
-            bgFile = "Interface/Buttons/WHITE8x8",
-            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-            tile = true,
-            tileSize = 8,
-            edgeSize = 8,
-            insets = { left = 2, right = 2, top = 2, bottom = 2 },
-        })
-        swatch:SetBackdropColor(0, 0, 0, 0.9)
-        swatch.texture = swatch:CreateTexture(nil, "ARTWORK")
-        swatch.texture:SetPoint("TOPLEFT", 2, -2)
-        swatch.texture:SetPoint("BOTTOMRIGHT", -2, 2)
-        row.swatch = swatch
-
-        local color = CreateButton(row, 60, Addon:S("Color"), function()
-            OpenColorPicker(row.entry)
-        end)
-        color:SetPoint("LEFT", swatch, "RIGHT", 8, 0)
-        row.color = color
-
-        local up = CreateFrame("Button", nil, row)
-        up:SetSize(24, 20)
-        up:SetPoint("LEFT", color, "RIGHT", 16, 0)
-        up:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up")
-        up:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Down")
-        up:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
-        up:SetDisabledTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Disabled")
-        row.up = up
-
-        local down = CreateFrame("Button", nil, row)
-        down:SetSize(24, 20)
-        down:SetPoint("LEFT", up, "RIGHT", 6, 0)
-        down:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
-        down:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Down")
-        down:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
-        down:SetDisabledTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Disabled")
-        row.down = down
-
         checkbox:SetScript("OnClick", function(self)
             row.entry.enabled = self:GetChecked()
             Addon:RefreshStats()
@@ -1346,21 +1576,57 @@ local function BuildStatsPage(content, addonName, statKeys)
         swatch:SetScript("OnClick", function()
             OpenColorPicker(row.entry)
         end)
-        up:SetScript("OnClick", function()
-            MoveStat(row.index, -1)
-        end)
-        down:SetScript("OnClick", function()
-            MoveStat(row.index, 1)
-        end)
 
         rowControls[index] = row
-        card:Advance(FORM_ROW_H)
+        card:Advance(30)
     end
 
     local bottomY = card:Finish()
     page.cursorY = bottomY - GROUP_GAP
 
     return page
+end
+
+local function CreateNavButton(parent, localeKey, onClick)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetHeight(32)
+    btn:SetScript("OnClick", onClick)
+
+    local bg = btn:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(unpack(COLOR_NAV_ACTIVE))
+    bg:Hide()
+    btn.bg = bg
+
+    local hover = btn:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetAllPoints()
+    hover:SetColorTexture(unpack(COLOR_NAV_HOVER))
+
+    local accent = btn:CreateTexture(nil, "ARTWORK")
+    accent:SetColorTexture(COLOR_ACCENT[1], COLOR_ACCENT[2], COLOR_ACCENT[3], 1)
+    accent:SetPoint("TOPLEFT", 0, 0)
+    accent:SetPoint("BOTTOMLEFT", 0, 0)
+    accent:SetWidth(3)
+    accent:Hide()
+    btn.accent = accent
+
+    local label = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("LEFT", 14, 0)
+    label:SetJustifyH("LEFT")
+    BindLocalizedText(label, localeKey)
+    btn.label = label
+
+    function btn:SetText(value)
+        self.label:SetText(value)
+    end
+
+    function btn:SetActive(active)
+        self.bg:SetShown(active)
+        self.accent:SetShown(active)
+        self.label:SetFontObject(active and "GameFontHighlight" or "GameFontNormal")
+    end
+
+    return btn
 end
 
 function Addon:BuildOptionsPanel()
@@ -1374,42 +1640,63 @@ function Addon:BuildOptionsPanel()
     optionsPanel.name = self:S("NE Stats")
     optionsPanel:SetSize(780, 620)
 
-    local scrollFrame = CreateFrame("ScrollFrame", addonName .. "OptionsScrollFrame", optionsPanel, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 12, -12)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -32, 12)
-    controlRefs.scrollFrame = scrollFrame
-
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetSize(720, 620)
-    scrollFrame:SetScrollChild(content)
-    controlRefs.scrollContent = content
-
-    local title = content:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText(self:S("NE Stats"))
+    -- Fixed header that stays in place while the content area scrolls.
+    local title = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 20, -18)
+    BindLocalizedText(title, "NE Stats")
     controlRefs.title = title
 
-    local subtitle = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-    subtitle:SetWidth(660)
+    local subtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+    subtitle:SetWidth(720)
     subtitle:SetJustifyH("LEFT")
-    subtitle:SetText(self:S("Profiles are shared across your account.\nYou can create multiple profiles to save different layouts, positions, and display settings."))
+    BindLocalizedText(subtitle, "Profiles are shared across your account.\nYou can create multiple profiles to save different layouts, positions, and display settings.")
     controlRefs.subtitle = subtitle
+
+    local divider = optionsPanel:CreateTexture(nil, "ARTWORK")
+    divider:SetColorTexture(unpack(COLOR_CARD_BORDER))
+    divider:SetHeight(1)
+    divider:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 16, -HEADER_H)
+    divider:SetPoint("TOPRIGHT", optionsPanel, "TOPRIGHT", -16, -HEADER_H)
+
+    -- Vertical navigation rail on the left.
+    local nav = CreateFrame("Frame", nil, optionsPanel)
+    nav:SetPoint("TOPLEFT", optionsPanel, "TOPLEFT", 16, -HEADER_H - 10)
+    nav:SetPoint("BOTTOMLEFT", optionsPanel, "BOTTOMLEFT", 16, 14)
+    nav:SetWidth(SIDEBAR_W)
+    controlRefs.nav = nav
 
     controlRefs.tabButtons = {}
     local previousTab
     for _, key in ipairs(TAB_ORDER) do
-        local button = CreateButton(content, 110, self:S(TAB_LABELS[key]), function()
+        local button = CreateNavButton(nav, TAB_LABELS[key], function()
             ShowOptionsTab(key)
         end)
+        button:SetPoint("LEFT", nav, "LEFT", 0, 0)
+        button:SetPoint("RIGHT", nav, "RIGHT", 0, 0)
         if previousTab then
-            button:SetPoint("LEFT", previousTab, "RIGHT", 8, 0)
+            button:SetPoint("TOP", previousTab, "BOTTOM", 0, -4)
         else
-            button:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -18)
+            button:SetPoint("TOP", nav, "TOP", 0, 0)
         end
         controlRefs.tabButtons[key] = button
         previousTab = button
     end
+
+    -- Scrollable content area to the right of the navigation rail.
+    local scrollFrame = CreateFrame("ScrollFrame", addonName .. "OptionsScrollFrame", optionsPanel, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", nav, "TOPRIGHT", 18, 0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", optionsPanel, "BOTTOMRIGHT", -28, 14)
+    controlRefs.scrollFrame = scrollFrame
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(PAGE_WIDTH, 480)
+    scrollFrame:SetScrollChild(content)
+    controlRefs.scrollContent = content
+
+    scrollFrame:SetScript("OnSizeChanged", function()
+        UpdateContentHeight()
+    end)
 
     controlRefs.pages = {}
     controlRefs.pages.profiles = BuildProfilesPage(content, addonName)
@@ -1447,7 +1734,9 @@ function Addon:ResetOptionsPanelState()
     lastOptionsPanelError = nil
     rowControls = {}
     controlRefs = {}
+    wipe(localizedWidgets)
     activeTab = "profiles"
+    statDragState = { active = false }
 end
 
 function Addon:SafeBuildOptionsPanel()
