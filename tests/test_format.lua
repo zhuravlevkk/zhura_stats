@@ -164,6 +164,26 @@ describe("Format", function()
   end)
 
   describe("FormatStatValue", function()
+    -- These tests verify formatting *logic* (ok/low tags, suffix presence).
+    -- They must not depend on WoWLogsStatsPrio.lua content, which changes every
+    -- week. A fixed fixture is injected here so tests stay deterministic.
+    -- FIXTURE_CRIT = 300: "ok" test sends rating=400 (>300), "low" sends rating=100 (<300).
+    local FIXTURE_CRIT = 300
+    before_each(function()
+      WoWLogsStatsPrio = WoWLogsStatsPrio or {}
+      WoWLogsStatsPrio["mage/fire/m+"] = {
+        updated  = "2025-01-01T00:00:00Z",
+        activity = "m+", class = "mage", spec = "fire",
+        primary  = "intellect",
+        secondary = {
+          { stat = "haste",       rating = 1000,         order = 2 },
+          { stat = "mastery",     rating = 700,          order = 3 },
+          { stat = "crit",        rating = FIXTURE_CRIT, order = 4 },
+          { stat = "versatility", rating = 200,          order = 5 },
+        },
+      }
+    end)
+
     it("formats GOLD with gold rules", function()
       local p = Addon._test_profile
       p.showLabels = false
@@ -281,7 +301,7 @@ describe("Format", function()
       p.statPriorityMode = "archon_mplus"
       p.referenceDisplay = "inline"
       local def = Addon.StatDefinitions.CRIT
-      -- WoWLogsStatsPrio mage/fire/m+ crit rating is 238
+      -- rating=400 > FIXTURE_CRIT=300 → expects "ok"
       local out = Addon:FormatStatValue("CRIT", { value = 10, rating = 400 }, p, def)
       assert.is_true(out:find("ok", 1, true) ~= nil)
     end)
@@ -297,9 +317,10 @@ describe("Format", function()
       p.referenceDisplay = "inline"
       p.showReferenceRanges = true
       local def = Addon.StatDefinitions.CRIT
+      -- rating=100 < FIXTURE_CRIT=300 → expects "low" and the archon rating number
       local out = Addon:FormatStatValue("CRIT", { value = 10, rating = 100 }, p, def)
       assert.is_true(out:find("low", 1, true) ~= nil)
-      assert.is_true(out:find("238", 1, true) ~= nil)
+      assert.is_true(out:find(tostring(FIXTURE_CRIT), 1, true) ~= nil)
     end)
 
     it("with referenceDisplay off skips Archon suffix in archon mode", function()
