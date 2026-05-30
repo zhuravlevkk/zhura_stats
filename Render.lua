@@ -8,7 +8,7 @@ local MIN_DYNAMIC_FONT_SIZE = 8
 local combatStatRefreshHandle
 local COMBAT_STAT_REFRESH_SEC = 0.35
 -- Row brightness multiplier for stale / snapshot values (not live).
-local STALE_DIM_FACTOR = 0.75
+local STALE_DIM_FACTOR = 0.8
 local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
 local stableLayoutSignature = nil
