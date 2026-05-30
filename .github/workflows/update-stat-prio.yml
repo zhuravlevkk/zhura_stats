@@ -106,13 +106,11 @@ jobs:
     if: failure()
     steps:
       - name: Telegram
-        run: |
-          curl -sf -X POST "https://api.telegram.org/bot${BOT}/sendMessage" \
-            -d "chat_id=${CHAT}" \
-            -d "parse_mode=Markdown" \
-            --data-urlencode "text=❌ *zhura_stats* · Update Stat Priority failed
-Run: ${URL}"
-        env:
-          BOT:  ${{ secrets.TG_BOT_TOKEN }}
-          CHAT: ${{ secrets.TG_CHAT_ID }}
-          URL:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        uses: appleboy/telegram-action@v1.0.1
+        with:
+          to: ${{ secrets.TG_CHAT_ID }}
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          format: html
+          message: |
+            ❌ <b>zhura_stats</b> · Update Stat Priority failed
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
