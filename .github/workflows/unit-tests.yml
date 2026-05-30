@@ -63,3 +63,22 @@ jobs:
           name: luacov-report
           path: luacov.report.out
           if-no-files-found: ignore
+
+  notify-failure:
+    name: Notify on failure
+    runs-on: ubuntu-latest
+    needs: busted
+    if: failure()
+    steps:
+      - name: Telegram
+        run: |
+          curl -sf -X POST "https://api.telegram.org/bot${BOT}/sendMessage" \
+            -d "chat_id=${CHAT}" \
+            -d "parse_mode=Markdown" \
+            --data-urlencode "text=❌ *zhura_stats* · Unit Tests failed
+PR: ${{ github.event.pull_request.html_url }}
+Run: ${URL}"
+        env:
+          BOT:  ${{ secrets.TG_BOT_TOKEN }}
+          CHAT: ${{ secrets.TG_CHAT_ID }}
+          URL:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

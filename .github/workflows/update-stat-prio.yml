@@ -26,11 +26,29 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      - name: Skip if already fetched today (UTC)
+        id: freshness
+        shell: pwsh
+        run: |
+          $luaPath = Join-Path $env:GITHUB_WORKSPACE 'WoWLogsStatsPrio.lua'
+          $today   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
+          if (Test-Path $luaPath) {
+            $head = (Get-Content $luaPath -TotalCount 5) -join "`n"
+            if ($head -match $today) {
+              Write-Host "Already have archon data for $today — skipping scrape."
+              "skip=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+              exit 0
+            }
+          }
+          "skip=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Scrape archon.gg and regenerate WoWLogsStatsPrio.lua
+        if: steps.freshness.outputs.skip != 'true'
         shell: pwsh
         run: .\scripts\Get-AllStats.ps1 -OutFile ".\WoWLogsStatsPrio.lua" -Threads 15
 
       - name: Bump version, commit, and push if data changed
+        if: steps.freshness.outputs.skip != 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
@@ -80,3 +98,21 @@ jobs:
           gh pr merge --auto --squash `
             --subject "chore: update stat priority data (archon.gg) -> v$newVersion" `
             $branch
+
+  notify-failure:
+    name: Notify on failure
+    runs-on: ubuntu-latest
+    needs: update
+    if: failure()
+    steps:
+      - name: Telegram
+        run: |
+          curl -sf -X POST "https://api.telegram.org/bot${BOT}/sendMessage" \
+            -d "chat_id=${CHAT}" \
+            -d "parse_mode=Markdown" \
+            --data-urlencode "text=❌ *zhura_stats* · Update Stat Priority failed
+Run: ${URL}"
+        env:
+          BOT:  ${{ secrets.TG_BOT_TOKEN }}
+          CHAT: ${{ secrets.TG_CHAT_ID }}
+          URL:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
