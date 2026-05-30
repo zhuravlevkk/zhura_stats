@@ -7,6 +7,8 @@ local Addon = ns.ZhuraStats
 local MIN_DYNAMIC_FONT_SIZE = 8
 local combatStatRefreshHandle
 local COMBAT_STAT_REFRESH_SEC = 0.35
+-- Row brightness multiplier for stale / snapshot values (not live).
+local STALE_DIM_FACTOR = 0.75
 local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
 local stableLayoutSignature = nil
@@ -341,6 +343,13 @@ local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlay
             local lineR, lineG, lineB = measured.entry.color[1], measured.entry.color[2], measured.entry.color[3]
             if (profile.drDisplayMode or "off") ~= "off" and measured.drPenalty then
                 lineR, lineG, lineB = addon:GetDRColor(measured.entry.color, measured.drPenalty)
+            end
+            -- Dim the whole row when the value isn't live (Secret in
+            -- combat/M+/encounter/PvP), so a stale snapshot reads as
+            -- "last known", not a current number.
+            local sr = measured.statResult
+            if sr and (sr.source == "snapshot" or sr.source == "cache" or sr.stale == true) then
+                lineR, lineG, lineB = lineR * STALE_DIM_FACTOR, lineG * STALE_DIM_FACTOR, lineB * STALE_DIM_FACTOR
             end
             line:SetTextColor(lineR, lineG, lineB, 1)
             line:SetText(measured.text)

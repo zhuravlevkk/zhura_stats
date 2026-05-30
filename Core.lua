@@ -8,14 +8,40 @@ Addon.name = Addon.name or ADDON_NAME
 
 local addonFrame = CreateFrame("Frame")
 
-local combatLogTicker = nil
+local restrictedRefreshTicker = nil
 
-local function StartCombatLogPolling()
-    if combatLogTicker then return end
-    combatLogTicker = C_Timer.NewTicker(0.1, function()
-        local Stats = ns.Stats
-        if Stats and Stats.HandleCombatLogEvent then
-            Stats.HandleCombatLogEvent()
+-- True when the player is in a context where stat APIs return Secret values
+-- the whole time (Mythic+ / challenge mode), not just while in combat. In
+-- those zones live values never become readable, so we keep a low-frequency
+-- ticker running to refresh the snapshot display even out of combat.
+local function InRestrictedZone()
+    if C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive then
+        local ok, active = pcall(C_ChallengeMode.IsChallengeModeActive)
+        if ok and active then
+            return true
+        end
+    end
+    return false
+end
+
+local function StartRestrictedRefresh()
+    if restrictedRefreshTicker or not (C_Timer and C_Timer.NewTicker) then
+        return
+    end
+    -- 0.5s is plenty: in a restricted zone we're only re-rendering the
+    -- persisted snapshot, which changes rarely. No CLEU, no per-frame polling.
+    restrictedRefreshTicker = C_Timer.NewTicker(0.5, function()
+        if not InRestrictedZone() and not (InCombatLockdown and InCombatLockdown()) then
+            -- Left the restricted context and out of combat: stop and do a
+            -- final refresh to pick up now-readable live values.
+            if restrictedRefreshTicker then
+                restrictedRefreshTicker:Cancel()
+                restrictedRefreshTicker = nil
+            end
+            if Addon.initialized then
+                Addon:RefreshStats()
+            end
+            return
         end
         if Addon.initialized then
             Addon:RefreshStats()
@@ -23,10 +49,15 @@ local function StartCombatLogPolling()
     end)
 end
 
-local function StopCombatLogPolling()
-    if combatLogTicker then
-        combatLogTicker:Cancel()
-        combatLogTicker = nil
+local function StopRestrictedRefresh()
+    -- Only stop if we're genuinely out of any restricted context. Inside M+
+    -- the ticker must survive leaving combat between pulls.
+    if InRestrictedZone() then
+        return
+    end
+    if restrictedRefreshTicker then
+        restrictedRefreshTicker:Cancel()
+        restrictedRefreshTicker = nil
     end
 end
 
@@ -145,16 +176,6 @@ local function OnEvent(_, event, arg1, ...)
         return
     end
 
-    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        if Stats and Stats.HandleCombatLogEvent then
-            Stats.HandleCombatLogEvent()
-        end
-        if Addon.initialized then
-            Addon:RefreshStats()
-        end
-        return
-    end
-
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
         EnsureDatabaseBackup()
         Addon:EnsureDatabase()
@@ -170,6 +191,9 @@ local function OnEvent(_, event, arg1, ...)
     end
 
     if event == "PLAYER_ENTERING_WORLD" then
+        if InRestrictedZone() then
+            StartRestrictedRefresh()
+        end
         if InCombatLockdown and InCombatLockdown() then
             Addon:StartCombatStatRefresh()
         end
@@ -177,15 +201,29 @@ local function OnEvent(_, event, arg1, ...)
         return
     end
 
+    if event == "CHALLENGE_MODE_START" then
+        -- Entering a M+ key: stats are Secret for the whole run. Keep the
+        -- snapshot display refreshing even between pulls.
+        StartRestrictedRefresh()
+        Addon:RefreshStats()
+        return
+    end
+
+    if event == "CHALLENGE_MODE_COMPLETED" then
+        StopRestrictedRefresh()
+        Addon:RefreshStats()
+        return
+    end
+
     if event == "PLAYER_REGEN_DISABLED" then
-        StartCombatLogPolling()
+        StartRestrictedRefresh()
         Addon:StartCombatStatRefresh()
         Addon:RefreshStats()
         return
     end
 
     if event == "PLAYER_REGEN_ENABLED" then
-        StopCombatLogPolling()
+        StopRestrictedRefresh()
         Addon:StopCombatStatRefresh()
         local refs = Addon:GetControlRefs()
         if Addon.pendingOptionRowsAfterCombat and refs and refs.scrollFrame and refs.scrollFrame:IsShown() then
@@ -224,6 +262,24 @@ local function OnEvent(_, event, arg1, ...)
     if refs and refs.scrollFrame and refs.scrollFrame:IsShown() then
         Addon:RefreshOptionRows()
     end
+
+    -- Some events fire before the engine finishes recomputing derived stats
+    -- (gear swaps, gems/enchants, talent/spec changes). A same-frame read sees
+    -- the old values, which looked like "lag". Schedule one follow-up read on
+    -- the next frame so the snapshot reflects the new values immediately.
+    if event == "PLAYER_EQUIPMENT_CHANGED"
+        or event == "UNIT_INVENTORY_CHANGED"
+        or event == "TRAIT_CONFIG_UPDATED"
+        or event == "ACTIVE_TALENT_GROUP_CHANGED"
+        or event == "PLAYER_SPECIALIZATION_CHANGED" then
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0, function()
+                if Addon.initialized then
+                    Addon:RefreshStats()
+                end
+            end)
+        end
+    end
 end
 
 local function RegisterAllEvents()
@@ -246,6 +302,8 @@ local function RegisterAllEvents()
     addonFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     addonFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     addonFrame:RegisterEvent("ADDON_RESTRICTION_STATE_CHANGED")
+    addonFrame:RegisterEvent("CHALLENGE_MODE_START")
+    addonFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
     addonFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
     addonFrame:RegisterEvent("PLAYER_MONEY")
     addonFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")

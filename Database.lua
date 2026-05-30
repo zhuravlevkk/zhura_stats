@@ -387,7 +387,27 @@ function Addon:EnsureDatabase()
     end
 
     db.global.addonLocale = db.global.addonLocale or self.Constants.CLIENT_LANGUAGE_VALUE
+    self:WireStatSnapshotStore()
     self:ApplyLocale()
+end
+
+-- Bridges the per-character snapshot table (db.char.statSnapshot, keyed by
+-- spec) into the Stats module so MakeResult can persist and fall back to it.
+function Addon:WireStatSnapshotStore()
+    local Stats = ns.Stats
+    if not Stats or not Stats.SetSnapshotStore or not db or not db.char then
+        return
+    end
+    db.char.statSnapshot = db.char.statSnapshot or {}
+    Stats.SetSnapshotStore(db.char.statSnapshot, function()
+        if type(GetSpecialization) == "function" then
+            local ok, specIndex = pcall(GetSpecialization)
+            if ok and type(specIndex) == "number" and specIndex > 0 then
+                return specIndex
+            end
+        end
+        return "default"
+    end)
 end
 
 function Addon:RestoreMissingProfilesFromBackup()

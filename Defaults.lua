@@ -77,6 +77,12 @@ local aceDefaults = {
     global = {
         addonLocale = "client",
     },
+    char = {
+        -- Per-character stat snapshots, keyed by spec. Lets the addon show the
+        -- last trustworthy reading (clearly marked stale) while live values are
+        -- Secret in combat / Mythic+ / encounters / PvP, and survives /reload.
+        statSnapshot = {},
+    },
 }
 
 Addon.Constants = Addon.Constants or {}

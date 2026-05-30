@@ -19,6 +19,7 @@ globals = {
 
 -- WoW API and libraries used across modules (CI runs luacheck on all root *.lua).
 read_globals = {
+   "C_ChallengeMode",
    "C_ClassTalents",
    "C_Timer",
    "C_UnitAuras",
