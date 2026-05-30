@@ -168,7 +168,7 @@ describe("Format", function()
     -- They must not depend on WoWLogsStatsPrio.lua content, which changes every
     -- week. A fixed fixture is injected here so tests stay deterministic.
     -- FIXTURE_CRIT = 300: "ok" test sends rating=400 (>300), "low" sends rating=100 (<300).
-    local FIXTURE_CRIT = 50 -- temporary: force failure to test CI notifications
+    local FIXTURE_CRIT = 300
     before_each(function()
       WoWLogsStatsPrio = WoWLogsStatsPrio or {}
       WoWLogsStatsPrio["mage/fire/m+"] = {
