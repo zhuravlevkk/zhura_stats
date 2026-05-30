@@ -158,8 +158,6 @@ function Addon:Initialize()
 end
 
 local function OnEvent(_, event, arg1, ...)
-    local Stats = ns.Stats
-
     if event == "ADDON_RESTRICTION_STATE_CHANGED" then
         local restrictionType = arg1
         local restrictionState = select(2, ...)
@@ -244,10 +242,6 @@ local function OnEvent(_, event, arg1, ...)
         or event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_EXITED_VEHICLE")
         and arg1 ~= "player" then
         return
-    end
-
-    if event == "UNIT_AURA" and Stats and Stats.RefreshPotionState then
-        Stats.RefreshPotionState()
     end
 
     if event == "TRAIT_CONFIG_UPDATED"

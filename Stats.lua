@@ -46,29 +46,6 @@ function Stats.SetSnapshotStore(store, getSpecKey)
     snapshotStore = store
     snapshotGetSpecKey = getSpecKey
 end
-local potionState = {
-    active = false,
-    name = nil,
-    expirationTime = 0,
-    lastUsedAt = 0,
-    lastUsedName = nil,
-}
-
--- A tiny seed list. The scanner also accepts registered IDs so new potion IDs
--- can be added without changing the display layer.
-local potionSpellIDs = {
-    -- Combat Potions (30 sec, 5 min CD)
-    [1236994] = true, -- Potion of Recklessness
-    [1238443] = true, -- Potion of Zealotry
-    [1236998] = true, -- Draught of Rampant Abandon
-    [1236616] = true, -- Light's Potential
-
-    -- Flasks (1 hour, persist through death)
-    [1235057] = true, -- Flask of Thalassian Resistance (+Versatility)
-    [1235110] = true, -- Flask of the Blood Knights (+Haste)
-    [1235108] = true, -- Flask of the Magisters (+Mastery)
-    [1235111] = true, -- Flask of the Shattered Sun (+Crit)
-}
 
 local function IsSecret(value)
     return issecretvalue and issecretvalue(value)
@@ -449,68 +426,6 @@ function Stats.ReadStat(key)
     end
 
     return MakeResult(key, nil)
-end
-
-function Stats.RegisterPotionSpell(spellId)
-    if spellId then
-        potionSpellIDs[spellId] = true
-    end
-end
-
-local function AuraLooksLikePotion(aura)
-    if not aura then return false end
-    local spellId = aura.spellId
-    if spellId and not IsSecret(spellId) then
-        return potionSpellIDs[spellId] == true
-    end
-    return false
-end
-
-function Stats.RefreshPotionState()
-    potionState.active = false
-    potionState.name = nil
-    potionState.expirationTime = 0
-
-    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        for index = 1, 60 do
-            local aura = C_UnitAuras.GetAuraDataByIndex("player", index, "HELPFUL")
-            if not aura then
-                break
-            end
-            if AuraLooksLikePotion(aura) then
-                potionState.active = true
-                potionState.name = aura.name
-                potionState.expirationTime = aura.expirationTime or 0
-                return potionState
-            end
-        end
-    end
-
-    return potionState
-end
-
-function Stats.HandleCombatLogEvent()
-    if not CombatLogGetCurrentEventInfo or not UnitGUID then
-        return
-    end
-
-    local _, subevent, _, sourceGUID, _, _, _, _, _, _, _, spellId, spellName = CombatLogGetCurrentEventInfo()
-    if sourceGUID ~= UnitGUID("player") then
-        return
-    end
-    if subevent ~= "SPELL_CAST_SUCCESS" and subevent ~= "SPELL_AURA_APPLIED" and subevent ~= "SPELL_AURA_REFRESH" then
-        return
-    end
-
-    if spellId and not IsSecret(spellId) and potionSpellIDs[spellId] then
-        potionState.lastUsedAt = GetTime and GetTime() or 0
-        potionState.lastUsedName = spellName
-    end
-end
-
-function Stats.GetPotionState()
-    Stats.RefreshPotionState()
-    return potionState
 end
 
 function Stats.GetMovementSpeedPercent()
