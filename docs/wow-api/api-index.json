@@ -11164,6 +11164,44 @@
     }
    ]
   },
+  "BNetOutage": {
+   "file": "BNetOutageDocumentation.lua",
+   "entries": [
+    {
+     "name": "BNetOutage",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ClearOutage",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "OutageDetected",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
   "BagConstants": {
    "file": "BagConstantsDocumentation.lua",
    "entries": [
@@ -12834,88 +12872,6 @@
     }
    ]
   },
-  "BattlepayConstants": {
-   "file": "BattlepayConstantsDocumentation.lua",
-   "entries": [
-    {
-     "name": "BulkPurchaseResult",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BulkPurchaseStatus",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BulkRefundResult",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "CanRedeemTokenForBalanceResult",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PurchaseResult",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SimpleOrderStatus",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "VasTransactionPurchaseResult",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "BattlePetConstants": {
    "file": "BattlePetConstantsDocumentation.lua",
    "entries": [
@@ -13667,6 +13623,88 @@
     }
    ]
   },
+  "BattlepayConstants": {
+   "file": "BattlepayConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "BulkPurchaseResult",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "BulkPurchaseStatus",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "BulkRefundResult",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CanRedeemTokenForBalanceResult",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "PurchaseResult",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SimpleOrderStatus",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "VasTransactionPurchaseResult",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
   "BehavioralMessaging": {
    "file": "BehavioralMessagingDocumentation.lua",
    "entries": [
@@ -13855,44 +13893,6 @@
        "nilable": false
       }
      ]
-    }
-   ]
-  },
-  "BNetOutage": {
-   "file": "BNetOutageDocumentation.lua",
-   "entries": [
-    {
-     "name": "BNetOutage",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "ClearOutage",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "OutageDetected",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
     }
    ]
   },
@@ -14225,6 +14225,321 @@
        "nilable": false
       }
      ],
+     "payload": []
+    }
+   ]
+  },
+  "CVar": {
+   "file": "CVarDocumentation.lua",
+   "entries": [
+    {
+     "name": "CVarScripts",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetCVar",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "value",
+       "type": "string",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetCVarBitfield",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "index",
+       "type": "luaIndex",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "value",
+       "type": "bool",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetCVarBool",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "value",
+       "type": "bool",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetCVarDefault",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "defaultValue",
+       "type": "string",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetCVarInfo",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "value",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "defaultValue",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "isStoredServerAccount",
+       "type": "bool",
+       "nilable": false
+      },
+      {
+       "name": "isStoredServerCharacter",
+       "type": "bool",
+       "nilable": false
+      },
+      {
+       "name": "isLockedFromUser",
+       "type": "bool",
+       "nilable": false
+      },
+      {
+       "name": "isSecure",
+       "type": "bool",
+       "nilable": false
+      },
+      {
+       "name": "isReadOnly",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "RegisterCVar",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "value",
+       "type": "cstring",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ResetTestCVars",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetCVar",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "value",
+       "type": "cstring",
+       "nilable": true
+      }
+     ],
+     "returns": [
+      {
+       "name": "success",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "SetCVarBitfield",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "index",
+       "type": "luaIndex",
+       "nilable": false
+      },
+      {
+       "name": "value",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "success",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "CVarInfo",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RequiresIndexInRange",
+     "type": "Precondition",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RequiresNonReadOnlyCVar",
+     "type": "Precondition",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RequiresNonSecureCVar",
+     "type": "Precondition",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RequiresValidAndPublicCVar",
+     "type": "Precondition",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
      "payload": []
     }
    ]
@@ -40348,33 +40663,6 @@
     }
    ]
   },
-  "CurrencyConstants_Mainline": {
-   "file": "CurrencyConstants_MainlineDocumentation.lua",
-   "entries": [
-    {
-     "name": "CurrencyDestroyReason",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "CurrencySource",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "CurrencyConstants": {
    "file": "CurrencyConstantsDocumentation.lua",
    "entries": [
@@ -40480,6 +40768,33 @@
     {
      "name": "CurrencyConsts",
      "type": "Constants",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "CurrencyConstants_Mainline": {
+   "file": "CurrencyConstants_MainlineDocumentation.lua",
+   "entries": [
+    {
+     "name": "CurrencyDestroyReason",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CurrencySource",
+     "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
@@ -41912,321 +42227,6 @@
        "nilable": false
       }
      ],
-     "payload": []
-    }
-   ]
-  },
-  "CVar": {
-   "file": "CVarDocumentation.lua",
-   "entries": [
-    {
-     "name": "CVarScripts",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetCVar",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "value",
-       "type": "string",
-       "nilable": true
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetCVarBitfield",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "index",
-       "type": "luaIndex",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "value",
-       "type": "bool",
-       "nilable": true
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetCVarBool",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "value",
-       "type": "bool",
-       "nilable": true
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetCVarDefault",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "defaultValue",
-       "type": "string",
-       "nilable": true
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetCVarInfo",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "value",
-       "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "defaultValue",
-       "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "isStoredServerAccount",
-       "type": "bool",
-       "nilable": false
-      },
-      {
-       "name": "isStoredServerCharacter",
-       "type": "bool",
-       "nilable": false
-      },
-      {
-       "name": "isLockedFromUser",
-       "type": "bool",
-       "nilable": false
-      },
-      {
-       "name": "isSecure",
-       "type": "bool",
-       "nilable": false
-      },
-      {
-       "name": "isReadOnly",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "RegisterCVar",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "value",
-       "type": "cstring",
-       "nilable": true
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "ResetTestCVars",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetCVar",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "value",
-       "type": "cstring",
-       "nilable": true
-      }
-     ],
-     "returns": [
-      {
-       "name": "success",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "SetCVarBitfield",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "index",
-       "type": "luaIndex",
-       "nilable": false
-      },
-      {
-       "name": "value",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "success",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "CVarInfo",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RequiresIndexInRange",
-     "type": "Precondition",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RequiresNonReadOnlyCVar",
-     "type": "Precondition",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RequiresNonSecureCVar",
-     "type": "Precondition",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RequiresValidAndPublicCVar",
-     "type": "Precondition",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
      "payload": []
     }
    ]
@@ -44854,22 +44854,6 @@
     }
    ]
   },
-  "EditModeManagerConstants_Mainline": {
-   "file": "EditModeManagerConstants_MainlineDocumentation.lua",
-   "entries": [
-    {
-     "name": "EditModeLayoutConsts",
-     "type": "Constants",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "EditModeManagerConstants": {
    "file": "EditModeManagerConstantsDocumentation.lua",
    "entries": [
@@ -45502,6 +45486,22 @@
     },
     {
      "name": "EditModeConsts",
+     "type": "Constants",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "EditModeManagerConstants_Mainline": {
+   "file": "EditModeManagerConstants_MainlineDocumentation.lua",
+   "entries": [
+    {
+     "name": "EditModeLayoutConsts",
      "type": "Constants",
      "literal_name": null,
      "secret_flags": [],
@@ -57902,6 +57902,200 @@
     }
    ]
   },
+  "GARRISON_FOLLOWER_TYPEConstants": {
+   "file": "GARRISON_FOLLOWER_TYPEConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "GarrisonFollowerType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "GARRISON_TYPEConstants": {
+   "file": "GARRISON_TYPEConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "GarrisonType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "GMTicketInfo": {
+   "file": "GMTicketInfoDocumentation.lua",
+   "entries": [
+    {
+     "name": "GMTicketInfo",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GmPlayerInfo",
+     "type": "Event",
+     "literal_name": "GM_PLAYER_INFO",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "info",
+       "type": "cstring",
+       "nilable": false
+      }
+     ]
+    },
+    {
+     "name": "ItemRestorationButtonStatus",
+     "type": "Event",
+     "literal_name": "ITEM_RESTORATION_BUTTON_STATUS",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "PetitionClosed",
+     "type": "Event",
+     "literal_name": "PETITION_CLOSED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "PetitionShow",
+     "type": "Event",
+     "literal_name": "PETITION_SHOW",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "PlayerReportSubmitted",
+     "type": "Event",
+     "literal_name": "PLAYER_REPORT_SUBMITTED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "invitedByGUID",
+       "type": "WOWGUID",
+       "nilable": false
+      }
+     ]
+    },
+    {
+     "name": "QuickTicketSystemStatus",
+     "type": "Event",
+     "literal_name": "QUICK_TICKET_SYSTEM_STATUS",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "QuickTicketThrottleChanged",
+     "type": "Event",
+     "literal_name": "QUICK_TICKET_THROTTLE_CHANGED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "UpdateWebTicket",
+     "type": "Event",
+     "literal_name": "UPDATE_WEB_TICKET",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "hasTicket",
+       "type": "bool",
+       "nilable": false
+      },
+      {
+       "name": "numTickets",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "ticketStatus",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "caseIndex",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "waitTimeMinutes",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "waitMessage",
+       "type": "cstring",
+       "nilable": true
+      },
+      {
+       "name": "caseTitle",
+       "type": "cstring",
+       "nilable": true
+      },
+      {
+       "name": "caseDescription",
+       "type": "cstring",
+       "nilable": true
+      }
+     ]
+    }
+   ]
+  },
   "GameCursor": {
    "file": "GameCursorDocumentation.lua",
    "entries": [
@@ -59503,38 +59697,6 @@
        "nilable": false
       }
      ],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
-  "GARRISON_FOLLOWER_TYPEConstants": {
-   "file": "GARRISON_FOLLOWER_TYPEConstantsDocumentation.lua",
-   "entries": [
-    {
-     "name": "GarrisonFollowerType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
-  "GARRISON_TYPEConstants": {
-   "file": "GARRISON_TYPEConstantsDocumentation.lua",
-   "entries": [
-    {
-     "name": "GarrisonType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
      "returns": [],
      "payload": []
     }
@@ -62263,168 +62425,6 @@
        "name": "spellID",
        "type": "number",
        "nilable": false
-      }
-     ]
-    }
-   ]
-  },
-  "GMTicketInfo": {
-   "file": "GMTicketInfoDocumentation.lua",
-   "entries": [
-    {
-     "name": "GMTicketInfo",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GmPlayerInfo",
-     "type": "Event",
-     "literal_name": "GM_PLAYER_INFO",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "name",
-       "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "info",
-       "type": "cstring",
-       "nilable": false
-      }
-     ]
-    },
-    {
-     "name": "ItemRestorationButtonStatus",
-     "type": "Event",
-     "literal_name": "ITEM_RESTORATION_BUTTON_STATUS",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetitionClosed",
-     "type": "Event",
-     "literal_name": "PETITION_CLOSED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetitionShow",
-     "type": "Event",
-     "literal_name": "PETITION_SHOW",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PlayerReportSubmitted",
-     "type": "Event",
-     "literal_name": "PLAYER_REPORT_SUBMITTED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "invitedByGUID",
-       "type": "WOWGUID",
-       "nilable": false
-      }
-     ]
-    },
-    {
-     "name": "QuickTicketSystemStatus",
-     "type": "Event",
-     "literal_name": "QUICK_TICKET_SYSTEM_STATUS",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "QuickTicketThrottleChanged",
-     "type": "Event",
-     "literal_name": "QUICK_TICKET_THROTTLE_CHANGED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "UpdateWebTicket",
-     "type": "Event",
-     "literal_name": "UPDATE_WEB_TICKET",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "hasTicket",
-       "type": "bool",
-       "nilable": false
-      },
-      {
-       "name": "numTickets",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "ticketStatus",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "caseIndex",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "waitTimeMinutes",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "waitMessage",
-       "type": "cstring",
-       "nilable": true
-      },
-      {
-       "name": "caseTitle",
-       "type": "cstring",
-       "nilable": true
-      },
-      {
-       "name": "caseDescription",
-       "type": "cstring",
-       "nilable": true
       }
      ]
     }
@@ -73613,79 +73613,6 @@
     }
    ]
   },
-  "IncomingSummon": {
-   "file": "IncomingSummonDocumentation.lua",
-   "entries": [
-    {
-     "name": "IncomingSummon",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "HasIncomingSummon",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "unit",
-       "type": "UnitToken",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "summon",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "IncomingSummonStatus",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "unit",
-       "type": "UnitToken",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "status",
-       "type": "SummonStatus",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "SummonStatus",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "InGameNavigation": {
    "file": "InGameNavigationDocumentation.lua",
    "entries": [
@@ -73849,6 +73776,79 @@
     },
     {
      "name": "NavigationState",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "IncomingSummon": {
+   "file": "IncomingSummonDocumentation.lua",
+   "entries": [
+    {
+     "name": "IncomingSummon",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "HasIncomingSummon",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "unit",
+       "type": "UnitToken",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "summon",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IncomingSummonStatus",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "unit",
+       "type": "UnitToken",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "status",
+       "type": "SummonStatus",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "SummonStatus",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -75452,55 +75452,6 @@
     }
    ]
   },
-  "ItemConstants_Mainline": {
-   "file": "ItemConstants_MainlineDocumentation.lua",
-   "entries": [
-    {
-     "name": "ItemGemSubclass",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "ItemRedundancySlot",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "InventoryConstants",
-     "type": "Constants",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "ItemConsts_Mainline",
-     "type": "Constants",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "ItemConstants": {
    "file": "ItemConstantsDocumentation.lua",
    "entries": [
@@ -75814,6 +75765,55 @@
     },
     {
      "name": "ITEM_WEAPON_SUBCLASSConstants_PostMists",
+     "type": "Constants",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "ItemConstants_Mainline": {
+   "file": "ItemConstants_MainlineDocumentation.lua",
+   "entries": [
+    {
+     "name": "ItemGemSubclass",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ItemRedundancySlot",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "InventoryConstants",
+     "type": "Constants",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ItemConsts_Mainline",
      "type": "Constants",
      "literal_name": null,
      "secret_flags": [],
@@ -80259,659 +80259,6 @@
     }
    ]
   },
-  "LegendaryCrafting": {
-   "file": "LegendaryCraftingDocumentation.lua",
-   "entries": [
-    {
-     "name": "LegendaryCrafting",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "CloseRuneforgeInteraction",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "CraftRuneforgeLegendary",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "description",
-       "type": "RuneforgeLegendaryCraftDescription",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeItemPreviewInfo",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "runeforgePowerID",
-       "type": "number",
-       "nilable": true
-      }
-     ],
-     "returns": [
-      {
-       "name": "info",
-       "type": "RuneforgeItemPreviewInfo",
-       "nilable": true
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeLegendaryComponentInfo",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "componentInfo",
-       "type": "RuneforgeLegendaryComponentInfo",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeLegendaryCost",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeLegendaryCraftSpellID",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "spellID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeLegendaryCurrencies",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeLegendaryUpgradeCost",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeModifierInfo",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "powerID",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "addedModifierIndex",
-       "type": "luaIndex",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "name",
-       "type": "string",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgeModifiers",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgePowerInfo",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "runeforgePowerID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "power",
-       "type": "RuneforgePower",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgePowerSlots",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "runeforgePowerID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgePowers",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "filter",
-       "type": "RuneforgePowerFilter",
-       "nilable": true
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRuneforgePowersByClassSpecAndCovenant",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "classID",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "specID",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "covenantID",
-       "type": "number",
-       "nilable": true
-      },
-      {
-       "name": "filter",
-       "type": "RuneforgePowerFilter",
-       "nilable": true
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "IsRuneforgeLegendary",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "isRuneforgeLegendary",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "IsRuneforgeLegendaryMaxLevel",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "isMaxLevel",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "IsUpgradeItemValidForRuneforgeLegendary",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "isValid",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "IsValidRuneforgeBaseItem",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "isValid",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "MakeRuneforgeCraftDescription",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "runeforgePowerID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "description",
-       "type": "RuneforgeLegendaryCraftDescription",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "UpgradeRuneforgeLegendary",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "NewRuneforgePowerAdded",
-     "type": "Event",
-     "literal_name": "NEW_RUNEFORGE_POWER_ADDED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "powerID",
-       "type": "number",
-       "nilable": false
-      }
-     ]
-    },
-    {
-     "name": "RuneforgeLegendaryCraftingClosed",
-     "type": "Event",
-     "literal_name": "RUNEFORGE_LEGENDARY_CRAFTING_CLOSED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RuneforgeLegendaryCraftingOpened",
-     "type": "Event",
-     "literal_name": "RUNEFORGE_LEGENDARY_CRAFTING_OPENED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "isUpgrade",
-       "type": "bool",
-       "nilable": false
-      }
-     ]
-    },
-    {
-     "name": "RuneforgePowerInfoUpdated",
-     "type": "Event",
-     "literal_name": "RUNEFORGE_POWER_INFO_UPDATED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "powerID",
-       "type": "number",
-       "nilable": false
-      }
-     ]
-    }
-   ]
-  },
-  "LegendaryCraftingTypes": {
-   "file": "LegendaryCraftingTypesDocumentation.lua",
-   "entries": [
-    {
-     "name": "RuneforgePowerFilter",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RuneforgePowerState",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "CurrencyCost",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RuneforgeItemPreviewInfo",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RuneforgeLegendaryComponentInfo",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RuneforgeLegendaryCraftDescription",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "RuneforgePower",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
-  "LevelConstants": {
-   "file": "LevelConstantsDocumentation.lua",
-   "entries": [
-    {
-     "name": "LevelConstsExposed",
-     "type": "Constants",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
-  "LevelLink": {
-   "file": "LevelLinkDocumentation.lua",
-   "entries": [
-    {
-     "name": "LevelLink",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "IsActionLocked",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "actionID",
-       "type": "luaIndex",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "isLocked",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "IsSpellLocked",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "spellID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "isLocked",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    }
-   ]
-  },
-  "LevelSquish": {
-   "file": "LevelSquishDocumentation.lua",
-   "entries": [
-    {
-     "name": "LevelSquish",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "ConvertFollowerLevel",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "level",
-       "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "maxFollowerLevel",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "squishedLevel",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "ConvertPlayerLevel",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "level",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "squishedLevel",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    }
-   ]
-  },
   "LFGConstants": {
    "file": "LFGConstantsDocumentation.lua",
    "entries": [
@@ -83364,6 +82711,659 @@
      "documentation": null,
      "arguments": [],
      "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "LegendaryCrafting": {
+   "file": "LegendaryCraftingDocumentation.lua",
+   "entries": [
+    {
+     "name": "LegendaryCrafting",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CloseRuneforgeInteraction",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CraftRuneforgeLegendary",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "description",
+       "type": "RuneforgeLegendaryCraftDescription",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeItemPreviewInfo",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "runeforgePowerID",
+       "type": "number",
+       "nilable": true
+      }
+     ],
+     "returns": [
+      {
+       "name": "info",
+       "type": "RuneforgeItemPreviewInfo",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeLegendaryComponentInfo",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "componentInfo",
+       "type": "RuneforgeLegendaryComponentInfo",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeLegendaryCost",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeLegendaryCraftSpellID",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "spellID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeLegendaryCurrencies",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeLegendaryUpgradeCost",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeModifierInfo",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "powerID",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "addedModifierIndex",
+       "type": "luaIndex",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "name",
+       "type": "string",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgeModifiers",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgePowerInfo",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "runeforgePowerID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "power",
+       "type": "RuneforgePower",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgePowerSlots",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "runeforgePowerID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgePowers",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "filter",
+       "type": "RuneforgePowerFilter",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRuneforgePowersByClassSpecAndCovenant",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "classID",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "specID",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "covenantID",
+       "type": "number",
+       "nilable": true
+      },
+      {
+       "name": "filter",
+       "type": "RuneforgePowerFilter",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "IsRuneforgeLegendary",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isRuneforgeLegendary",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsRuneforgeLegendaryMaxLevel",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isMaxLevel",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsUpgradeItemValidForRuneforgeLegendary",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isValid",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsValidRuneforgeBaseItem",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isValid",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "MakeRuneforgeCraftDescription",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "runeforgePowerID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "description",
+       "type": "RuneforgeLegendaryCraftDescription",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "UpgradeRuneforgeLegendary",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "NewRuneforgePowerAdded",
+     "type": "Event",
+     "literal_name": "NEW_RUNEFORGE_POWER_ADDED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "powerID",
+       "type": "number",
+       "nilable": false
+      }
+     ]
+    },
+    {
+     "name": "RuneforgeLegendaryCraftingClosed",
+     "type": "Event",
+     "literal_name": "RUNEFORGE_LEGENDARY_CRAFTING_CLOSED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RuneforgeLegendaryCraftingOpened",
+     "type": "Event",
+     "literal_name": "RUNEFORGE_LEGENDARY_CRAFTING_OPENED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "isUpgrade",
+       "type": "bool",
+       "nilable": false
+      }
+     ]
+    },
+    {
+     "name": "RuneforgePowerInfoUpdated",
+     "type": "Event",
+     "literal_name": "RUNEFORGE_POWER_INFO_UPDATED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "powerID",
+       "type": "number",
+       "nilable": false
+      }
+     ]
+    }
+   ]
+  },
+  "LegendaryCraftingTypes": {
+   "file": "LegendaryCraftingTypesDocumentation.lua",
+   "entries": [
+    {
+     "name": "RuneforgePowerFilter",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RuneforgePowerState",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CurrencyCost",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RuneforgeItemPreviewInfo",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RuneforgeLegendaryComponentInfo",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RuneforgeLegendaryCraftDescription",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RuneforgePower",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "LevelConstants": {
+   "file": "LevelConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "LevelConstsExposed",
+     "type": "Constants",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "LevelLink": {
+   "file": "LevelLinkDocumentation.lua",
+   "entries": [
+    {
+     "name": "LevelLink",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "IsActionLocked",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "actionID",
+       "type": "luaIndex",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isLocked",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsSpellLocked",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "spellID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isLocked",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    }
+   ]
+  },
+  "LevelSquish": {
+   "file": "LevelSquishDocumentation.lua",
+   "entries": [
+    {
+     "name": "LevelSquish",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ConvertFollowerLevel",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "level",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "maxFollowerLevel",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "squishedLevel",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "ConvertPlayerLevel",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "level",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "squishedLevel",
+       "type": "number",
+       "nilable": false
+      }
+     ],
      "payload": []
     }
    ]
@@ -94126,6 +94126,22 @@
        "nilable": false
       }
      ],
+     "payload": []
+    }
+   ]
+  },
+  "PVPMgrConstants": {
+   "file": "PVPMgrConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "PvPMatchmakingType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
      "payload": []
     }
    ]
@@ -109203,22 +109219,6 @@
     }
    ]
   },
-  "PVPMgrConstants": {
-   "file": "PVPMgrConstantsDocumentation.lua",
-   "entries": [
-    {
-     "name": "PvPMatchmakingType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "QuestConstants": {
    "file": "QuestConstantsDocumentation.lua",
    "entries": [
@@ -116951,6 +116951,39 @@
     }
    ]
   },
+  "ScriptWarnings": {
+   "file": "ScriptWarningsDocumentation.lua",
+   "entries": [
+    {
+     "name": "ScriptWarnings",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "LuaWarning",
+     "type": "Event",
+     "literal_name": "LUA_WARNING",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "warningText",
+       "type": "cstring",
+       "nilable": false
+      }
+     ]
+    }
+   ]
+  },
   "ScriptedAnimations": {
    "file": "ScriptedAnimationsDocumentation.lua",
    "entries": [
@@ -117030,39 +117063,6 @@
      "arguments": [],
      "returns": [],
      "payload": []
-    }
-   ]
-  },
-  "ScriptWarnings": {
-   "file": "ScriptWarningsDocumentation.lua",
-   "entries": [
-    {
-     "name": "ScriptWarnings",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "LuaWarning",
-     "type": "Event",
-     "literal_name": "LUA_WARNING",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "warningText",
-       "type": "cstring",
-       "nilable": false
-      }
-     ]
     }
    ]
   },
@@ -120692,90 +120692,6 @@
     }
    ]
   },
-  "SimpleAnimAlpha": {
-   "file": "SimpleAnimAlphaAPIDocumentation.lua",
-   "entries": [
-    {
-     "name": "SimpleAnimAlphaAPI",
-     "type": "ScriptObject",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetFromAlpha",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "normalizedAlpha",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetToAlpha",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "normalizedAlpha",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "SetFromAlpha",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "normalizedAlpha",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetToAlpha",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "NotAllowed",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "normalizedAlpha",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "SimpleAnim": {
    "file": "SimpleAnimAPIDocumentation.lua",
    "entries": [
@@ -121441,11 +121357,11 @@
     }
    ]
   },
-  "SimpleAnimatableObject": {
-   "file": "SimpleAnimatableObjectAPIDocumentation.lua",
+  "SimpleAnimAlpha": {
+   "file": "SimpleAnimAlphaAPIDocumentation.lua",
    "entries": [
     {
-     "name": "SimpleAnimatableObjectAPI",
+     "name": "SimpleAnimAlphaAPI",
      "type": "ScriptObject",
      "literal_name": null,
      "secret_flags": [],
@@ -121456,7 +121372,41 @@
      "payload": []
     },
     {
-     "name": "CreateAnimationGroup",
+     "name": "GetFromAlpha",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "normalizedAlpha",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetToAlpha",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "normalizedAlpha",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "SetFromAlpha",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
@@ -121464,44 +121414,28 @@
      "documentation": null,
      "arguments": [
       {
-       "name": "name",
-       "type": "cstring",
-       "nilable": true
-      },
-      {
-       "name": "templateName",
-       "type": "cstring",
-       "nilable": true
-      }
-     ],
-     "returns": [
-      {
-       "name": "group",
-       "type": "SimpleAnimGroup",
+       "name": "normalizedAlpha",
+       "type": "number",
        "nilable": false
       }
      ],
-     "payload": []
-    },
-    {
-     "name": "GetAnimationGroups",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
      "returns": [],
      "payload": []
     },
     {
-     "name": "StopAnimating",
+     "name": "SetToAlpha",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": null,
+     "secret_args": "NotAllowed",
      "documentation": null,
-     "arguments": [],
+     "arguments": [
+      {
+       "name": "normalizedAlpha",
+       "type": "number",
+       "nilable": false
+      }
+     ],
      "returns": [],
      "payload": []
     }
@@ -122847,6 +122781,72 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": "AllowedWhenTainted",
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "SimpleAnimatableObject": {
+   "file": "SimpleAnimatableObjectAPIDocumentation.lua",
+   "entries": [
+    {
+     "name": "SimpleAnimatableObjectAPI",
+     "type": "ScriptObject",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CreateAnimationGroup",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": true
+      },
+      {
+       "name": "templateName",
+       "type": "cstring",
+       "nilable": true
+      }
+     ],
+     "returns": [
+      {
+       "name": "group",
+       "type": "SimpleAnimGroup",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetAnimationGroups",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "StopAnimating",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
      "documentation": null,
      "arguments": [],
      "returns": [],
@@ -145052,6 +145052,384 @@
     }
    ]
   },
+  "TTSSettings": {
+   "file": "TTSSettingsDocumentation.lua",
+   "entries": [
+    {
+     "name": "TTSSettings",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetChannelEnabled",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "channelInfo",
+       "type": "ChatChannelInfo",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "enabled",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetCharacterSettingsSaved",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "settingsBeenSaved",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetChatTypeEnabled",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "chatName",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "enabled",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetSetting",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "setting",
+       "type": "TtsBoolSetting",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "enabled",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetSpeechRate",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "rate",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetSpeechVolume",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "volume",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetVoiceOptionID",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "voiceType",
+       "type": "TtsVoiceType",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "voiceID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetVoiceOptionName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "voiceType",
+       "type": "TtsVoiceType",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "voiceName",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "MarkCharacterSettingsSaved",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetChannelEnabled",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "channelInfo",
+       "type": "ChatChannelInfo",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetChannelKeyEnabled",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "channelKey",
+       "type": "string",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetChatTypeEnabled",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "chatName",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetDefaultSettings",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetSetting",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "setting",
+       "type": "TtsBoolSetting",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetSpeechRate",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "newVal",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetSpeechVolume",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "newVal",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetVoiceOption",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "voiceType",
+       "type": "TtsVoiceType",
+       "nilable": false
+      },
+      {
+       "name": "voiceID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetVoiceOptionName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "voiceType",
+       "type": "TtsVoiceType",
+       "nilable": false
+      },
+      {
+       "name": "voiceName",
+       "type": "string",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ShouldOverrideMessage",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "language",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "messageText",
+       "type": "string",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "overrideMessage",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    }
+   ]
+  },
   "TalentAndGlyphConstants": {
    "file": "TalentAndGlyphConstantsDocumentation.lua",
    "entries": [
@@ -157335,384 +157713,6 @@
     }
    ]
   },
-  "TTSSettings": {
-   "file": "TTSSettingsDocumentation.lua",
-   "entries": [
-    {
-     "name": "TTSSettings",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetChannelEnabled",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "channelInfo",
-       "type": "ChatChannelInfo",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "enabled",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetCharacterSettingsSaved",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "settingsBeenSaved",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetChatTypeEnabled",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "chatName",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "enabled",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetSetting",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "setting",
-       "type": "TtsBoolSetting",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "enabled",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetSpeechRate",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "rate",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetSpeechVolume",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "volume",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetVoiceOptionID",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "voiceType",
-       "type": "TtsVoiceType",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "voiceID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetVoiceOptionName",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "voiceType",
-       "type": "TtsVoiceType",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "voiceName",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "MarkCharacterSettingsSaved",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetChannelEnabled",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "channelInfo",
-       "type": "ChatChannelInfo",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetChannelKeyEnabled",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "channelKey",
-       "type": "string",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetChatTypeEnabled",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "chatName",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetDefaultSettings",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetSetting",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "setting",
-       "type": "TtsBoolSetting",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetSpeechRate",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "newVal",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetSpeechVolume",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "newVal",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetVoiceOption",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "voiceType",
-       "type": "TtsVoiceType",
-       "nilable": false
-      },
-      {
-       "name": "voiceID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetVoiceOptionName",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "voiceType",
-       "type": "TtsVoiceType",
-       "nilable": false
-      },
-      {
-       "name": "voiceName",
-       "type": "string",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "ShouldOverrideMessage",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "language",
-       "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "messageText",
-       "type": "string",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "overrideMessage",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    }
-   ]
-  },
   "Tutorial": {
    "file": "TutorialDocumentation.lua",
    "entries": [
@@ -158898,33 +158898,6 @@
     },
     {
      "name": "UIModelSceneActorFlag",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
-  "UiModelSceneConstants": {
-   "file": "UiModelSceneConstantsDocumentation.lua",
-   "entries": [
-    {
-     "name": "UIModelSceneContext",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "UIModelSceneFlags",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -161300,6 +161273,88 @@
     },
     {
      "name": "UIWidgetVisualizationType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "URL": {
+   "file": "URLDocumentation.lua",
+   "entries": [
+    {
+     "name": "URL",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "LaunchURL",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "url",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "LoadURLIndex",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "index",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "param",
+       "type": "number",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "UiModelSceneConstants": {
+   "file": "UiModelSceneConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "UIModelSceneContext",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "UIModelSceneFlags",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -171500,61 +171555,6 @@
     }
    ]
   },
-  "URL": {
-   "file": "URLDocumentation.lua",
-   "entries": [
-    {
-     "name": "URL",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "LaunchURL",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "url",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "LoadURLIndex",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "index",
-       "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "param",
-       "type": "number",
-       "nilable": true
-      }
-     ],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "UserFeedback": {
    "file": "UserFeedbackDocumentation.lua",
    "entries": [
@@ -174834,213 +174834,6 @@
     }
    ]
   },
-  "WarbandSceneInfoConstants": {
-   "file": "WarbandSceneInfoConstantsDocumentation.lua",
-   "entries": [
-    {
-     "name": "WarbandSceneFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
-  "WarbandSceneInfo": {
-   "file": "WarbandSceneInfoDocumentation.lua",
-   "entries": [
-    {
-     "name": "WarbandSceneInfo",
-     "type": "System",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "GetRandomEntryID",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "warbandSceneID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetWarbandSceneEntry",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "warbandSceneID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "warbandSceneEntry",
-       "type": "WarbandSceneEntry",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "HasWarbandScene",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "warbandSceneID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "owned",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "IsFavorite",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "warbandSceneID",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "favorite",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "SearchWarbandSceneEntries",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "searchParams",
-       "type": "WarbandSceneSearchInfo",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetFavorite",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "warbandSceneID",
-       "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "favorite",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "NewWarbandSceneAdded",
-     "type": "Event",
-     "literal_name": "NEW_WARBAND_SCENE_ADDED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": [
-      {
-       "name": "warbandScenID",
-       "type": "number",
-       "nilable": false
-      }
-     ]
-    },
-    {
-     "name": "WarbandSceneFavoritesUpdated",
-     "type": "Event",
-     "literal_name": "WARBAND_SCENE_FAVORITES_UPDATED",
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "WarbandSceneEntry",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "WarbandSceneSearchInfo",
-     "type": "Structure",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    }
-   ]
-  },
   "WarCampaign": {
    "file": "WarCampaignDocumentation.lua",
    "entries": [
@@ -175302,6 +175095,213 @@
     },
     {
      "name": "CampaignInfo",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "WarbandSceneInfoConstants": {
+   "file": "WarbandSceneInfoConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "WarbandSceneFlags",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "WarbandSceneInfo": {
+   "file": "WarbandSceneInfoDocumentation.lua",
+   "entries": [
+    {
+     "name": "WarbandSceneInfo",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetRandomEntryID",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "warbandSceneID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetWarbandSceneEntry",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "warbandSceneID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "warbandSceneEntry",
+       "type": "WarbandSceneEntry",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "HasWarbandScene",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "warbandSceneID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "owned",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsFavorite",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "warbandSceneID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "favorite",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "SearchWarbandSceneEntries",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "searchParams",
+       "type": "WarbandSceneSearchInfo",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetFavorite",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "warbandSceneID",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "favorite",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "NewWarbandSceneAdded",
+     "type": "Event",
+     "literal_name": "NEW_WARBAND_SCENE_ADDED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "warbandScenID",
+       "type": "number",
+       "nilable": false
+      }
+     ]
+    },
+    {
+     "name": "WarbandSceneFavoritesUpdated",
+     "type": "Event",
+     "literal_name": "WARBAND_SCENE_FAVORITES_UPDATED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "WarbandSceneEntry",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "WarbandSceneSearchInfo",
      "type": "Structure",
      "literal_name": null,
      "secret_flags": [],
