@@ -62,6 +62,7 @@ ZhuraStats.zip
     +-- ZhuraStats.lua
     +-- embeds.xml
     +-- Libs/
+    +-- Media/
     \-- Locales/
 ```
 
