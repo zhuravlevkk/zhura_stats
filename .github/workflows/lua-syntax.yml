@@ -9,7 +9,7 @@ on:
 
 jobs:
   syntax-check:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
@@ -28,13 +28,26 @@ jobs:
 
       - name: Install Lua 5.1
         if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        run: choco install lua -y --no-progress
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1
 
       - name: Validate Lua syntax
         if: steps.filter.outputs.lua == 'true' || github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        run: .\scripts\check-lua-syntax.ps1
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            luac5.1 -p "$file"
+            count=$((count + 1))
+          done < <(find . -name '*.lua' -not -path './Libs/*' -not -path './.tools/*' -print0 | sort -z)
+          if [ "$count" -eq 0 ]; then
+            echo "No Lua files found to validate." >&2
+            exit 1
+          fi
+          echo "Lua syntax check passed for $count file(s)."
 
   luacheck:
     runs-on: ubuntu-latest

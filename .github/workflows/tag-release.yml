@@ -138,6 +138,11 @@ jobs:
           if [ -d "$workspace/Libs" ]; then
             cp -R "$workspace/Libs" "$addon_dir/Libs"
           fi
+          if [ ! -d "$workspace/Media" ]; then
+            echo "Media folder is missing (required for RefArrow textures)." >&2
+            exit 1
+          fi
+          cp -R "$workspace/Media" "$addon_dir/Media"
           if [ -f "$workspace/README.md" ]; then
             cp "$workspace/README.md" "$addon_dir/README.md"
           fi

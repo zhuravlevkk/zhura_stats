@@ -132,6 +132,12 @@ jobs:
             Copy-Item -LiteralPath $libsSourcePath -Destination (Join-Path $addonDir 'Libs') -Recurse -Force
           }
 
+          $mediaSourcePath = Join-Path $workspace 'Media'
+          if (-not (Test-Path -LiteralPath $mediaSourcePath)) {
+            throw "Media folder is missing (required for RefArrow textures)."
+          }
+          Copy-Item -LiteralPath $mediaSourcePath -Destination (Join-Path $addonDir 'Media') -Recurse -Force
+
           if (Test-Path (Join-Path $workspace 'README.md')) {
             Copy-Item -LiteralPath (Join-Path $workspace 'README.md') -Destination $addonDir
           }
