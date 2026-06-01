@@ -256,6 +256,28 @@ The stats frame must feel anchored and predictable during live stat updates.
 
 ---
 
+## Localization (STRICT)
+
+Locale files live under `Locales/` — one file per locale (`enUS.lua`, `ruRU.lua`, …).
+
+**NEVER** put user-facing text in a locale file in a language other than that file’s locale.
+
+* Adding or changing a string in `Locales/enUS.lua` → write **English**.
+* Adding or changing a string in `Locales/ruRU.lua` → write **Russian**.
+* Same rule for every locale: `deDE`, `esES`, `esMX`, `frFR`, `itIT`, `koKR`, `ptBR`, `ukUA`, `zhCN`, `zhTW`.
+
+**Localize immediately.** When you add a new `NE_STATS_*` key:
+
+1. Add it to **every** locale file in the correct language for that file.
+2. Do **not** copy English into non-`enUS` files as a temporary placeholder.
+3. Do **not** leave “translate later” TODOs in locale files.
+
+Proper names that stay Latin across locales (e.g. `Archon`, `NE Stats`, slash commands) are fine; explanatory sentences must match the file’s language.
+
+`enUS` is the fallback in `Locale.lua`, but missing or wrong-language entries are still a defect — fix all locales in the same change.
+
+---
+
 ## Code Style Guidelines
 
 * Prefer small focused functions
@@ -290,6 +312,8 @@ Deploy the addon into the retail WoW AddOns folder from the repository root:
 ```powershell
 .\scripts\deploy-local.ps1
 ```
+
+The deploy script copies `Locales/`, `Libs/`, and `Media/` (custom textures such as ref arrows). After changing files under `Media/`, redeploy before `/reload`.
 
 Default target:
 

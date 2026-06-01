@@ -23,6 +23,69 @@ function Addon:IsArchonReferenceStatKey(statKey)
     return REFERENCE_SECONDARY_KEYS[statKey] == true
 end
 
+-- True when DR display is on and the stat has an active DR penalty.
+function Addon:HasActiveDiminishingReturns(profile, statResult)
+    local defaults = self.Defaults and self.Defaults.profile
+    profile = profile or {}
+    local drMode = profile.drDisplayMode or (defaults and defaults.drDisplayMode) or "off"
+    return drMode ~= "off"
+        and statResult and statResult.dr
+        and (statResult.dr.penalty or 0) > 0
+end
+
+function Addon:IsReferenceDisplayEnabled(profile)
+    local defaults = self.Defaults and self.Defaults.profile
+    profile = profile or {}
+    local display = profile.referenceDisplay or (defaults and defaults.referenceDisplay) or "off"
+    return display ~= "off"
+end
+
+-- On-screen ref segments (inline / delta) are hidden while DR is active.
+function Addon:ShouldShowReferenceOnRow(statKey, statResult, profile)
+    if not self:IsArchonReferenceStatKey(statKey) then
+        return false
+    end
+    if not self:IsReferenceDisplayEnabled(profile) then
+        return false
+    end
+    local defaults = self.Defaults and self.Defaults.profile
+    profile = profile or {}
+    local display = profile.referenceDisplay or (defaults and defaults.referenceDisplay) or "off"
+    if display == "tooltip" then
+        return false
+    end
+    if self:NormalizeStatPriorityMode(profile.statPriorityMode or (defaults and defaults.statPriorityMode) or "manual") == "manual" then
+        return false
+    end
+    if self:HasActiveDiminishingReturns(profile, statResult) then
+        return false
+    end
+    return self:GetArchonStatReferencePayload(statKey, profile) ~= nil
+end
+
+-- Tooltip on row hover: tooltip-only mode, or DR hiding on-screen reference.
+function Addon:WantsReferenceTooltip(statKey, statResult, profile)
+    if not self:IsArchonReferenceStatKey(statKey) then
+        return false
+    end
+    if not self:IsReferenceDisplayEnabled(profile) then
+        return false
+    end
+    local defaults = self.Defaults and self.Defaults.profile
+    profile = profile or {}
+    if self:NormalizeStatPriorityMode(profile.statPriorityMode or (defaults and defaults.statPriorityMode) or "manual") == "manual" then
+        return false
+    end
+    if not self:GetArchonStatReferencePayload(statKey, profile) then
+        return false
+    end
+    local display = profile.referenceDisplay or (defaults and defaults.referenceDisplay) or "off"
+    if display == "tooltip" then
+        return true
+    end
+    return self:HasActiveDiminishingReturns(profile, statResult)
+end
+
 -- Returns Archon-generated reference for one secondary stat, or nil if unavailable.
 -- Uses only WoWLogsStatsPrio fields: secondary[].stat, secondary[].rating, plus root updated/activity.
 function Addon:GetArchonStatReferencePayload(statKey, profile)

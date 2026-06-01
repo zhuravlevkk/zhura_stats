@@ -22,15 +22,160 @@ local LOCK_BUTTON_SIZE = 20
 local LOCK_BUTTON_GAP = 2
 local FRAME_CONTROLS_GAP = 4
 
+local glyphDebugFrame
+local lockButtonMiddleClickCount = 0
+local lockButtonMiddleClickTime = 0
+local LOCK_BUTTON_TRIPLE_CLICK_WINDOW = 0.5
+
+-- Arrow glyph candidates for in-game font/texture comparison (3x middle-click lock).
+local GLYPH_DEBUG_CANDIDATES = {
+    { label = "U+2191", text = "\226\134\145" },
+    { label = "U+2193", text = "\226\134\147" },
+    { label = "U+25B2", text = "\226\150\178" },
+    { label = "U+25BC", text = "\226\150\188" },
+    { label = "U+2B06", text = "\226\172\134" },
+    { label = "U+2B07", text = "\226\172\135" },
+    { label = "ASCII ^", text = "^" },
+    { label = "ASCII v", text = "v" },
+    { label = "U+203A", text = "\226\128\186" },
+    { label = "U+2039", text = "\226\128\185" },
+}
+
+local GLYPH_DEBUG_TEXTURES = {
+    { label = "Zhura RefArrowUp", text = "|TInterface\\AddOns\\ZhuraStats\\Media\\RefArrowUp:16:16:0:0|t" },
+    { label = "Zhura RefArrowDown", text = "|TInterface\\AddOns\\ZhuraStats\\Media\\RefArrowDown:16:16:0:0|t" },
+    { label = "Arrow-Up-Up", text = "|TInterface\\Buttons\\Arrow-Up-Up:16:16:0:0|t" },
+    { label = "Arrow-Down-Up", text = "|TInterface\\Buttons\\Arrow-Down-Up:16:16:0:0|t" },
+    { label = "ScrollUpButton", text = "|TInterface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up:16:16:0:0|t" },
+    { label = "ScrollDownButton", text = "|TInterface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up:16:16:0:0|t" },
+}
+
+local function ApplyGlyphDebugFont()
+    if not glyphDebugFrame then
+        return
+    end
+    local profile = Addon:GetProfile()
+    local defaults = Addon.Defaults and Addon.Defaults.profile
+    local fontKey = (profile and profile.fontKey) or (defaults and defaults.fontKey)
+    local fontPath, fontFlags = Addon:GetFontInfo(fontKey)
+    local fontSize = (profile and profile.fontSize) or (defaults and defaults.fontSize) or 12
+
+    if glyphDebugFrame.title then
+        glyphDebugFrame.title:SetFont(fontPath, fontSize, fontFlags)
+    end
+    for _, row in ipairs(glyphDebugFrame.rows or {}) do
+        if row.sample then
+            row.sample:SetFont(fontPath, fontSize, fontFlags)
+        end
+    end
+end
+
+local function EnsureGlyphDebugFrame()
+    if glyphDebugFrame then
+        return glyphDebugFrame
+    end
+
+    local rowCount = #GLYPH_DEBUG_CANDIDATES + #GLYPH_DEBUG_TEXTURES + 2
+    local frame = CreateFrame("Frame", "ZhuraStatsGlyphDebugFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(340, 48 + (rowCount * 20))
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 80)
+    frame:SetFrameStrata("DIALOG")
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", frame, "TOP", 0, -10)
+    title:SetText("Arrow glyph debug — 3x middle-click lock to close")
+    frame.title = title
+
+    frame.rows = {}
+    local y = -34
+
+    local function addRow(labelText, sampleText)
+        local label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        label:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, y)
+        label:SetWidth(130)
+        label:SetJustifyH("LEFT")
+        label:SetText(labelText)
+
+        local sample = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        sample:SetPoint("LEFT", label, "RIGHT", 8, 0)
+        sample:SetJustifyH("LEFT")
+        sample:SetText(sampleText)
+
+        table.insert(frame.rows, { sample = sample })
+        y = y - 20
+    end
+
+    addRow("— font glyphs —", "")
+    for _, entry in ipairs(GLYPH_DEBUG_CANDIDATES) do
+        addRow(entry.label, entry.text .. " 123")
+    end
+
+    addRow("— textures —", "")
+    for _, entry in ipairs(GLYPH_DEBUG_TEXTURES) do
+        addRow(entry.label, entry.text .. " 123")
+    end
+
+    local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -2, -2)
+    closeBtn:SetScript("OnClick", function()
+        frame:Hide()
+    end)
+
+    glyphDebugFrame = frame
+    return frame
+end
+
+local function ToggleGlyphDebugPanel()
+    local frame = EnsureGlyphDebugFrame()
+    ApplyGlyphDebugFont()
+    if frame:IsShown() then
+        frame:Hide()
+    else
+        frame:Show()
+    end
+end
+
+local function HandleLockButtonMiddleClick()
+    local now = GetTime()
+    if now - lockButtonMiddleClickTime > LOCK_BUTTON_TRIPLE_CLICK_WINDOW then
+        lockButtonMiddleClickCount = 0
+    end
+    lockButtonMiddleClickCount = lockButtonMiddleClickCount + 1
+    lockButtonMiddleClickTime = now
+    if lockButtonMiddleClickCount >= 3 then
+        lockButtonMiddleClickCount = 0
+        ToggleGlyphDebugPanel()
+    end
+end
+
+-- The stat block is anchored by its TOP edge so that adding rows or widening a
+-- row (e.g. a DR suffix appearing) grows the frame downward / sideways away
+-- from the anchor, never shifting the anchor point itself.
+--   LEFT   -> top-left  pinned, grows right & down
+--   CENTER -> top-center pinned, grows symmetrically & down
+--   RIGHT  -> top-right pinned, grows left & down
 local FRAME_ANCHOR_BY_TEXT_ALIGN = {
-    LEFT = "BOTTOMLEFT",
-    CENTER = "BOTTOM",
-    RIGHT = "BOTTOMRIGHT",
+    LEFT = "TOPLEFT",
+    CENTER = "TOP",
+    RIGHT = "TOPRIGHT",
 }
 
 local function GetFrameAnchorPoint(profile, defaults)
     local align = (profile and profile.textAlign) or (defaults and defaults.textAlign) or "LEFT"
-    return FRAME_ANCHOR_BY_TEXT_ALIGN[align] or "BOTTOMLEFT"
+    return FRAME_ANCHOR_BY_TEXT_ALIGN[align] or "TOPLEFT"
 end
 
 local function GetCurrentAnchorOffsets(frame, anchorPoint, relativeTo)
@@ -41,22 +186,23 @@ local function GetCurrentAnchorOffsets(frame, anchorPoint, relativeTo)
     relativeTo = relativeTo or UIParent
     local relLeft = relativeTo:GetLeft() or 0
     local relRight = relativeTo:GetRight() or (relLeft + (relativeTo:GetWidth() or 0))
-    local relBottom = relativeTo:GetBottom() or 0
+    local relTop = relativeTo:GetTop() or 0
     local frameLeft = frame:GetLeft() or 0
     local frameRight = frame:GetRight() or frameLeft
-    local frameBottom = frame:GetBottom() or 0
+    local frameTop = frame:GetTop() or 0
 
-    if anchorPoint == "BOTTOMRIGHT" then
-        return frameRight - relRight, frameBottom - relBottom
+    -- All anchor points pin the TOP edge; only the horizontal reference differs.
+    if anchorPoint == "TOPRIGHT" then
+        return frameRight - relRight, frameTop - relTop
     end
 
-    if anchorPoint == "BOTTOM" then
+    if anchorPoint == "TOP" then
         local relCenter = relLeft + ((relativeTo:GetWidth() or 0) / 2)
         local frameCenter = frameLeft + ((frameRight - frameLeft) / 2)
-        return frameCenter - relCenter, frameBottom - relBottom
+        return frameCenter - relCenter, frameTop - relTop
     end
 
-    return frameLeft - relLeft, frameBottom - relBottom
+    return frameLeft - relLeft, frameTop - relTop
 end
 
 function Addon:GetFrameRefs()
@@ -73,6 +219,76 @@ end
 
 function Addon:GetLineOverlays()
     return lineOverlays
+end
+
+-- Lazily grow a row's segment FontString pool and return the Nth one,
+-- reset to a clean state ready for SetText/SetPoint by the renderer.
+function Addon:AcquireRowSegment(row, segIndex)
+    if not row then
+        return nil
+    end
+    row.segments = row.segments or {}
+    local fs = row.segments[segIndex]
+    if not fs then
+        fs = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        fs:SetShadowOffset(1, -1)
+        row.segments[segIndex] = fs
+    end
+    fs:ClearAllPoints()
+    fs:SetText("")
+    fs:SetWordWrap(false)
+    fs:SetMaxLines(1)
+    fs:Show()
+    return fs
+end
+
+-- Hide all segment FontStrings on a row from index `fromIndex` onward (cleanup
+-- for rows that now use fewer segments than a previous render).
+function Addon:HideRowSegmentsFrom(row, fromIndex)
+    if not row or not row.segments then
+        return
+    end
+    for i = fromIndex, #row.segments do
+        local fs = row.segments[i]
+        if fs then
+            fs:Hide()
+            fs:ClearAllPoints()
+            fs:SetText("")
+        end
+    end
+end
+
+-- Reference delta arrows use Texture (not FontString |T) for vertical centering and tinting.
+function Addon:AcquireRowRefArrow(row, index)
+    if not row then
+        return nil
+    end
+    row.refArrows = row.refArrows or {}
+    local tex = row.refArrows[index]
+    if not tex then
+        tex = row:CreateTexture(nil, "OVERLAY")
+        if tex.SetBlendMode then
+            tex:SetBlendMode("BLEND")
+        end
+        row.refArrows[index] = tex
+    end
+    tex:ClearAllPoints()
+    tex:Show()
+    return tex
+end
+
+function Addon:HideRowRefArrowsFrom(row, fromIndex)
+    if not row or not row.refArrows then
+        return
+    end
+    for i = fromIndex, #row.refArrows do
+        local tex = row.refArrows[i]
+        if tex then
+            tex:Hide()
+            tex:ClearAllPoints()
+            tex:SetTexture(nil)
+        end
+    end
 end
 
 function Addon:GetFrameControlsSize()
@@ -245,12 +461,12 @@ function Addon:UpdateTooltipOverlayVisibility()
     if not profile then
         return
     end
-    local defaults = self.Defaults.profile
-    local tooltipMode = (profile.referenceDisplay or defaults.referenceDisplay or "off") == "tooltip"
-    local archonMode = self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual") ~= "manual"
-    local active = tooltipMode and archonMode
     for _, overlay in ipairs(lineOverlays) do
-        overlay:EnableMouse(active and overlay:IsShown())
+        local active = overlay:IsShown()
+            and overlay.statKey
+            and overlay.statResult
+            and self:WantsReferenceTooltip(overlay.statKey, overlay.statResult, profile)
+        overlay:EnableMouse(active == true)
     end
 end
 
@@ -297,7 +513,7 @@ function Addon:EnsureStatsFrame()
     lockButton:SetSize(20, 20)
     lockButton:SetFrameLevel(statsAnchor:GetFrameLevel() + 10)
     lockButton:SetText("")
-    lockButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    lockButton:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp")
     lockButton:SetScript("OnEnter", function(btn)
         isLockButtonHovered = true
         Addon:UpdateFrameLockState()
@@ -313,6 +529,10 @@ function Addon:EnsureStatsFrame()
         Addon:UpdateFrameLockState()
     end)
     lockButton:SetScript("OnClick", function(_, button)
+        if button == "MiddleButton" then
+            HandleLockButtonMiddleClick()
+            return
+        end
         if button == "RightButton" then
             Addon:OpenAddonSettings()
             return
@@ -403,8 +623,14 @@ function Addon:EnsureStatsFrame()
         line:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
         line:SetJustifyH("LEFT")
         line:SetShadowOffset(1, -1)
+        line:Hide() -- legacy single-string widget; segment FS below do the drawing
         row.text = line
         lines[index] = line
+
+        -- Per-segment FontStrings. The renderer positions each one into its own
+        -- aligned sub-column (rating / sep / percent / ref / ...). Pool is grown
+        -- lazily via Addon:AcquireRowSegment so we never create more than used.
+        row.segments = {}
 
         -- Invisible overlay frame for tooltip hit-testing.
         -- EnableMouse is toggled by UpdateTooltipOverlayVisibility — off by default
@@ -417,9 +643,6 @@ function Addon:EnsureStatsFrame()
         overlay:SetScript("OnEnter", function(frame)
             local key = frame.statKey
             if not key then
-                return
-            end
-            if not Addon:IsArchonReferenceStatKey(key) then
                 return
             end
             local profile = Addon:GetProfile()

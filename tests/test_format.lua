@@ -3,6 +3,13 @@ require("Format")
 
 local Addon = stub.Addon
 
+local function expectedRefArrowSize()
+  return Addon:GetRefArrowSize(Addon.Defaults.profile, Addon.Defaults.profile)
+end
+
+local REF_ARROW_TEX_UP = "Interface\\AddOns\\ZhuraStats\\Media\\RefArrowUp"
+local REF_ARROW_TEX_DOWN = "Interface\\AddOns\\ZhuraStats\\Media\\RefArrowDown"
+
 describe("Format", function()
   before_each(function()
     stub.reset_test_profile()
@@ -88,6 +95,25 @@ describe("Format", function()
     it("formats full mode", function()
       local r = { dr = { penalty = 30, loss = 12 } }
       assert.are.equal(" (DR -30%, -12)", Addon:FormatDiminishingReturns(r, "full"))
+    end)
+  end)
+
+  describe("GetReferenceProximityColor", function()
+    it("returns green on archon rating match", function()
+      local r, g, b = Addon:GetReferenceProximityColor(300, 300)
+      assert.is_true(r < 0.5 and g > 0.8)
+    end)
+
+    it("returns red when far below or above archon reference", function()
+      local underR, underG, underB = Addon:GetReferenceProximityColor(100, 300)
+      local overR, overG, overB = Addon:GetReferenceProximityColor(500, 300)
+      assert.is_true(underR > 0.85 and underG < 0.25)
+      assert.is_true(overR > 0.85 and overG < 0.25)
+    end)
+
+    it("returns near-green for small delta", function()
+      local r, g, b = Addon:GetReferenceProximityColor(304, 300)
+      assert.is_true(g > 0.85 and r < 0.55)
     end)
   end)
 
@@ -335,6 +361,259 @@ describe("Format", function()
       local def = Addon.StatDefinitions.CRIT
       local out = Addon:FormatStatValue("CRIT", { value = 10, rating = 400 }, p, def)
       assert.is_nil(out:find("ok", 1, true))
+    end)
+  end)
+
+  describe("BuildStatSegments", function()
+    local FIXTURE_CRIT = 300
+    before_each(function()
+      WoWLogsStatsPrio = WoWLogsStatsPrio or {}
+      WoWLogsStatsPrio["mage/fire/m+"] = {
+        updated  = "2025-01-01T00:00:00Z",
+        activity = "m+", class = "mage", spec = "fire",
+        primary  = "intellect",
+        secondary = {
+          { stat = "crit", rating = FIXTURE_CRIT, order = 4 },
+        },
+      }
+    end)
+
+    local function byCol(segments, col)
+      for _, seg in ipairs(segments) do
+        if seg.col == col then
+          return seg
+        end
+      end
+      return nil
+    end
+
+    it("rating stat with values+percent yields rating/sep/percent segments", function()
+      local p = Addon._test_profile
+      p.showLabels = true
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 35, rating = 981 }, p, Addon.StatDefinitions.CRIT)
+      assert.is_not_nil(byCol(segs, "label"))
+      assert.are.equal("981", byCol(segs, "rating").text)
+      assert.are.equal("/", byCol(segs, "sep").text)
+      assert.are.equal("35%", byCol(segs, "percent").text)
+      assert.is_nil(byCol(segs, "value"))
+    end)
+
+    it("rating segments carry RIGHT justify for numeric columns", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 35, rating = 981 }, p, Addon.StatDefinitions.CRIT)
+      assert.are.equal("RIGHT", byCol(segs, "rating").justify)
+      assert.are.equal("RIGHT", byCol(segs, "percent").justify)
+    end)
+
+    it("non-rating stat yields a single value segment, no rating/sep/percent", function()
+      local p = Addon._test_profile
+      p.showLabels = true
+      p.showValues = true
+      p.showPercent = true
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("ILVL", { value = 287.44 }, p, Addon.StatDefinitions.ILVL)
+      assert.is_not_nil(byCol(segs, "value"))
+      assert.is_nil(byCol(segs, "rating"))
+      assert.is_nil(byCol(segs, "sep"))
+      assert.is_nil(byCol(segs, "percent"))
+    end)
+
+    it("GOLD value segment uses gold formatting", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.goldUseSeparator = true
+      p.goldSeparator = "."
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("GOLD", { value = 63399 }, p, Addon.StatDefinitions.GOLD)
+      assert.are.equal("63.399", byCol(segs, "value").text)
+    end)
+
+    it("delta mode emits a colored ref segment with +N when under", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "archon_mplus"
+      p.referenceDisplay = "delta"
+      -- rating 100 < FIXTURE_CRIT 300 → undercapped by 200 → down arrow
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100 }, p, Addon.StatDefinitions.CRIT)
+      local refArrow = byCol(segs, "ref_arrow")
+      local ref = byCol(segs, "ref")
+      assert.is_not_nil(refArrow)
+      assert.is_not_nil(ref)
+      assert.are.equal(REF_ARROW_TEX_DOWN, refArrow.texture)
+      assert.are.equal(expectedRefArrowSize(), refArrow.textureSize)
+      local r, g, b = Addon:GetReferenceProximityColor(100, 300)
+      assert.are.same({ r, g, b }, refArrow.color)
+      assert.are.equal("200", ref.text)
+      assert.is_not_nil(ref.color)
+    end)
+
+    it("delta mode emits up arrow when overcapped (rating above reference)", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "archon_mplus"
+      p.referenceDisplay = "delta"
+      -- rating 500 > FIXTURE_CRIT 300 → overcapped by 200 → up arrow, NOT minus
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 500 }, p, Addon.StatDefinitions.CRIT)
+      local refArrow = byCol(segs, "ref_arrow")
+      local ref = byCol(segs, "ref")
+      assert.is_not_nil(refArrow)
+      assert.is_not_nil(ref)
+      assert.are.equal(REF_ARROW_TEX_UP, refArrow.texture)
+      assert.are.equal(expectedRefArrowSize(), refArrow.textureSize)
+      local r, g, b = Addon:GetReferenceProximityColor(500, 300)
+      assert.are.same({ r, g, b }, refArrow.color)
+      assert.are.equal("200", ref.text)
+      -- guard against the old sign-inversion bug (negative delta magnitude)
+      assert.is_nil(ref.text:match("%-%d+$"))
+    end)
+
+    it("manual mode emits no ref segment", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "manual"
+      p.referenceDisplay = "delta"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100 }, p, Addon.StatDefinitions.CRIT)
+      assert.is_nil(byCol(segs, "ref"))
+    end)
+
+    it("hides ref segments while DR is active but wants hover tooltip", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "penalty"
+      p.statPriorityMode = "archon_mplus"
+      p.referenceDisplay = "delta"
+      local statResult = { value = 60, rating = 500, dr = { penalty = 25, loss = 120 } }
+      local segs = Addon:BuildStatSegments("CRIT", statResult, p, Addon.StatDefinitions.CRIT)
+      assert.is_not_nil(byCol(segs, "dr"))
+      assert.is_nil(byCol(segs, "ref"))
+      assert.is_nil(byCol(segs, "ref_arrow"))
+      assert.is_false(Addon:ShouldShowReferenceOnRow("CRIT", statResult, p))
+      assert.is_true(Addon:WantsReferenceTooltip("CRIT", statResult, p))
+    end)
+
+    it("shows ref in delta mode when DR is inactive and no hover tooltip", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "archon_mplus"
+      p.referenceDisplay = "delta"
+      local statResult = { value = 10, rating = 500 }
+      local segs = Addon:BuildStatSegments("CRIT", statResult, p, Addon.StatDefinitions.CRIT)
+      assert.is_not_nil(byCol(segs, "ref"))
+      assert.is_true(Addon:ShouldShowReferenceOnRow("CRIT", statResult, p))
+      assert.is_false(Addon:WantsReferenceTooltip("CRIT", statResult, p))
+    end)
+
+    it("dr penalty mode emits a dr segment", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "penalty"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100, dr = { penalty = 25, loss = 3 } }, p, Addon.StatDefinitions.CRIT)
+      local dr = byCol(segs, "dr")
+      assert.is_not_nil(dr)
+      assert.is_true(dr.text:find("DR", 1, true) ~= nil)
+    end)
+
+    it("dr tag shows DR(-loss) using rating lost to DR", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "full"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100, dr = { penalty = 25, loss = 123 } }, p, Addon.StatDefinitions.CRIT)
+      local dr = byCol(segs, "dr")
+      assert.is_not_nil(dr)
+      -- Tag carries the real DR loss, formatted as DR(-N).
+      assert.are.equal("DR(-123)", dr.text)
+      assert.is_true(dr.drFlag == true)
+    end)
+
+    it("dr tag rounds loss and falls back to bare DR when loss is zero", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "penalty"
+      p.statPriorityMode = "manual"
+      -- penalty > 0 (so DR shows) but loss rounds to 0 → bare "DR".
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100, dr = { penalty = 10, loss = 0.2 } }, p, Addon.StatDefinitions.CRIT)
+      assert.are.equal("DR", byCol(segs, "dr").text)
+    end)
+
+    it("percent segment is dr-flagged when diminished", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "penalty"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100, dr = { penalty = 25 } }, p, Addon.StatDefinitions.CRIT)
+      assert.is_true(byCol(segs, "percent").drFlag == true)
+    end)
+
+    it("no dr segment and no dr flag when penalty is zero", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "penalty"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100, dr = { penalty = 0, loss = 0 } }, p, Addon.StatDefinitions.CRIT)
+      assert.is_nil(byCol(segs, "dr"))
+      assert.is_not_true(byCol(segs, "percent").drFlag)
+    end)
+
+    it("no dr segment when drDisplayMode is off even with penalty", function()
+      local p = Addon._test_profile
+      p.showLabels = false
+      p.showValues = true
+      p.showPercent = true
+      p.percentPrecision = 0
+      p.drDisplayMode = "off"
+      p.statPriorityMode = "manual"
+      local segs = Addon:BuildStatSegments("CRIT", { value = 10, rating = 100, dr = { penalty = 25, loss = 3 } }, p, Addon.StatDefinitions.CRIT)
+      assert.is_nil(byCol(segs, "dr"))
+      assert.is_not_true(byCol(segs, "percent").drFlag)
     end)
   end)
 end)

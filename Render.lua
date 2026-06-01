@@ -9,10 +9,60 @@ local combatStatRefreshHandle
 local COMBAT_STAT_REFRESH_SEC = 0.35
 -- Row brightness multiplier for stale / snapshot values (not live).
 local STALE_DIM_FACTOR = 0.70
+
+-- Only dim numeric/value segments when stats are stale; labels stay full brightness.
+local STALE_DIM_COLUMNS = {
+    rating = true,
+    percent = true,
+    value = true,
+    sep = true,
+    dr = true,
+    ref = true,
+    ref_arrow = true,
+}
 local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
-local stableLayoutSignature = nil
-local stableColumnWidths = {}
+
+-- Sub-columns that the rating band is composed of (left-to-right). The
+-- non-rating "value" cell is right-aligned to this same band zone, and the
+-- dr/ref "tail" forms a separate right-aligned zone after it.
+local VALUE_SPAN = { "rating", "sep", "percent" }
+
+local SUBCOL_GAP = 3 -- horizontal gap between adjacent sub-columns
+local REF_ARROW_NUM_GAP = 1 -- tight gap between ref arrow texture and delta digits
+
+local TAIL_COLUMNS = {
+    dr = true,
+    ref = true,
+    ref_arrow = true,
+}
+
+local function RefArrowSegmentWidth(seg)
+    return seg.textureSize or 0
+end
+
+local function TailSegmentGap(prevCol, col)
+    if not prevCol then
+        return 0
+    end
+    if prevCol == "ref_arrow" and col == "ref" then
+        return REF_ARROW_NUM_GAP
+    end
+    return SUBCOL_GAP
+end
+
+local function MeasureTailWidth(segments)
+    local width = 0
+    local prevCol
+    for _, seg in ipairs(segments) do
+        if TAIL_COLUMNS[seg.col] then
+            width = width + TailSegmentGap(prevCol, seg.col)
+            width = width + seg.width
+            prevCol = seg.col
+        end
+    end
+    return width
+end
 
 local LAYOUT = {
     leftPadding = 8,
@@ -53,62 +103,7 @@ local function BuildLayoutSignature(addon, profile, defaults, fontSize, textAlig
     }, "|")
 end
 
-local function ResetStableLayoutIfNeeded(layoutSignature)
-    if stableLayoutSignature ~= layoutSignature then
-        stableLayoutSignature = layoutSignature
-        stableColumnWidths = {}
-    end
-end
-
-local function GetReservedReferenceSuffixWidth(addon, measureLine, statKey, profile, defaults)
-    if not addon:IsArchonReferenceStatKey(statKey) then
-        return 0
-    end
-
-    local display = profile.referenceDisplay or defaults.referenceDisplay or "off"
-    if display == "off" or display == "tooltip" then
-        return 0
-    end
-
-    local mode = addon:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual")
-    if mode == "manual" then
-        return 0
-    end
-
-    local payload = addon:GetArchonStatReferencePayload(statKey, profile)
-    local referenceRating = payload and payload.archonRating or 9999
-    local samples
-    if display == "delta" then
-        samples = {
-            "  |cff78ff8f" .. addon:S("NE_STATS_REFERENCE_TAG_OK") .. "|r",
-            "  |cffffd25d+" .. referenceRating .. "|r",
-            "  |cffff9455-" .. referenceRating .. "|r",
-        }
-    elseif profile.showReferenceRanges ~= false then
-        samples = {
-            "  |cff78ff8f" .. addon:S("NE_STATS_REFERENCE_TAG_OK") .. "|r",
-            "  |cffffd25d" .. addon:S("NE_STATS_REFERENCE_TAG_LOW") .. " " .. referenceRating .. "|r",
-        }
-    else
-        samples = {
-            "  |cff78ff8f" .. addon:S("NE_STATS_REFERENCE_TAG_OK") .. "|r",
-            "  |cffffd25d" .. addon:S("NE_STATS_REFERENCE_TAG_LOW") .. "|r",
-        }
-    end
-
-    if profile.showDiminishingReturnHint == true then
-        table.insert(samples, samples[#samples] .. " " .. addon:S("NE_STATS_REFERENCE_DR_TAG"))
-    end
-
-    local width = 0
-    for _, sample in ipairs(samples) do
-        measureLine:SetText(sample)
-        width = math.max(width, GetStringWidth(measureLine))
-    end
-    return width
-end
-
-local function ResetRenderWidgets(lines, lineOverlays, renderRows)
+local function ResetRenderWidgets(addon, lines, lineOverlays, renderRows)
     for index, line in ipairs(lines) do
         local row = renderRows and renderRows[index]
         if row then
@@ -121,6 +116,8 @@ local function ResetRenderWidgets(lines, lineOverlays, renderRows)
                 row.icon:SetTexture(nil)
                 row.icon:SetSize(1, 1)
             end
+            addon:HideRowSegmentsFrom(row, 1)
+            addon:HideRowRefArrowsFrom(row, 1)
         end
 
         if line then
@@ -147,6 +144,12 @@ local function ResetRenderWidgets(lines, lineOverlays, renderRows)
     end
 end
 
+-- Measure every visible stat into a segment list with per-segment widths.
+-- measured = {
+--   entry, def, statResult, drPenalty, textHeight,
+--   iconSize,                 -- icon px (0 if none)
+--   segments = { {col,text,color,justify,width}, ... },
+-- }
 local function BuildMeasuredStats(addon, statsReader, statDefinitions, visibleStats, profile, defaults, measureLine)
     local measuredStats = {}
     local maxLineHeight = 0
@@ -157,28 +160,51 @@ local function BuildMeasuredStats(addon, statsReader, statDefinitions, visibleSt
             return statsReader and statsReader.ReadStat and statsReader.ReadStat(entry.key)
         end)
         if readOk and statResult and statResult.value ~= nil then
-            local formatOk, text = pcall(function()
-                return addon:FormatStatValue(entry.key, statResult, profile, def)
+            local segOk, segments = pcall(function()
+                return addon:BuildStatSegments(entry.key, statResult, profile, def)
             end)
-            if formatOk and text then
-                measureLine:SetText(text)
-                local textWidth = GetStringWidth(measureLine)
-                local textHeight = measureLine:GetStringHeight()
-                local reservedReferenceWidth = GetReservedReferenceSuffixWidth(addon, measureLine, entry.key, profile, defaults)
-                local iconWidth = 0
-                if profile.showStatIcons == true and def and def.icon then
-                    iconWidth = math.max(MIN_DYNAMIC_FONT_SIZE, math.ceil(measureLine:GetStringHeight())) + LAYOUT.iconGap
+            if segOk and segments and #segments > 0 then
+                local measuredSegments = {}
+                local textHeight = 0
+                for _, seg in ipairs(segments) do
+                    local width
+                    if seg.col == "ref_arrow" then
+                        width = RefArrowSegmentWidth(seg)
+                        textHeight = math.max(textHeight, width)
+                    else
+                        measureLine:SetText(seg.text or "")
+                        textHeight = math.max(textHeight, measureLine:GetStringHeight())
+                        width = GetStringWidth(measureLine)
+                    end
+                    table.insert(measuredSegments, {
+                        col = seg.col,
+                        text = seg.text or "",
+                        texture = seg.texture,
+                        textureSize = seg.textureSize,
+                        color = seg.color,
+                        justify = seg.justify or "LEFT",
+                        drFlag = seg.drFlag,
+                        width = width,
+                    })
                 end
+                if textHeight <= 0 then
+                    measureLine:SetText("0")
+                    textHeight = measureLine:GetStringHeight()
+                end
+
+                local iconSize = 0
+                if profile.showStatIcons == true and def and def.icon then
+                    iconSize = math.max(MIN_DYNAMIC_FONT_SIZE, math.ceil(textHeight))
+                end
+
                 table.insert(measuredStats, {
                     entry = entry,
                     def = def,
-                    text = text,
-                    textWidth = textWidth + iconWidth,
-                    reservedTextWidth = textWidth + iconWidth + reservedReferenceWidth,
-                    iconSize = iconWidth > 0 and (iconWidth - LAYOUT.iconGap) or 0,
-                    textHeight = textHeight,
-                    drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
                     statResult = statResult,
+                    drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
+                    textHeight = textHeight,
+                    iconSize = iconSize,
+                    segments = measuredSegments,
                 })
                 maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
             end
@@ -188,43 +214,122 @@ local function BuildMeasuredStats(addon, statsReader, statDefinitions, visibleSt
     return measuredStats, maxLineHeight
 end
 
-local function ComputeColumnWidths(measuredStats, columnItemCounts, actualColumns)
-    local columnWidths = {}
-    local reservedColumnWidths = {}
-    local maxRows = 0
-    local itemIndex = 1
+-- Layout model: three zones laid left-to-right inside a display column.
+--   [icon] [label] [ BAND ] [ TAIL ]
+-- BAND  = rating / sep / percent, internally grid-aligned and right-aligned
+--         within a zone of width max(bandWidth, valueWidth). The non-rating
+--         "value" cell is right-aligned to the same zone.
+-- TAIL  = dr + ref, drawn tight together per row and right-aligned within a
+--         zone of width = max over rows of (dr + gap? + ref). Because TAIL is a
+--         single right-aligned zone, a DR suffix on one row never pushes the
+--         ref column of other rows — it just makes that row's tail longer.
+--
+-- ComputeColumnMetrics returns everything the offset/draw passes need:
+--   sub        -- [col] = max width of that sub-column (rating/sep/percent/label/value)
+--   iconWidth  -- max icon px (0 if none)
+--   bandWidth  -- rating+sep+percent grid width
+--   valueWidth -- max non-rating value width
+--   bandZone   -- max(bandWidth, valueWidth)
+--   tailZone   -- max per-row (dr + ref) width
+local function ComputeColumnMetrics(measuredStats, startIndex, count)
+    local sub = {}
+    local iconWidth = 0
+    local tailZone = 0
 
-    for columnIndex = 1, actualColumns do
-        local columnWidth = 0
-        local reservedColumnWidth = 0
-        local rowCount = columnItemCounts[columnIndex] or 0
-        maxRows = math.max(maxRows, rowCount)
-        for _ = 1, rowCount do
-            local measured = measuredStats[itemIndex]
-            if measured then
-                columnWidth = math.max(columnWidth, measured.textWidth)
-                reservedColumnWidth = math.max(reservedColumnWidth, measured.reservedTextWidth or measured.textWidth)
+    for offset = 0, count - 1 do
+        local measured = measuredStats[startIndex + offset]
+        if measured then
+            iconWidth = math.max(iconWidth, measured.iconSize or 0)
+            for _, seg in ipairs(measured.segments) do
+                if not TAIL_COLUMNS[seg.col] then
+                    sub[seg.col] = math.max(sub[seg.col] or 0, seg.width)
+                end
             end
-            itemIndex = itemIndex + 1
+            local rowTail = MeasureTailWidth(measured.segments)
+            tailZone = math.max(tailZone, rowTail)
         end
-        columnWidths[columnIndex] = columnWidth
-        reservedColumnWidths[columnIndex] = reservedColumnWidth
     end
 
-    for columnIndex = 1, actualColumns do
-        local currentWidth = reservedColumnWidths[columnIndex] or columnWidths[columnIndex] or 0
-        local rememberedWidth = stableColumnWidths[columnIndex] or 0
-        local effectiveWidth = math.max(currentWidth, rememberedWidth)
-        stableColumnWidths[columnIndex] = effectiveWidth
-        reservedColumnWidths[columnIndex] = effectiveWidth
+    local bandWidth = 0
+    local bandCols = 0
+    for _, key in ipairs(VALUE_SPAN) do
+        if sub[key] then
+            bandWidth = bandWidth + sub[key]
+            bandCols = bandCols + 1
+        end
+    end
+    if bandCols > 0 then
+        bandWidth = bandWidth + (bandCols - 1) * SUBCOL_GAP
     end
 
-    return columnWidths, reservedColumnWidths, maxRows
+    local valueWidth = sub.value or 0
+    local bandZone = math.max(bandWidth, valueWidth)
+
+    return {
+        sub = sub,
+        iconWidth = iconWidth,
+        bandWidth = bandWidth,
+        valueWidth = valueWidth,
+        bandZone = bandZone,
+        tailZone = tailZone,
+    }
+end
+
+-- Compute X offsets (relative to the content box, after the icon) for the band
+-- sub-columns and the value/tail zone starts. Returns offsets table + total
+-- content width (excluding icon advance).
+--   offsets.rating/sep/percent  -- band sub-column left edges
+--   offsets.value               -- value cell left edge (right-aligned in band zone)
+--   offsets.tail                -- tail zone left edge
+--   offsets.tailZone            -- tail zone width (for right-alignment in draw)
+local function ComputeColumnOffsets(metrics)
+    local offsets = {}
+    local sub = metrics.sub
+    local x = 0
+    local placed = false
+
+    -- label
+    if sub.label and sub.label > 0 then
+        offsets.label = x
+        x = x + sub.label
+        placed = true
+    end
+
+    -- band zone (rating/sep/percent right-aligned within bandZone; value too)
+    if metrics.bandZone > 0 then
+        if placed then
+            x = x + SUBCOL_GAP
+        end
+        local zoneStart = x
+        local bandStart = zoneStart + (metrics.bandZone - metrics.bandWidth)
+        local bx = bandStart
+        for _, bkey in ipairs(VALUE_SPAN) do
+            local bw = sub[bkey]
+            if bw then
+                offsets[bkey] = bx
+                bx = bx + bw + SUBCOL_GAP
+            end
+        end
+        offsets.value = zoneStart + (metrics.bandZone - metrics.valueWidth)
+        x = zoneStart + metrics.bandZone
+        placed = true
+    end
+
+    -- tail zone (dr+ref right-aligned within tailZone)
+    if metrics.tailZone > 0 then
+        if placed then
+            x = x + SUBCOL_GAP
+        end
+        offsets.tail = x
+        offsets.tailZone = metrics.tailZone
+        x = x + metrics.tailZone
+    end
+
+    return offsets, x
 end
 
 local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLineHeight, fontSize, controlsWidth, controlsHeight, controlsGap)
     local actualColumns, columnItemCounts = addon:GetDisplayLayout(profile, #measuredStats)
-    local columnWidths, reservedColumnWidths, maxRows = ComputeColumnWidths(measuredStats, columnItemCounts, actualColumns)
     local rowHeight = math.max(maxLineHeight, fontSize)
     local rowGap = math.max(0, math.floor(profile.rowGap or defaults.rowGap or 0))
     local columnGap = math.max(0, math.floor(profile.columnGap or defaults.columnGap or 0))
@@ -233,15 +338,27 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
     local controlsOnRight = controlsPosition == "RIGHT"
     local controlsOnTop = controlsPosition == "TOP"
     local controlsOnBottom = not controlsOnLeft and not controlsOnRight and not controlsOnTop
-    local rows = {}
-    local itemIndex = 1
+
     local contentX = LAYOUT.leftPadding + (controlsOnLeft and (controlsWidth + controlsGap) or 0)
     local contentY = LAYOUT.topPadding + (controlsOnTop and (controlsHeight + controlsGap) or 0)
+
+    local rows = {}
+    local itemIndex = 1
     local currentXOffset = contentX
+    local maxRows = 0
+    local columnContentWidths = {}
 
     for columnIndex = 1, actualColumns do
         local rowCount = columnItemCounts[columnIndex] or 0
-        local columnWidth = math.max((columnWidths[columnIndex] or 0) + 4, LAYOUT.minColumnWidth)
+        maxRows = math.max(maxRows, rowCount)
+
+        local metrics = ComputeColumnMetrics(measuredStats, itemIndex, rowCount)
+        local subOffsets, subContentWidth = ComputeColumnOffsets(metrics)
+        local iconWidth = metrics.iconWidth
+        local iconAdvance = iconWidth > 0 and (iconWidth + LAYOUT.iconGap) or 0
+        local columnContentWidth = iconAdvance + subContentWidth
+        columnContentWidths[columnIndex] = math.max(columnContentWidth, LAYOUT.minColumnWidth)
+
         for rowIndex = 1, rowCount do
             local measured = measuredStats[itemIndex]
             if measured then
@@ -250,24 +367,26 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
                     measured = measured,
                     x = currentXOffset,
                     y = contentY + (rowIndex - 1) * (rowHeight + rowGap),
-                    width = columnWidth,
                     height = rowHeight,
+                    iconWidth = iconWidth,
+                    iconAdvance = iconAdvance,
+                    metrics = metrics,
+                    subOffsets = subOffsets,
+                    columnWidth = columnContentWidths[columnIndex],
                 })
             end
             itemIndex = itemIndex + 1
         end
-        currentXOffset = currentXOffset + (columnWidths[columnIndex] or 0) + columnGap
+
+        currentXOffset = currentXOffset + columnContentWidths[columnIndex] + columnGap
     end
 
     local contentWidth = 0
-    local reservedContentWidth = 0
     for columnIndex = 1, actualColumns do
-        contentWidth = contentWidth + (columnWidths[columnIndex] or 0)
-        reservedContentWidth = reservedContentWidth + (reservedColumnWidths[columnIndex] or columnWidths[columnIndex] or 0)
+        contentWidth = contentWidth + (columnContentWidths[columnIndex] or 0)
     end
     if actualColumns > 1 then
         contentWidth = contentWidth + (actualColumns - 1) * columnGap
-        reservedContentWidth = reservedContentWidth + (actualColumns - 1) * columnGap
     end
 
     local contentHeight = 0
@@ -275,19 +394,18 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
         contentHeight = maxRows * rowHeight + math.max(0, maxRows - 1) * rowGap
     end
 
-    local contentAreaWidth = math.max(contentWidth, reservedContentWidth)
     local controlsX = LAYOUT.leftPadding
     local controlsY = LAYOUT.topPadding
     local frameContentWidth
     local frameContentHeight
 
     if controlsOnLeft then
-        frameContentWidth = controlsWidth + controlsGap + contentAreaWidth
+        frameContentWidth = controlsWidth + controlsGap + contentWidth
     elseif controlsOnRight then
-        controlsX = LAYOUT.leftPadding + contentAreaWidth + controlsGap
-        frameContentWidth = contentAreaWidth + controlsGap + controlsWidth
+        controlsX = LAYOUT.leftPadding + contentWidth + controlsGap
+        frameContentWidth = contentWidth + controlsGap + controlsWidth
     else
-        frameContentWidth = math.max(contentAreaWidth, controlsWidth)
+        frameContentWidth = math.max(contentWidth, controlsWidth)
     end
 
     if controlsOnTop then
@@ -308,53 +426,131 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
     }
 end
 
-local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, textAlign, profile)
+local function ResolveSegmentColor(addon, measured, seg, profile)
+    -- ref segments carry their own color verbatim.
+    if seg.color then
+        return seg.color[1], seg.color[2], seg.color[3]
+    end
+
+    local color = measured.entry.color
+    local r, g, b = color[1], color[2], color[3]
+
+    -- DR coloring: only segments explicitly flagged (percent/value + the DR tag)
+    -- are tinted by penalty severity. The percent shown is the real post-DR
+    -- value; the color simply signals it is being diminished.
+    if seg.drFlag and measured.drPenalty then
+        r, g, b = addon:GetDRColor(color, measured.drPenalty)
+    end
+
+    -- Dim value segments when the stat isn't live (stale snapshot / cache).
+    local sr = measured.statResult
+    if sr and STALE_DIM_COLUMNS[seg.col]
+        and (sr.source == "snapshot" or sr.source == "cache" or sr.stale == true) then
+        r, g, b = r * STALE_DIM_FACTOR, g * STALE_DIM_FACTOR, b * STALE_DIM_FACTOR
+    end
+
+    return r, g, b
+end
+
+local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile)
     for _, rowLayout in ipairs(layout.rows) do
         local measured = rowLayout.measured
-        local line = lines[rowLayout.index]
         local row = renderRows and renderRows[rowLayout.index]
-        if measured and line and row then
+        if measured and row then
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", rowLayout.x, -rowLayout.y)
-            row:SetSize(rowLayout.width, rowLayout.height)
+            row:SetSize(rowLayout.columnWidth, rowLayout.height)
             row.statKey = measured.entry.key
             row:Show()
 
-            local textX = 0
-            if measured.iconSize and measured.iconSize > 0 and measured.def and measured.def.icon and row.icon then
+            -- Icon.
+            if rowLayout.iconWidth > 0 and measured.iconSize > 0 and measured.def and measured.def.icon and row.icon then
                 row.icon:SetTexture(measured.def.icon)
                 row.icon:SetSize(measured.iconSize, measured.iconSize)
                 row.icon:ClearAllPoints()
                 row.icon:SetPoint("LEFT", row, "LEFT", 0, 0)
                 row.icon:Show()
-                textX = measured.iconSize + LAYOUT.iconGap
             elseif row.icon then
                 row.icon:Hide()
             end
 
-            line:ClearAllPoints()
-            line:SetPoint("TOPLEFT", row, "TOPLEFT", textX, 0)
-            line:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
-            line:SetFont(fontPath, fontSize, fontFlags)
-            line:SetJustifyH(textAlign)
-            line:SetWidth(math.max(1, rowLayout.width - textX))
-            line:SetWordWrap(false)
-            line:SetMaxLines(1)
-            local lineR, lineG, lineB = measured.entry.color[1], measured.entry.color[2], measured.entry.color[3]
-            if (profile.drDisplayMode or "off") ~= "off" and measured.drPenalty then
-                lineR, lineG, lineB = addon:GetDRColor(measured.entry.color, measured.drPenalty)
+            local baseX = rowLayout.iconAdvance
+            local metrics = rowLayout.metrics
+            local sub = metrics.sub
+            local subOffsets = rowLayout.subOffsets
+
+            -- Pre-measure this row's tail width so we can right-align it in the zone.
+            local rowTailWidth = MeasureTailWidth(measured.segments)
+            local tailStart = (subOffsets.tail or 0) + (metrics.tailZone - rowTailWidth)
+            local tailCursor = tailStart
+            local prevTailCol
+
+            local segIndex = 0
+            local refArrowIndex = 0
+            local pendingRefArrow = nil
+            for _, seg in ipairs(measured.segments) do
+                local cellWidth, cellX
+                if TAIL_COLUMNS[seg.col] then
+                    cellWidth = seg.width
+                    if prevTailCol then
+                        tailCursor = tailCursor + TailSegmentGap(prevTailCol, seg.col)
+                    end
+                    cellX = tailCursor
+                    tailCursor = tailCursor + seg.width
+                    prevTailCol = seg.col
+                elseif seg.col == "value" then
+                    cellWidth = metrics.valueWidth
+                    cellX = subOffsets.value or 0
+                else
+                    cellWidth = sub[seg.col] or seg.width
+                    cellX = subOffsets[seg.col] or 0
+                end
+
+                local r, g, b = ResolveSegmentColor(addon, measured, seg, profile)
+
+                if seg.col == "ref_arrow" and seg.texture then
+                    pendingRefArrow = {
+                        texture = seg.texture,
+                        textureSize = seg.textureSize,
+                        color = { r, g, b },
+                    }
+                else
+                    segIndex = segIndex + 1
+                    local fs = addon:AcquireRowSegment(row, segIndex)
+                    if fs then
+                        fs:SetFont(fontPath, fontSize, fontFlags)
+                        fs:SetJustifyH(seg.justify)
+                        fs:ClearAllPoints()
+                        fs:SetPoint("LEFT", row, "LEFT", baseX + cellX, 0)
+                        fs:SetWidth(math.max(1, cellWidth))
+                        fs:SetHeight(math.max(1, rowLayout.height))
+                        if fs.SetJustifyV then
+                            fs:SetJustifyV("MIDDLE")
+                        end
+                        fs:SetTextColor(r, g, b, 1)
+                        fs:SetText(seg.text)
+                        fs:Show()
+
+                        if seg.col == "ref" and pendingRefArrow then
+                            refArrowIndex = refArrowIndex + 1
+                            local tex = addon:AcquireRowRefArrow(row, refArrowIndex)
+                            if tex then
+                                local size = pendingRefArrow.textureSize or 0
+                                tex:SetTexture(pendingRefArrow.texture)
+                                tex:SetSize(size, size)
+                                tex:ClearAllPoints()
+                                tex:SetPoint("CENTER", fs, "LEFT", -(REF_ARROW_NUM_GAP + (size * 0.5)), 0)
+                                local cr, cg, cb = pendingRefArrow.color[1], pendingRefArrow.color[2], pendingRefArrow.color[3]
+                                tex:SetVertexColor(cr, cg, cb, 1)
+                                tex:Show()
+                            end
+                            pendingRefArrow = nil
+                        end
+                    end
+                end
             end
-            -- Dim the whole row when the value isn't live (Secret in
-            -- combat/M+/encounter/PvP), so a stale snapshot reads as
-            -- "last known", not a current number.
-            local sr = measured.statResult
-            if sr and (sr.source == "snapshot" or sr.source == "cache" or sr.stale == true) then
-                lineR, lineG, lineB = lineR * STALE_DIM_FACTOR, lineG * STALE_DIM_FACTOR, lineB * STALE_DIM_FACTOR
-            end
-            line:SetTextColor(lineR, lineG, lineB, 1)
-            line:SetText(measured.text)
-            line.statKey = measured.entry.key
-            line:Show()
+            addon:HideRowSegmentsFrom(row, segIndex + 1)
+            addon:HideRowRefArrowsFrom(row, refArrowIndex + 1)
 
             local overlay = lineOverlays[rowLayout.index]
             if overlay then
@@ -453,14 +649,11 @@ function Addon:GetDisplayLayout(profile, visibleCount)
     return actualColumns, columnItemCounts
 end
 
+-- Text alignment is now expressed per sub-column inside the grid, so a change
+-- to the profile textAlign just re-runs a full layout pass.
 function Addon:ApplyTextAlignmentToVisibleLines()
-    local lines = select(1, self:GetRenderWidgets())
-    local align = self:GetProfileValue("textAlign") or self.Defaults.profile.textAlign
-    for _, line in ipairs(lines) do
-        if line and line:IsShown() then
-            line:SetJustifyH(align)
-            line:SetText(line:GetText() or "")
-        end
+    if self.initialized then
+        self:RefreshStats()
     end
 end
 
@@ -478,15 +671,16 @@ function Addon:RefreshStatsImpl()
     local fontPath, fontFlags = self:GetFontInfo(profile.fontKey)
     local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
     local controlsWidth, controlsHeight, controlsGap = self:GetFrameControlsSize()
-    local layoutSignature = BuildLayoutSignature(self, profile, defaults, fontSize, textAlign, visibleStats)
+    -- Signature kept for potential future caching; layout itself is now fully
+    -- deterministic from measured widths, so no reserved-width memo is needed.
+    BuildLayoutSignature(self, profile, defaults, fontSize, textAlign, visibleStats)
 
-    ResetStableLayoutIfNeeded(layoutSignature)
-    ResetRenderWidgets(lines, lineOverlays, renderRows)
+    ResetRenderWidgets(self, lines, lineOverlays, renderRows)
 
     measureLine:SetFont(fontPath, fontSize, fontFlags)
     local measuredStats, maxLineHeight = BuildMeasuredStats(self, ns.Stats, self.StatDefinitions, visibleStats, profile, defaults, measureLine)
     local layout = BuildRenderLayout(self, profile, defaults, measuredStats, maxLineHeight, fontSize, controlsWidth, controlsHeight, controlsGap)
-    ApplyRenderRows(self, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, textAlign, profile)
+    ApplyRenderRows(self, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile)
     ResizeStatsFrame(self, statsFrame, statsAnchor, profile, defaults, layout)
 
     self:UpdateTooltipOverlayVisibility()
