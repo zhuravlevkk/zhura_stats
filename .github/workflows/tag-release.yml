@@ -236,15 +236,32 @@ jobs:
             --argjson gameVersions "[${game_version_id}]" \
             '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, releaseType: "release", gameVersions: $gameVersions}')
 
-          response=$(curl -s -X POST \
-            -H "X-Api-Token: $CF_TOKEN" \
-            -F "metadata=$metadata" \
-            -F "file=@${ZIP_PATH}" \
-            "https://wow.curseforge.com/api/projects/${CF_PROJECT_ID}/upload-file")
+          file_id=""
+          response=""
+          delay=5
+          for attempt in 1 2 3 4 5; do
+            echo "Uploading to CurseForge (attempt $attempt/5)."
+            if response=$(curl -sS -X POST \
+              -H "X-Api-Token: $CF_TOKEN" \
+              -F "metadata=$metadata" \
+              -F "file=@${ZIP_PATH}" \
+              "https://wow.curseforge.com/api/projects/${CF_PROJECT_ID}/upload-file"); then
+              file_id=$(echo "$response" | jq -r '.id')
+              if [ -n "$file_id" ] && [ "$file_id" != "null" ]; then
+                break
+              fi
+            fi
 
-          file_id=$(echo "$response" | jq -r '.id')
+            if [ "$attempt" -lt 5 ]; then
+              echo "CurseForge upload did not return a file id. Response: $response" >&2
+              echo "Retrying in ${delay}s."
+              sleep "$delay"
+              delay=$((delay * 2))
+            fi
+          done
+
           if [ -z "$file_id" ] || [ "$file_id" = "null" ]; then
-            echo "CurseForge upload failed. Response: $response" >&2
+            echo "CurseForge upload failed after 5 attempts. Last response: $response" >&2
             exit 1
           fi
           echo "CurseForge upload succeeded, file id=$file_id."
