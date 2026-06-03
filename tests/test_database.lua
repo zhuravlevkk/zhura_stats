@@ -265,6 +265,8 @@ describe("Database", function()
         fontSize = "14",
         columnCount = "2",
         rowGap = "4",
+        valueColumnWidth = "96",
+        compactValueColumns = 1,
         percentPrecision = "3",
       })
       Addon:MigrateProfile(profile)
@@ -273,6 +275,8 @@ describe("Database", function()
       assert.are.equal(14, profile.fontSize)
       assert.are.equal(2, profile.columnCount)
       assert.are.equal(4, profile.rowGap)
+      assert.are.equal(96, profile.valueColumnWidth)
+      assert.is_false(profile.compactValueColumns)
       assert.are.equal(3, profile.percentPrecision)
     end)
   end)

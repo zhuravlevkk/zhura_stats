@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   release-on-master:
@@ -173,6 +174,21 @@ jobs:
           name: ${{ steps.archive.outputs.zip_name }}
           path: ${{ steps.archive.outputs.zip_path }}
 
+      - name: Generate release notes
+        if: steps.release_exists.outputs.exists == 'false'
+        id: notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes_path="$RUNNER_TEMP/release-notes.md"
+          bash .github/scripts/new-release-notes.sh \
+            --version '${{ steps.version.outputs.version }}' \
+            --tag-name '${{ steps.version.outputs.tag }}' \
+            --output "$notes_path"
+          echo "path=$notes_path" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub release
         if: steps.release_exists.outputs.exists == 'false'
         uses: softprops/action-gh-release@v3
@@ -180,7 +196,7 @@ jobs:
           name: NE Stats v${{ steps.version.outputs.version }}
           tag_name: ${{ steps.version.outputs.tag }}
           files: ${{ steps.archive.outputs.zip_path }}
-          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.path }}
 
       - name: Upload to CurseForge
         if: steps.release_exists.outputs.exists == 'false'
@@ -190,8 +206,7 @@ jobs:
           CF_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           ZIP_PATH: ${{ steps.archive.outputs.zip_path }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
-          TAG_NAME: ${{ steps.version.outputs.tag }}
-          GITHUB_REPO: ${{ github.repository }}
+          RELEASE_NOTES_PATH: ${{ steps.notes.outputs.path }}
         run: |
           set -euo pipefail
 
@@ -215,10 +230,8 @@ jobs:
           fi
           echo "Selected CurseForge game version id=$game_version_id."
 
-          changelog="## NE Stats v${RELEASE_VERSION}\n\nSee [GitHub release ${TAG_NAME}](https://github.com/${GITHUB_REPO}/releases/tag/${TAG_NAME}) for notes."
-
           metadata=$(jq -n \
-            --arg changelog "$changelog" \
+            --rawfile changelog "$RELEASE_NOTES_PATH" \
             --arg displayName "NE Stats v${RELEASE_VERSION}" \
             --argjson gameVersions "[${game_version_id}]" \
             '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, releaseType: "release", gameVersions: $gameVersions}')

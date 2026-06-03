@@ -64,6 +64,24 @@ local function MeasureTailWidth(segments)
     return width
 end
 
+local function SegmentGap(prevCol, col)
+    if not prevCol then
+        return 0
+    end
+    return TailSegmentGap(prevCol, col)
+end
+
+local function MeasureCompactRowWidth(segments)
+    local width = 0
+    local prevCol
+    for _, seg in ipairs(segments) do
+        width = width + SegmentGap(prevCol, seg.col)
+        width = width + seg.width
+        prevCol = seg.col
+    end
+    return width
+end
+
 local LAYOUT = {
     leftPadding = 8,
     rightPadding = 8,
@@ -92,6 +110,8 @@ local function BuildLayoutSignature(addon, profile, defaults, fontSize, textAlig
         tostring(profile.rowsPerColumn or defaults.rowsPerColumn),
         tostring(profile.rowGap or defaults.rowGap),
         tostring(profile.columnGap or defaults.columnGap),
+        tostring(profile.valueColumnWidth or defaults.valueColumnWidth),
+        tostring(profile.compactValueColumns == true),
         tostring(profile.frameControlsPosition or defaults.frameControlsPosition),
         tostring(profile.frameControlsDirection or defaults.frameControlsDirection),
         tostring(#visibleStats),
@@ -231,23 +251,42 @@ end
 --   valueWidth -- max non-rating value width
 --   bandZone   -- max(bandWidth, valueWidth)
 --   tailZone   -- max per-row (dr + ref) width
-local function ComputeColumnMetrics(measuredStats, startIndex, count)
+local function ComputeColumnMetrics(measuredStats, startIndex, count, profile, defaults)
     local sub = {}
     local iconWidth = 0
     local tailZone = 0
+    local compact = profile and profile.compactValueColumns == true
+    local compactWidth = 0
 
     for offset = 0, count - 1 do
         local measured = measuredStats[startIndex + offset]
         if measured then
             iconWidth = math.max(iconWidth, measured.iconSize or 0)
-            for _, seg in ipairs(measured.segments) do
-                if not TAIL_COLUMNS[seg.col] then
-                    sub[seg.col] = math.max(sub[seg.col] or 0, seg.width)
+            if compact then
+                compactWidth = math.max(compactWidth, MeasureCompactRowWidth(measured.segments))
+            else
+                for _, seg in ipairs(measured.segments) do
+                    if not TAIL_COLUMNS[seg.col] then
+                        sub[seg.col] = math.max(sub[seg.col] or 0, seg.width)
+                    end
                 end
+                local rowTail = MeasureTailWidth(measured.segments)
+                tailZone = math.max(tailZone, rowTail)
             end
-            local rowTail = MeasureTailWidth(measured.segments)
-            tailZone = math.max(tailZone, rowTail)
         end
+    end
+
+    if compact then
+        return {
+            sub = sub,
+            iconWidth = iconWidth,
+            bandWidth = 0,
+            valueWidth = 0,
+            bandZone = 0,
+            tailZone = 0,
+            compact = true,
+            compactWidth = compactWidth,
+        }
     end
 
     local bandWidth = 0
@@ -263,7 +302,9 @@ local function ComputeColumnMetrics(measuredStats, startIndex, count)
     end
 
     local valueWidth = sub.value or 0
-    local bandZone = math.max(bandWidth, valueWidth)
+    local minValueColumnWidth = math.max(0, math.floor((profile and profile.valueColumnWidth)
+        or (defaults and defaults.valueColumnWidth) or 0))
+    local bandZone = math.max(bandWidth, valueWidth, minValueColumnWidth)
 
     return {
         sub = sub,
@@ -283,6 +324,10 @@ end
 --   offsets.tail                -- tail zone left edge
 --   offsets.tailZone            -- tail zone width (for right-alignment in draw)
 local function ComputeColumnOffsets(metrics)
+    if metrics.compact then
+        return {}, metrics.compactWidth or 0
+    end
+
     local offsets = {}
     local sub = metrics.sub
     local x = 0
@@ -352,7 +397,7 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
         local rowCount = columnItemCounts[columnIndex] or 0
         maxRows = math.max(maxRows, rowCount)
 
-        local metrics = ComputeColumnMetrics(measuredStats, itemIndex, rowCount)
+        local metrics = ComputeColumnMetrics(measuredStats, itemIndex, rowCount, profile, defaults)
         local subOffsets, subContentWidth = ComputeColumnOffsets(metrics)
         local iconWidth = metrics.iconWidth
         local iconAdvance = iconWidth > 0 and (iconWidth + LAYOUT.iconGap) or 0
@@ -488,9 +533,19 @@ local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlay
             local segIndex = 0
             local refArrowIndex = 0
             local pendingRefArrow = nil
+            local compactCursor = 0
+            local compactPrevCol
             for _, seg in ipairs(measured.segments) do
                 local cellWidth, cellX
-                if TAIL_COLUMNS[seg.col] then
+                if metrics.compact then
+                    if compactPrevCol then
+                        compactCursor = compactCursor + SegmentGap(compactPrevCol, seg.col)
+                    end
+                    cellWidth = seg.width
+                    cellX = compactCursor
+                    compactCursor = compactCursor + seg.width
+                    compactPrevCol = seg.col
+                elseif TAIL_COLUMNS[seg.col] then
                     cellWidth = seg.width
                     if prevTailCol then
                         tailCursor = tailCursor + TailSegmentGap(prevTailCol, seg.col)

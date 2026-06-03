@@ -708,6 +708,7 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.showLabelsCheckbox then controlRefs.showLabelsCheckbox:SetChecked(profile.showLabels) end
     if controlRefs.showValuesCheckbox then controlRefs.showValuesCheckbox:SetChecked(profile.showValues) end
     if controlRefs.showStatIconsCheckbox then controlRefs.showStatIconsCheckbox:SetChecked(profile.showStatIcons) end
+    if controlRefs.compactValueColumnsCheckbox then controlRefs.compactValueColumnsCheckbox:SetChecked(profile.compactValueColumns) end
     if controlRefs.textAlignDropDown then controlRefs.textAlignDropDown:Refresh(profile.textAlign or defaults.textAlign) end
     if controlRefs.goldUseSeparatorCheckbox then controlRefs.goldUseSeparatorCheckbox:SetChecked(profile.goldUseSeparator) end
     if controlRefs.goldSeparatorDropDown then controlRefs.goldSeparatorDropDown:Refresh(profile.goldSeparator or defaults.goldSeparator) end
@@ -727,6 +728,7 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.rowsPerColumnSlider then controlRefs.rowsPerColumnSlider:SetValue(profile.rowsPerColumn or defaults.rowsPerColumn) end
     if controlRefs.rowGapSlider then controlRefs.rowGapSlider:SetValue(profile.rowGap or defaults.rowGap) end
     if controlRefs.columnGapSlider then controlRefs.columnGapSlider:SetValue(profile.columnGap or defaults.columnGap) end
+    if controlRefs.valueColumnWidthSlider then controlRefs.valueColumnWidthSlider:SetValue(profile.valueColumnWidth or defaults.valueColumnWidth) end
     if controlRefs.priorityModeDropDown then
         controlRefs.priorityModeDropDown:Refresh(self:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual"))
     end
@@ -1261,6 +1263,13 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     textLayoutCard:AddCheckboxRow(showStatIconsCheckbox)
     controlRefs.showStatIconsCheckbox = showStatIconsCheckbox
 
+    local compactValueColumnsCheckbox = CreateCheckbox(textLayoutCard, "NE_STATS_COMPACT_VALUE_COLUMNS", nil, function(self)
+        SetValue("compactValueColumns", self:GetChecked())
+        Addon:RefreshStats()
+    end)
+    textLayoutCard:AddCheckboxRow(compactValueColumnsCheckbox)
+    controlRefs.compactValueColumnsCheckbox = compactValueColumnsCheckbox
+
     local rowGapSlider = CreateSlider(addonName .. "RowGapSlider", textLayoutCard, Addon:S("NE_STATS_ROW_SPACING"), 0, 20, 1, function(_, value)
         SetValue("rowGap", math.max(0, math.floor(value + 0.5)))
         Addon:RefreshStats()
@@ -1274,6 +1283,14 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     end)
     textLayoutCard:AddSliderRow("NE_STATS_COLUMN_SPACING", columnGapSlider)
     controlRefs.columnGapSlider = columnGapSlider
+
+    local valueColumnWidthSlider = CreateSlider(addonName .. "ValueColumnWidthSlider", textLayoutCard, Addon:S("NE_STATS_VALUE_COLUMN_WIDTH"), 0, 240, 1, function(_, value)
+        SetValue("valueColumnWidth", math.max(0, math.floor(value + 0.5)))
+        Addon:RefreshStats()
+    end)
+    valueColumnWidthSlider:SetMinLabel(Addon:S("NE_STATS_AUTO"))
+    textLayoutCard:AddSliderRow("NE_STATS_VALUE_COLUMN_WIDTH", valueColumnWidthSlider)
+    controlRefs.valueColumnWidthSlider = valueColumnWidthSlider
 
     local fontDropDown = CreateDropDown(textLayoutCard, addonName .. "FontDropDown", 220, function()
         local items = {}

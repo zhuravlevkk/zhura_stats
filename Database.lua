@@ -304,6 +304,8 @@ function Addon:MigrateProfile(profile)
     profile.rowsPerColumn = math.max(0, math.floor(CoerceNumber(profile.rowsPerColumn, defaults.rowsPerColumn)))
     profile.rowGap = math.max(0, math.floor(CoerceNumber(profile.rowGap, defaults.rowGap)))
     profile.columnGap = math.max(0, math.floor(CoerceNumber(profile.columnGap, defaults.columnGap)))
+    profile.valueColumnWidth = math.max(0, math.floor(CoerceNumber(profile.valueColumnWidth, defaults.valueColumnWidth)))
+    profile.compactValueColumns = profile.compactValueColumns == true
     profile.showPercent = profile.showPercent ~= false
     profile.percentPrecision = CoerceNumber(profile.percentPrecision or profile.decimalPrecision, defaults.percentPrecision)
     if profile.drDisplayMode == nil then

@@ -1,6 +1,6 @@
 # Secrets (repository) for CurseForge upload on tag builds:
-#   CURSEFORGE_TOKEN — API token from https://authors-old.curseforge.com/account/api-tokens
-#   CURSEFORGE_PROJECT_ID — numeric project ID from the CurseForge project URL
+#   CURSEFORGE_TOKEN -- API token from https://authors-old.curseforge.com/account/api-tokens
+#   CURSEFORGE_PROJECT_ID -- numeric project ID from the CurseForge project URL
 
 name: Release Build
 
@@ -12,149 +12,148 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   build-and-release:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Read addon version from TOC
         id: version
-        shell: pwsh
+        shell: bash
         run: |
-          $tocPath = Join-Path $env:GITHUB_WORKSPACE 'ZhuraStats.toc'
-          $versionLine = Select-String -Path $tocPath -Pattern '^## Version:\s*(.+)$' | Select-Object -First 1
-          if (-not $versionLine) {
-            throw "Could not find ## Version in ZhuraStats.toc"
-          }
+          set -euo pipefail
 
-          $tocVersion = $versionLine.Matches[0].Groups[1].Value.Trim()
-          $tagName = "${{ github.ref_name }}"
-          $isTagRef = "${{ startsWith(github.ref, 'refs/tags/v') }}"
-          $releaseVersion = if ($isTagRef -eq 'true' -and $tagName) { $tagName.TrimStart('v') } else { $tocVersion }
-          if ($isTagRef -eq 'true' -and $tagName) {
-            $tagName = if ($tagName.StartsWith('v')) { $tagName } else { "v$tagName" }
-          } else {
-            $tagName = "v$tocVersion"
-          }
+          toc_version="$(sed -n 's/^## Version:[[:space:]]*//p' ZhuraStats.toc | head -n1 | tr -d '\r')"
+          if [ -z "$toc_version" ]; then
+            echo "Could not find ## Version in ZhuraStats.toc" >&2
+            exit 1
+          fi
 
-          "toc_version=$tocVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "release_version=$releaseVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "tag_name=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          tag_name="${{ github.ref_name }}"
+          if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" && -n "$tag_name" ]]; then
+            release_version="${tag_name#v}"
+            [[ "$tag_name" == v* ]] || tag_name="v$tag_name"
+          else
+            release_version="$toc_version"
+            tag_name="v$toc_version"
+          fi
+
+          echo "toc_version=$toc_version" >> "$GITHUB_OUTPUT"
+          echo "release_version=$release_version" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$tag_name" >> "$GITHUB_OUTPUT"
 
       - name: Build release archive
         id: archive
-        shell: pwsh
+        shell: bash
         run: |
-          $workspace = $env:GITHUB_WORKSPACE
-          $stageRoot = Join-Path $env:RUNNER_TEMP 'release-stage'
-          $addonDir = Join-Path $stageRoot 'ZhuraStats'
-          $zipName = "NE-Stats-v${{ steps.version.outputs.release_version }}.zip"
-          $zipPath = Join-Path $env:RUNNER_TEMP $zipName
-          $tocPath = Join-Path $workspace 'ZhuraStats.toc'
-          $embedsPath = Join-Path $workspace 'embeds.xml'
+          set -euo pipefail
 
-          if (Test-Path $stageRoot) {
-            Remove-Item -LiteralPath $stageRoot -Recurse -Force
-          }
-          if (Test-Path $zipPath) {
-            Remove-Item -LiteralPath $zipPath -Force
-          }
+          workspace="$GITHUB_WORKSPACE"
+          stage_root="$RUNNER_TEMP/release-stage"
+          addon_dir="$stage_root/ZhuraStats"
+          zip_name="NE-Stats-v${{ steps.version.outputs.release_version }}.zip"
+          zip_path="$RUNNER_TEMP/$zip_name"
+          toc_path="$workspace/ZhuraStats.toc"
+          embeds_path="$workspace/embeds.xml"
 
-          New-Item -ItemType Directory -Path $addonDir -Force | Out-Null
+          rm -rf "$stage_root"
+          rm -f "$zip_path"
+          mkdir -p "$addon_dir"
 
-          if (-not (Test-Path -LiteralPath $tocPath)) {
-            throw "Required file ZhuraStats.toc is missing."
-          }
+          if [ ! -f "$toc_path" ]; then
+            echo "Required file ZhuraStats.toc is missing." >&2
+            exit 1
+          fi
 
-          $tocEntries = Get-Content -LiteralPath $tocPath |
-            ForEach-Object { $_.Trim() } |
-            Where-Object { $_ -and -not $_.StartsWith('#') -and -not $_.StartsWith('##') }
+          mapfile -t toc_entries < <(
+            sed 's/\r$//' "$toc_path" |
+            sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' |
+            grep -vE '^($|#)'
+          )
+          if [ "${#toc_entries[@]}" -eq 0 ]; then
+            echo "ZhuraStats.toc does not contain file entries." >&2
+            exit 1
+          fi
 
-          if (-not $tocEntries) {
-            throw "ZhuraStats.toc does not contain file entries."
-          }
+          required_paths=("ZhuraStats.toc")
+          for entry in "${toc_entries[@]}"; do
+            normalized="${entry//\\//}"
+            required_paths+=("$normalized")
+          done
 
-          $requiredPaths = @('ZhuraStats.toc')
-          foreach ($entry in $tocEntries) {
-            $normalized = $entry -replace '/', '\'
-            $requiredPaths += $normalized
-          }
+          missing=()
+          for relative in "${required_paths[@]}"; do
+            if [ ! -e "$workspace/$relative" ]; then
+              missing+=("$relative")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Release package is missing required files from TOC: ${missing[*]}" >&2
+            exit 1
+          fi
 
-          $missingRequired = @()
-          foreach ($relativePath in $requiredPaths) {
-            $sourcePath = Join-Path $workspace $relativePath
-            if (-not (Test-Path -LiteralPath $sourcePath)) {
-              $missingRequired += $relativePath
-            }
-          }
+          if [ -f "$embeds_path" ]; then
+            mapfile -t lib_refs < <(grep -oE 'Libs[\\/][^"]+' "$embeds_path" | sed 's#\\#/#g')
+            for lib_ref in "${lib_refs[@]}"; do
+              if [ ! -e "$workspace/$lib_ref" ]; then
+                echo "embeds.xml references missing library asset: $lib_ref" >&2
+                exit 1
+              fi
+            done
+          fi
 
-          if ($missingRequired.Count -gt 0) {
-            $missingList = $missingRequired -join ', '
-            throw "Release package is missing required files from TOC: $missingList"
-          }
+          for relative in "${required_paths[@]}"; do
+            mkdir -p "$addon_dir/$(dirname "$relative")"
+            cp -R "$workspace/$relative" "$addon_dir/$relative"
+          done
 
-          if (Test-Path -LiteralPath $embedsPath) {
-            $libReferences = Select-String -Path $embedsPath -Pattern 'Libs[\\/][^"]+' -AllMatches |
-              ForEach-Object { $_.Matches } |
-              ForEach-Object { $_.Value }
+          if [ -d "$workspace/Libs" ]; then
+            cp -R "$workspace/Libs" "$addon_dir/Libs"
+          fi
+          if [ ! -d "$workspace/Media" ]; then
+            echo "Media folder is missing (required for RefArrow textures)." >&2
+            exit 1
+          fi
+          cp -R "$workspace/Media" "$addon_dir/Media"
+          if [ -f "$workspace/README.md" ]; then
+            cp "$workspace/README.md" "$addon_dir/README.md"
+          fi
+          if [ -f "$workspace/LICENSE" ]; then
+            cp "$workspace/LICENSE" "$addon_dir/LICENSE"
+          fi
 
-            foreach ($libReference in $libReferences) {
-              $normalizedLibPath = $libReference -replace '/', '\'
-              $libSourcePath = Join-Path $workspace $normalizedLibPath
-              if (-not (Test-Path -LiteralPath $libSourcePath)) {
-                throw "embeds.xml references missing library asset: $normalizedLibPath"
-              }
-            }
-          }
+          (cd "$stage_root" && zip -r "$zip_path" "ZhuraStats")
 
-          foreach ($relativePath in $requiredPaths) {
-            $sourcePath = Join-Path $workspace $relativePath
-            $destinationPath = Join-Path $addonDir $relativePath
-            $destinationDir = Split-Path -Parent $destinationPath
-
-            if ($destinationDir -and -not (Test-Path -LiteralPath $destinationDir)) {
-              New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
-            }
-
-            if (Test-Path -LiteralPath $sourcePath -PathType Container) {
-              Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Recurse -Force
-            } else {
-              Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
-            }
-          }
-
-          $libsSourcePath = Join-Path $workspace 'Libs'
-          if (Test-Path -LiteralPath $libsSourcePath) {
-            Copy-Item -LiteralPath $libsSourcePath -Destination (Join-Path $addonDir 'Libs') -Recurse -Force
-          }
-
-          $mediaSourcePath = Join-Path $workspace 'Media'
-          if (-not (Test-Path -LiteralPath $mediaSourcePath)) {
-            throw "Media folder is missing (required for RefArrow textures)."
-          }
-          Copy-Item -LiteralPath $mediaSourcePath -Destination (Join-Path $addonDir 'Media') -Recurse -Force
-
-          if (Test-Path (Join-Path $workspace 'README.md')) {
-            Copy-Item -LiteralPath (Join-Path $workspace 'README.md') -Destination $addonDir
-          }
-          if (Test-Path (Join-Path $workspace 'LICENSE')) {
-            Copy-Item -LiteralPath (Join-Path $workspace 'LICENSE') -Destination $addonDir
-          }
-
-          Compress-Archive -Path $addonDir -DestinationPath $zipPath -Force
-
-          "zip_path=$zipPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "zip_name=$zipName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.archive.outputs.zip_name }}
           path: ${{ steps.archive.outputs.zip_path }}
+
+      - name: Generate release notes
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        id: notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes_path="$RUNNER_TEMP/release-notes.md"
+          bash .github/scripts/new-release-notes.sh \
+            --version '${{ steps.version.outputs.release_version }}' \
+            --tag-name '${{ steps.version.outputs.tag_name }}' \
+            --output "$notes_path"
+          echo "path=$notes_path" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
@@ -163,68 +162,55 @@ jobs:
           name: NE Stats v${{ steps.version.outputs.release_version }}
           tag_name: ${{ steps.version.outputs.tag_name }}
           files: ${{ steps.archive.outputs.zip_path }}
-          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.path }}
 
       - name: Upload to CurseForge
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        shell: pwsh
+        shell: bash
         env:
           CF_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           CF_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           ZIP_PATH: ${{ steps.archive.outputs.zip_path }}
           RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
-          TAG_NAME: ${{ steps.version.outputs.tag_name }}
-          GITHUB_REPO: ${{ github.repository }}
+          RELEASE_NOTES_PATH: ${{ steps.notes.outputs.path }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:CF_TOKEN) -or [string]::IsNullOrWhiteSpace($env:CF_PROJECT_ID)) {
-            throw "CurseForge upload requires secrets CURSEFORGE_TOKEN and CURSEFORGE_PROJECT_ID."
-          }
+          set -euo pipefail
 
-          $zipPath = $env:ZIP_PATH
-          if (-not (Test-Path -LiteralPath $zipPath)) {
-            throw "Release zip not found: $zipPath"
-          }
+          if [ -z "${CF_TOKEN:-}" ] || [ -z "${CF_PROJECT_ID:-}" ]; then
+            echo "CurseForge upload requires secrets CURSEFORGE_TOKEN and CURSEFORGE_PROJECT_ID." >&2
+            exit 1
+          fi
 
-          $headers = @{ "X-Api-Token" = $env:CF_TOKEN }
-          $versions = Invoke-RestMethod -Uri "https://wow.curseforge.com/api/game/versions" -Headers $headers -Method Get
-          if (-not $versions) {
-            throw "CurseForge game versions API returned no data."
-          }
+          versions=$(curl -s -H "X-Api-Token: $CF_TOKEN" "https://wow.curseforge.com/api/game/versions")
 
-          # Retail rows use gameVersionTypeID 517 per CurseForge WoW documentation.
-          $retailTypeId = 517
-          $candidates = @($versions | Where-Object {
-            $typeId = $_.gameVersionTypeID
-            if ($null -eq $typeId) { $typeId = $_.gameVersionTypeId }
-            $typeId -eq $retailTypeId -and $_.name -match '^\d+\.\d+\.\d+$'
-          })
-          if ($candidates.Count -eq 0) {
-            throw "No Retail (gameVersionTypeID $retailTypeId) semver game versions in CurseForge response."
-          }
+          game_version_id=$(echo "$versions" | jq -r '
+            [.[] | select(.gameVersionTypeID == 517 and (.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")))]
+            | sort_by(.name | split(".") | map(tonumber))
+            | last
+            | .id
+          ')
 
-          $latest = $candidates | Sort-Object { [version]$_.name } -Descending | Select-Object -First 1
-          $gameVersionId = $latest.id
-          Write-Host "Selected CurseForge game version id=$gameVersionId (name=$($latest.name))."
+          if [ -z "$game_version_id" ] || [ "$game_version_id" = "null" ]; then
+            echo "Could not determine CurseForge retail game version ID." >&2
+            exit 1
+          fi
+          echo "Selected CurseForge game version id=$game_version_id."
 
-          $ver = $env:RELEASE_VERSION
-          $tag = $env:TAG_NAME
-          $repo = $env:GITHUB_REPO
-          $changelog = "## NE Stats v$ver`n`nSee [GitHub release $tag](https://github.com/$repo/releases/tag/$tag) for notes."
+          metadata=$(jq -n \
+            --rawfile changelog "$RELEASE_NOTES_PATH" \
+            --arg displayName "NE Stats v${RELEASE_VERSION}" \
+            --argjson gameVersions "[${game_version_id}]" \
+            '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, releaseType: "release", gameVersions: $gameVersions}')
 
-          $metadataJson = [ordered]@{
-            changelog     = $changelog
-            changelogType = "markdown"
-            displayName   = "NE Stats v$ver"
-            releaseType   = "release"
-            gameVersions  = @($gameVersionId)
-          } | ConvertTo-Json -Compress
+          response=$(curl -s -X POST \
+            -H "X-Api-Token: $CF_TOKEN" \
+            -F "metadata=$metadata" \
+            -F "file=@${ZIP_PATH}" \
+            "https://wow.curseforge.com/api/projects/${CF_PROJECT_ID}/upload-file")
 
-          $projectId = $env:CF_PROJECT_ID.Trim()
-          $uploadUri = "https://wow.curseforge.com/api/projects/$projectId/upload-file"
-
-          $response = Invoke-RestMethod -Uri $uploadUri -Method Post -Headers $headers -Form @{
-            metadata = $metadataJson
-            file     = Get-Item -LiteralPath $zipPath
-          }
-
-          Write-Host "CurseForge upload succeeded, file id=$($response.id)."
+          file_id=$(echo "$response" | jq -r '.id')
+          if [ -z "$file_id" ] || [ "$file_id" = "null" ]; then
+            echo "CurseForge upload failed. Response: $response" >&2
+            exit 1
+          fi
+          echo "CurseForge upload succeeded, file id=$file_id."
