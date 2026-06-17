@@ -1,5 +1,5 @@
 {
- "version": "12.0.5.67823",
+ "version": "12.0.7.68235",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -75,7 +75,7 @@
   },
   "SecretWhenUnitHealthMaxRestricted": {
    "type": "Secret",
-   "documentation": "Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid."
+   "documentation": "Guarded APIs and events produce secret values when the unit isn't player-controlled."
   },
   "SecretWhenUnitIdentityRestricted": {
    "type": "Secret",
@@ -83,7 +83,7 @@
   },
   "SecretWhenUnitPowerMaxRestricted": {
    "type": "Secret",
-   "documentation": "Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid. Individual power types may be flagged as never or always secret, which takes priority."
+   "documentation": "Guarded APIs and events produce secret values when the unit isn't player-controlled. Individual power types may be flagged as never or always secret, which takes priority."
   },
   "SecretWhenUnitPowerRestricted": {
    "type": "Secret",
@@ -12743,6 +12743,23 @@
      "payload": []
     },
     {
+     "name": "InviteFriend",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "gameAccountID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "SendGameData",
      "type": "Function",
      "literal_name": null,
@@ -12876,72 +12893,6 @@
    "file": "BattlePetConstantsDocumentation.lua",
    "entries": [
     {
-     "name": "BattlePetAbilityFlag",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetAbilitySlot",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetAbilityTargets",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetAbilityTurnFlag",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetAbilityTurnType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetAbilityType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
      "name": "BattlePetAction",
      "type": "Enumeration",
      "literal_name": null,
@@ -12964,61 +12915,6 @@
      "payload": []
     },
     {
-     "name": "BattlePetEffectFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetEffectParamType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetEvent",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetNpcEmote",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetNpcTeamFlag",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
      "name": "BattlePetOwner",
      "type": "Enumeration",
      "literal_name": null,
@@ -13031,94 +12927,6 @@
     },
     {
      "name": "BattlePetSources",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetSpeciesFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetStateFlag",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetTypes",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetVisualFlag",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlePetVisualRange",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlepetDbFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlepetDeletedReason",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "BattlepetSlotLockCheat",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -14053,6 +13861,29 @@
        "name": "buildInfo",
        "type": "string",
        "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetBuildOption",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isSet",
+       "type": "bool",
+       "nilable": true
       }
      ],
      "payload": []
@@ -19143,6 +18974,17 @@
      "arguments": [],
      "returns": [],
      "payload": []
+    },
+    {
+     "name": "NoRPEReason",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
     }
    ]
   },
@@ -19200,17 +19042,6 @@
     },
     {
      "name": "ChatChannelType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "ChatMessagingLockdownRestriction",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -21507,9 +21338,7 @@
      "name": "ChatMsgCombatFactionChange",
      "type": "Event",
      "literal_name": "CHAT_MSG_COMBAT_FACTION_CHANGE",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -21546,9 +21375,7 @@
      "name": "ChatMsgCombatHonorGain",
      "type": "Event",
      "literal_name": "CHAT_MSG_COMBAT_HONOR_GAIN",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -21585,9 +21412,7 @@
      "name": "ChatMsgCombatMiscInfo",
      "type": "Event",
      "literal_name": "CHAT_MSG_COMBAT_MISC_INFO",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -21624,9 +21449,7 @@
      "name": "ChatMsgCombatXpGain",
      "type": "Event",
      "literal_name": "CHAT_MSG_COMBAT_XP_GAIN",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -21702,9 +21525,7 @@
      "name": "ChatMsgCurrency",
      "type": "Event",
      "literal_name": "CHAT_MSG_CURRENCY",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -21819,9 +21640,7 @@
      "name": "ChatMsgFiltered",
      "type": "Event",
      "literal_name": "CHAT_MSG_FILTERED",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -22088,9 +21907,7 @@
      "name": "ChatMsgLoot",
      "type": "Event",
      "literal_name": "CHAT_MSG_LOOT",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -22127,9 +21944,7 @@
      "name": "ChatMsgMoney",
      "type": "Event",
      "literal_name": "CHAT_MSG_MONEY",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -22862,9 +22677,7 @@
      "name": "ChatMsgRestricted",
      "type": "Event",
      "literal_name": "CHAT_MSG_RESTRICTED",
-     "secret_flags": [
-      "SecretInChatMessagingLockdown"
-     ],
+     "secret_flags": [],
      "secret_args": null,
      "documentation": null,
      "arguments": [],
@@ -25081,29 +24894,6 @@
      "payload": []
     },
     {
-     "name": "GetStringFromModifiers",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "modifiers",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "modifierString",
-       "type": "string",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
      "name": "GetTutorialShown",
      "type": "Function",
      "literal_name": null,
@@ -25115,23 +24905,6 @@
       {
        "name": "tutorialShown",
        "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "MakeModifiers",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "modifiers",
-       "type": "number",
        "nilable": false
       }
      ],
@@ -25541,7 +25314,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       },
       {
@@ -26085,7 +25858,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ],
@@ -26450,7 +26223,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ],
@@ -26849,7 +26622,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ],
@@ -26996,7 +26769,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ],
@@ -27018,7 +26791,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ],
@@ -27062,7 +26835,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ],
@@ -27160,7 +26933,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       },
       {
@@ -27508,7 +27281,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ]
@@ -27530,7 +27303,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       },
       {
@@ -27557,7 +27330,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ]
@@ -27579,7 +27352,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       },
       {
@@ -27606,7 +27379,7 @@
       },
       {
        "name": "memberId",
-       "type": "number",
+       "type": "ClubMemberOpaqueId",
        "nilable": false
       }
      ]
@@ -31330,7 +31103,13 @@
      "secret_args": null,
      "documentation": null,
      "arguments": [],
-     "returns": [],
+     "returns": [
+      {
+       "name": "unitTarget",
+       "type": "string",
+       "nilable": false
+      }
+     ],
      "payload": []
     },
     {
@@ -34992,6 +34771,17 @@
      "payload": []
     },
     {
+     "name": "GetProtocolTypes",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "GetRealmID",
      "type": "Function",
      "literal_name": null,
@@ -35604,6 +35394,23 @@
      "documentation": null,
      "arguments": [],
      "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CalculateTotalNumberOfFreeBagSlots",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "totalFreeSlots",
+       "type": "number",
+       "nilable": false
+      }
+     ],
      "payload": []
     },
     {
@@ -40678,6 +40485,17 @@
      "payload": []
     },
     {
+     "name": "CurrencyConversionResult",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "CurrencyFilterType",
      "type": "Enumeration",
      "literal_name": null,
@@ -41986,6 +41804,17 @@
      "arguments": [],
      "returns": [],
      "payload": []
+    },
+    {
+     "name": "WoWClientCursorSize",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
     }
    ]
   },
@@ -42093,6 +41922,17 @@
     {
      "name": "CursorUtil",
      "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CursorFileInfo",
+     "type": "Structure",
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
@@ -43578,6 +43418,17 @@
      "payload": []
     },
     {
+     "name": "WorldTierDifficulty",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "DelveAssistActionData",
      "type": "Structure",
      "literal_name": null,
@@ -43854,6 +43705,23 @@
      "payload": []
     },
     {
+     "name": "GetDelveEntranceTitleString",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "title",
+       "type": "cstring",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "GetDelvesAffixSpellsForSeason",
      "type": "Function",
      "literal_name": null,
@@ -43938,7 +43806,7 @@
      "returns": [
       {
        "name": "text",
-       "type": "string",
+       "type": "cstring",
        "nilable": false
       }
      ],
@@ -44086,7 +43954,7 @@
      "returns": [
       {
        "name": "entranceType",
-       "type": "number",
+       "type": "TieredEntranceType",
        "nilable": false
       }
      ],
@@ -44130,6 +43998,23 @@
       }
      ],
      "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetWorldTierDifficultyForActivePlayer",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "difficulty",
+       "type": "WorldTierDifficulty",
+       "nilable": false
+      }
+     ],
      "payload": []
     },
     {
@@ -44501,51 +44386,7 @@
    "file": "DungeonEncounterConstantsDocumentation.lua",
    "entries": [
     {
-     "name": "DungeonEncounterFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "DungeonEncounterTriggerType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "DungeonEncounterXCreatureFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
      "name": "EncounterEventCastState",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "EncounterEventFlags",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -44573,6 +44414,427 @@
      "secret_flags": [],
      "secret_args": null,
      "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "DurationTextBindingObject": {
+   "file": "DurationTextBindingObjectAPIDocumentation.lua",
+   "entries": [
+    {
+     "name": "DurationTextBindingObjectAPI",
+     "type": "ScriptObject",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CanFormatText",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns true if this binding has enough configuration to produce formatted text.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "canFormatText",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "CanUpdateFontString",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns true if this binding has enough configuration to update its font string with formatted text.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "canUpdateText",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "Disable",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Disables automatic updates for this duration text binding.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "Enable",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Enables automatic updates for this duration text binding.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetDuration",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the duration object used by this duration text binding.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "duration",
+       "type": "LuaDurationObject",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetExpiredText",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the text shown when the duration has fully expired.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "text",
+       "type": "string",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetFontString",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the font string updated by this duration text binding.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "fontString",
+       "type": "SimpleFontString",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetFormattedText",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the text that would currently be assigned to the configured font string.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetTimeModifier",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the time modifier used when sampling duration values for this binding.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "modifier",
+       "type": "DurationTimeModifier",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetUpdateInterval",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the minimum number of seconds between automatic text updates. A value of zero updates every game tick.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "updateInterval",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetZeroDurationText",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the text shown when the duration is not configured, or represents a zero-duration time span.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "text",
+       "type": "string",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "HasSecretValues",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns true if the duration text binding has been configured with any secret values.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "hasSecretValues",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsEnabled",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns true if this duration text binding updates its font string automatically.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "enabled",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "SetDuration",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the duration object used by this duration text binding.",
+     "arguments": [
+      {
+       "name": "duration",
+       "type": "LuaDurationObject",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetEnabled",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures whether this duration text binding updates its font string automatically.",
+     "arguments": [
+      {
+       "name": "enabled",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetExpiredText",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the text shown when the duration has fully expired.",
+     "arguments": [
+      {
+       "name": "text",
+       "type": "string",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetFontString",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the font string updated by this duration text binding.",
+     "arguments": [
+      {
+       "name": "fontString",
+       "type": "SimpleFontString",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetFormatter",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the text format used by this duration text binding to display the remaining duration using the supplied formatter.",
+     "arguments": [
+      {
+       "name": "formatter",
+       "type": "NumericFormatter",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetTextFormat",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "format",
+       "type": "string",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetTimeModifier",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the time modifier used when sampling duration values for this binding.",
+     "arguments": [
+      {
+       "name": "modifier",
+       "type": "DurationTimeModifier",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetToDefaults",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Resets this duration text binding to its default state, clearing the configured font string, duration, format, formatter, and fallback text.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetUpdateInterval",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the minimum number of seconds between automatic text updates. A value of zero updates every game tick.",
+     "arguments": [
+      {
+       "name": "updateInterval",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetZeroDurationText",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the text shown when the duration is not configured, or represents a zero-duration time span.",
+     "arguments": [
+      {
+       "name": "text",
+       "type": "string",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "UpdateFontString",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Immediately updates the configured font string from the current duration state.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "DurationTextBindingShared": {
+   "file": "DurationTextBindingSharedDocumentation.lua",
+   "entries": [
+    {
+     "name": "DurationTextBindingProperty",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "DurationTextBindingFormatComponent",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "The duration property sampled for this format component.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -44611,17 +44873,34 @@
      "payload": []
     },
     {
-     "name": "GetCurrentTime",
+     "name": "CreateDurationTextBinding",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
-     "documentation": "Returns the current time used by duration objects. Equivalent to GetTime() in public builds.",
+     "documentation": "Creates a duration text binding, which automatically updates a font string with formatted text derived from a duration object.",
      "arguments": [],
      "returns": [
       {
-       "name": "currentTime",
-       "type": "FrameTime",
+       "name": "binding",
+       "type": "DurationTextBinding",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "CreateManualClock",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Creates a manually driven time source for use with duration objects.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "clock",
+       "type": "LuaDurationManualClock",
        "nilable": false
       }
      ],
@@ -45419,6 +45698,17 @@
      "payload": []
     },
     {
+     "name": "PersonalResourceDisplayVisibleSetting",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "RaidAuraOrganizationType",
      "type": "Enumeration",
      "literal_name": null,
@@ -46167,6 +46457,11 @@
        "name": "encounterEventID",
        "type": "number",
        "nilable": false
+      },
+      {
+       "name": "trigger",
+       "type": "EncounterEventColorTrigger",
+       "nilable": false
       }
      ],
      "returns": [],
@@ -46297,6 +46592,11 @@
        "name": "encounterEventID",
        "type": "number",
        "nilable": false
+      },
+      {
+       "name": "trigger",
+       "type": "EncounterEventColorTrigger",
+       "nilable": false
       }
      ],
      "returns": [],
@@ -46334,6 +46634,17 @@
   "EncounterEventsShared": {
    "file": "EncounterEventsSharedDocumentation.lua",
    "entries": [
+    {
+     "name": "EncounterEventColorTrigger",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Color to be used when an encounter event shown as a text warning alert.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
     {
      "name": "EncounterEventSoundTrigger",
      "type": "Enumeration",
@@ -46433,7 +46744,7 @@
      "literal_name": "ENCOUNTER_END",
      "secret_flags": [],
      "secret_args": null,
-     "documentation": null,
+     "documentation": "List of all boss units engaged during this encounter.",
      "arguments": [],
      "returns": [],
      "payload": [
@@ -46544,6 +46855,17 @@
      "name": "UpdateInstanceInfo",
      "type": "Event",
      "literal_name": "UPDATE_INSTANCE_INFO",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "EncounterUnitStatus",
+     "type": "Structure",
+     "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
      "documentation": null,
@@ -47372,6 +47694,30 @@
      "payload": []
     },
     {
+     "name": "GetEventColor",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [
+      "SecretWhenEncounterEvent"
+     ],
+     "secret_args": "NotAllowed",
+     "documentation": "Returns the current color used to render timeline event.",
+     "arguments": [
+      {
+       "name": "eventID",
+       "type": "EncounterTimelineEventID",
+       "nilable": false
+      },
+      {
+       "name": "overrideTrigger",
+       "type": "EncounterEventColorTrigger",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "GetEventCountBySource",
      "type": "Function",
      "literal_name": null,
@@ -47894,6 +48240,23 @@
      "secret_flags": [],
      "secret_args": null,
      "documentation": "Fired when an event has transitioned into or out of a 'blocked' status.",
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "eventID",
+       "type": "EncounterTimelineEventID",
+       "nilable": false
+      }
+     ]
+    },
+    {
+     "name": "EncounterTimelineEventColorChanged",
+     "type": "Event",
+     "literal_name": "ENCOUNTER_TIMELINE_EVENT_COLOR_CHANGED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Fired when an event has met a condition that should trigger a color change.",
      "arguments": [],
      "returns": [],
      "payload": [
@@ -49889,6 +50252,22 @@
        "nilable": false
       }
      ],
+     "payload": []
+    }
+   ]
+  },
+  "ExpansionLandingPageConstants": {
+   "file": "ExpansionLandingPageConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "ExpansionLandingPageType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
      "payload": []
     }
    ]
@@ -52786,7 +53165,13 @@
      "secret_args": null,
      "documentation": null,
      "arguments": [],
-     "returns": [],
+     "returns": [
+      {
+       "name": "guid",
+       "type": "WOWGUID",
+       "nilable": false
+      }
+     ],
      "payload": []
     },
     {
@@ -66927,6 +67312,34 @@
      "payload": []
     },
     {
+     "name": "GetCatalogCategoryAndSubcategoryNames",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "If found, returns the names of the parent category and the specified subcategory",
+     "arguments": [
+      {
+       "name": "subcategoryID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "categoryName",
+       "type": "string",
+       "nilable": false
+      },
+      {
+       "name": "subcategoryName",
+       "type": "string",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "GetCatalogCategoryInfo",
      "type": "Function",
      "literal_name": null,
@@ -68195,6 +68608,39 @@
      "payload": []
     },
     {
+     "name": "RoomConnectionSupportsDoorType",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Check whether a specific room component, within a specific room, supports a particular doorType",
+     "arguments": [
+      {
+       "name": "roomGUID",
+       "type": "WOWGUID",
+       "nilable": false
+      },
+      {
+       "name": "componentID",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "newDoortype",
+       "type": "HousingRoomComponentDoorType",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "doorTypeSupported",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "SetRoomComponentCeilingType",
      "type": "Function",
      "literal_name": null,
@@ -69132,6 +69578,17 @@
      "payload": []
     },
     {
+     "name": "LightRadiusIndicatorType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "HousingDecorInstanceListEntry",
      "type": "Structure",
      "literal_name": null,
@@ -69987,6 +70444,23 @@
      "payload": []
     },
     {
+     "name": "IsConnectedToDraggingRoom",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isConnectedToDraggingRoom",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "IsOccupiedDoor",
      "type": "Function",
      "literal_name": null,
@@ -69999,6 +70473,23 @@
        "name": "isOccupied",
        "type": "bool",
        "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsPartOfDraggingRoom",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isPartOfDraggingRoom",
+       "type": "bool",
+       "nilable": false
       }
      ],
      "payload": []
@@ -70115,6 +70606,29 @@
      "returns": [
       {
        "name": "anyRooms",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "CanSetViewedFloor",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "floor",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "canSet",
        "type": "bool",
        "nilable": false
       }
@@ -70503,23 +71017,6 @@
       },
       {
        "name": "isAccessibleDrag",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "IsDraggingStairwell",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [
-      {
-       "name": "isDraggingStairwell",
        "type": "bool",
        "nilable": false
       }
@@ -73986,6 +74483,29 @@
      "payload": []
     },
     {
+     "name": "GetStringFromModifiers",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "modifiers",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "modifierString",
+       "type": "string",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "IsAltKeyDown",
      "type": "Function",
      "literal_name": null,
@@ -74287,6 +74807,23 @@
      "payload": []
     },
     {
+     "name": "MakeModifiers",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "modifiers",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "SetCursorPosition",
      "type": "Function",
      "literal_name": null,
@@ -74377,6 +74914,17 @@
      "payload": []
     },
     {
+     "name": "MouseFocusValidForLimitedInput",
+     "type": "Precondition",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Requires that all mouse foci are not forbidden, hidden from the global environment, fully locked down, script inaccessible, or protected frames (while in combat)",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "RequiresLimitedInput",
      "type": "Precondition",
      "literal_name": null,
@@ -74460,6 +75008,29 @@
       {
        "name": "result",
        "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetBaseDifficultyID",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "difficultyID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "baseDifficultyID",
+       "type": "number",
        "nilable": false
       }
      ],
@@ -86395,6 +86966,117 @@
     }
    ]
   },
+  "LuaDurationClock": {
+   "file": "LuaDurationClockAPIDocumentation.lua",
+   "entries": [
+    {
+     "name": "LuaDurationClockObjectAPI",
+     "type": "ScriptObject",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the current time value represented by this clock.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "time",
+       "type": "FrameTime",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    }
+   ]
+  },
+  "LuaDurationManualClock": {
+   "file": "LuaDurationManualClockAPIDocumentation.lua",
+   "entries": [
+    {
+     "name": "LuaDurationManualClockAPI",
+     "type": "ScriptObject",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "AdvanceTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Advances the clock by a specified number of seconds.",
+     "arguments": [
+      {
+       "name": "delta",
+       "type": "DurationSeconds",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ResetTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Resets the clock to a zero time value.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RewindTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Rewinds the clock by a specified number of seconds.",
+     "arguments": [
+      {
+       "name": "delta",
+       "type": "DurationSeconds",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Sets the current clock timestamp to a given value.",
+     "arguments": [
+      {
+       "name": "time",
+       "type": "FrameTime",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
   "LuaDurationObject": {
    "file": "LuaDurationObjectAPIDocumentation.lua",
    "entries": [
@@ -86644,6 +87326,17 @@
      "payload": []
     },
     {
+     "name": "GetClock",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the clock source used by this object.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "GetClockTime",
      "type": "Function",
      "literal_name": null,
@@ -86797,6 +87490,23 @@
      "payload": []
     },
     {
+     "name": "HasExpired",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true once the duration has reached its end time.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "hasExpired",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "HasSecretValues",
      "type": "Function",
      "literal_name": null,
@@ -86807,6 +87517,40 @@
      "returns": [
       {
        "name": "hasSecretValues",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "HasStarted",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true once the duration has reached its start time.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "hasStarted",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsActive",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true while the duration is at or after its start time and before its end time.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isActive",
        "type": "bool",
        "nilable": false
       }
@@ -86837,6 +87581,17 @@
      "secret_flags": [],
      "secret_args": null,
      "documentation": "Resets the duration object to represent a zero duration time span.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetClock",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Configures the clock source used by this object.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -89296,6 +90051,17 @@
      "payload": []
     },
     {
+     "name": "GetMerchantCurrencies",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "GetNumJunkItems",
      "type": "Function",
      "literal_name": null,
@@ -89563,44 +90329,6 @@
      "returns": [
       {
        "name": "numTrackingTypes",
-       "type": "number",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
-     "name": "GetObjectIconTextureCoords",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "index",
-       "type": "number",
-       "nilable": true
-      }
-     ],
-     "returns": [
-      {
-       "name": "textureCoordsX",
-       "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "textureCoordsY",
-       "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "textureCoordsZ",
-       "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "textureCoordsW",
        "type": "number",
        "nilable": false
       }
@@ -90246,92 +90974,7 @@
      "payload": []
     },
     {
-     "name": "SetBlipTexture",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "asset",
-       "type": "TextureAsset",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetCorpsePOIArrowTexture",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "asset",
-       "type": "TextureAsset",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetIconTexture",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "asset",
-       "type": "TextureAsset",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
      "name": "SetMaskTexture",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "asset",
-       "type": "TextureAsset",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetPOIArrowTexture",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "asset",
-       "type": "TextureAsset",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetPlayerTexture",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
@@ -90451,23 +91094,6 @@
     },
     {
      "name": "SetQuestBlobRingTexture",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "asset",
-       "type": "TextureAsset",
-       "nilable": false
-      }
-     ],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "SetStaticPOIArrowTexture",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
@@ -90754,6 +91380,17 @@
   "MoneyConstants": {
    "file": "MoneyConstantsDocumentation.lua",
    "entries": [
+    {
+     "name": "CurrencyType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
     {
      "name": "MoneyFormattingConstants",
      "type": "Constants",
@@ -92511,7 +93148,7 @@
       },
       {
        "name": "completionDate",
-       "type": "MythicPlusDate",
+       "type": "CalendarTime",
        "nilable": false
       },
       {
@@ -95093,6 +95730,23 @@
      "payload": []
     },
     {
+     "name": "ConfirmReadyCheck",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "isReady",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "ConfirmRequestInviteFromUnit",
      "type": "Function",
      "literal_name": null,
@@ -95158,6 +95812,28 @@
      "payload": []
     },
     {
+     "name": "DemoteAssistant",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "exactNameMatch",
+       "type": "bool",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "DoCountdown",
      "type": "Function",
      "literal_name": null,
@@ -95178,6 +95854,17 @@
        "nilable": false
       }
      ],
+     "payload": []
+    },
+    {
+     "name": "DoReadyCheck",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
      "payload": []
     },
     {
@@ -95543,6 +96230,29 @@
      "payload": []
     },
     {
+     "name": "IsGUIDInGroup",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "If not provided, the active party is used",
+     "arguments": [
+      {
+       "name": "guid",
+       "type": "WOWGUID",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isInGroup",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "IsLootMethodAvailable",
      "type": "Function",
      "literal_name": null,
@@ -95634,6 +96344,50 @@
      "payload": []
     },
     {
+     "name": "PromoteToAssistant",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "exactNameMatch",
+       "type": "bool",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "PromoteToLeader",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "exactNameMatch",
+       "type": "bool",
+       "nilable": true
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "RequestInviteFromUnit",
      "type": "Function",
      "literal_name": null,
@@ -95663,6 +96417,29 @@
       }
      ],
      "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetEveryoneIsAssistant",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "isAssistant",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "updated",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
      "payload": []
     },
     {
@@ -95735,6 +96512,33 @@
      "secret_args": null,
      "documentation": "Start the vote",
      "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "UninviteUnit",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "name",
+       "type": "cstring",
+       "nilable": false
+      },
+      {
+       "name": "reason",
+       "type": "cstring",
+       "nilable": true
+      },
+      {
+       "name": "exactNameMatch",
+       "type": "bool",
+       "nilable": true
+      }
+     ],
      "returns": [],
      "payload": []
     },
@@ -96559,6 +97363,28 @@
      "payload": []
     },
     {
+     "name": "GetEventCPUUsage",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "call_time",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "call_count",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "GetFrameCPUUsage",
      "type": "Function",
      "literal_name": null,
@@ -96580,6 +97406,45 @@
       },
       {
        "name": "call_count",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetFunctionCPUUsage",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "call_time",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "call_count",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetScriptCPUUsage",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "result",
        "type": "number",
        "nilable": false
       }
@@ -97694,138 +98559,6 @@
      "payload": []
     },
     {
-     "name": "PetbattleAuraStateFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleCheatFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleEffectFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleEffectType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleEnviros",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleInputMoveMsgDebugFlag",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleMoveType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattlePboid",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattlePetStatus",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattlePlayer",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattlePlayerInputFlags",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleResult",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
      "name": "PetbattleSlot",
      "type": "Enumeration",
      "literal_name": null,
@@ -97837,51 +98570,7 @@
      "payload": []
     },
     {
-     "name": "PetbattleSlotAbility",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleSlotResult",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
      "name": "PetbattleState",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleTrapstatus",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
-     "name": "PetbattleType",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -101208,6 +101897,29 @@
      "returns": [
       {
        "name": "isDisplayRaceNative",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsExpansionLandingPageUnlockedForPlayer",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "expansionID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isUnlocked",
        "type": "bool",
        "nilable": false
       }
@@ -109437,6 +110149,29 @@
      "payload": []
     },
     {
+     "name": "GetQuestHasShortExpirationWarning",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "questID",
+       "type": "number",
+       "nilable": true
+      }
+     ],
+     "returns": [
+      {
+       "name": "hasShortExpirationWarning",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "GetQuestLogRewardFavor",
      "type": "Function",
      "literal_name": null,
@@ -116129,17 +116864,6 @@
    "file": "RolodexConstantsDocumentation.lua",
    "entries": [
     {
-     "name": "RolodexContextIDType",
-     "type": "Enumeration",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": null,
-     "documentation": null,
-     "arguments": [],
-     "returns": [],
-     "payload": []
-    },
-    {
      "name": "RolodexContextLevelType",
      "type": "Enumeration",
      "literal_name": null,
@@ -116277,6 +117001,23 @@
        "nilable": true
       }
      ],
+     "payload": []
+    },
+    {
+     "name": "GetScenarioIconInfo",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "uiMapID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [],
      "payload": []
     },
     {
@@ -116556,6 +117297,17 @@
     },
     {
      "name": "ScenarioDisplayInfo",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ScenarioIconInfo",
      "type": "Structure",
      "literal_name": null,
      "secret_flags": [],
@@ -117357,7 +118109,7 @@
      "returns": [
       {
        "name": "abbreviation",
-       "type": "SecondsFormatterAbbrevation",
+       "type": "SecondsFormatterAbbreviation",
        "nilable": true
       }
      ],
@@ -117552,7 +118304,7 @@
      "arguments": [
       {
        "name": "abbreviation",
-       "type": "SecondsFormatterAbbrevation",
+       "type": "SecondsFormatterAbbreviation",
        "nilable": false
       }
      ],
@@ -117701,7 +118453,7 @@
    "file": "SecondsFormatterSharedDocumentation.lua",
    "entries": [
     {
-     "name": "SecondsFormatterAbbrevation",
+     "name": "SecondsFormatterAbbreviation",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -118631,7 +119383,7 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
-     "documentation": "Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid.",
+     "documentation": "Guarded APIs and events produce secret values when the unit isn't player-controlled.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -118653,7 +119405,7 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
-     "documentation": "Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid. Individual power types may be flagged as never or always secret, which takes priority.",
+     "documentation": "Guarded APIs and events produce secret values when the unit isn't player-controlled. Individual power types may be flagged as never or always secret, which takes priority.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -123466,7 +124218,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [],
      "returns": [],
@@ -126920,7 +127672,7 @@
       },
       {
        "name": "fontHeight",
-       "type": "number",
+       "type": "uiFontHeight",
        "nilable": false
       },
       {
@@ -134626,7 +135378,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
@@ -134660,7 +135412,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
@@ -141512,29 +142264,6 @@
      "payload": []
     },
     {
-     "name": "GetMawPowerBorderAtlasBySpellID",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenTainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "spellID",
-       "type": "SpellIdentifier",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "rarityBorderAtlas",
-       "type": "textureAtlas",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
      "name": "GetMawPowerLinkBySpellID",
      "type": "Function",
      "literal_name": null,
@@ -141552,6 +142281,34 @@
       {
        "name": "link",
        "type": "cstring",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetMawPowerRarityInfoBySpellID",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "spellID",
+       "type": "SpellIdentifier",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "rarityID",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "rarityBorderAtlas",
+       "type": "textureAtlas",
        "nilable": false
       }
      ],
@@ -143623,6 +144380,29 @@
       {
        "name": "formatter",
        "type": "SecondsFormatter",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "EscapeDecimalNonPrintables",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns a string with ASCII control characters (except \\\n, \\r, and \t) and invalid UTF-8 bytes replaced by decimal escape sequences (e.g. \\\\127).",
+     "arguments": [
+      {
+       "name": "text",
+       "type": "stringView",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "escapedText",
+       "type": "string",
        "nilable": false
       }
      ],
@@ -146221,7 +147001,40 @@
      "payload": []
     },
     {
+     "name": "UrlTextureRequestResult",
+     "type": "Event",
+     "literal_name": "URL_TEXTURE_REQUEST_RESULT",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": [
+      {
+       "name": "texture",
+       "type": "SimpleTexture",
+       "nilable": false
+      },
+      {
+       "name": "result",
+       "type": "UrlTextureResult",
+       "nilable": false
+      }
+     ]
+    },
+    {
      "name": "TitleIconVersion",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "UrlTextureResult",
      "type": "Enumeration",
      "literal_name": null,
      "secret_flags": [],
@@ -158145,6 +158958,73 @@
      "secret_args": null,
      "documentation": null,
      "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "UIFileAsset": {
+   "file": "UIFileAssetAPIDocumentation.lua",
+   "entries": [
+    {
+     "name": "UIFileAssetAPI",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetFileID",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns the numeric file ID associated with a file asset.",
+     "arguments": [
+      {
+       "name": "asset",
+       "type": "FileAsset",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "IsKnownFile",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Determines whether a file asset is known to the client, either as a shipped asset or a locally existing loose file.",
+     "arguments": [
+      {
+       "name": "asset",
+       "type": "FileAsset",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "IsLooseFile",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Determines whether a file asset refers to a known loose (local) file.",
+     "arguments": [
+      {
+       "name": "asset",
+       "type": "FileAsset",
+       "nilable": false
+      }
+     ],
      "returns": [],
      "payload": []
     }

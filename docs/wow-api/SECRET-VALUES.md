@@ -1,10 +1,10 @@
-# Secret Values -- conditionally-secret API (build 12.0.5.67823)
+# Secret Values -- conditionally-secret API (build 12.0.7.68235)
 
 Functions whose return value becomes a **Secret** under the given condition. In tainted addon code you must call `issecretvalue(v)` before any comparison, arithmetic, or table-index on the result -- otherwise the game raises a Lua error.
 
 Predicate descriptions come from `SecretPredicatesDocumentation.lua`. See also `ADDON-RESTRICTIONS.md` for restriction types such as Challenge Mode (Mythic+).
 
-Total: 286 entries across 20 conditions.
+Total: 278 entries across 20 conditions.
 
 ## `SecretInActivePvPMatch` (2)
 
@@ -13,7 +13,7 @@ Total: 286 entries across 20 conditions.
 - `GetScoreInfo` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
 - `GetScoreInfoByPlayerGuid` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
 
-## `SecretInChatMessagingLockdown` (107)
+## `SecretInChatMessagingLockdown` (98)
 
 > Guarded APIs and events produce secret values when encounter, challenge mode, or PvP match addon restrictions are in effect, and when the player is on a communication-restricted map such as a dungeon or raid.
 
@@ -36,21 +36,13 @@ Total: 286 entries across 20 conditions.
 - `ChatMsgChannelList` -- ChatInfo
 - `ChatMsgChannelNotice` -- ChatInfo
 - `ChatMsgChannelNoticeUser` -- ChatInfo
-- `ChatMsgCombatFactionChange` -- ChatInfo
-- `ChatMsgCombatHonorGain` -- ChatInfo
-- `ChatMsgCombatMiscInfo` -- ChatInfo
-- `ChatMsgCombatXpGain` -- ChatInfo
 - `ChatMsgCommunitiesChannel` -- ChatInfo
-- `ChatMsgCurrency` -- ChatInfo
 - `ChatMsgDnd` -- ChatInfo
 - `ChatMsgEmote` -- ChatInfo
-- `ChatMsgFiltered` -- ChatInfo
 - `ChatMsgGuild` -- ChatInfo
 - `ChatMsgIgnored` -- ChatInfo
 - `ChatMsgInstanceChat` -- ChatInfo
 - `ChatMsgInstanceChatLeader` -- ChatInfo
-- `ChatMsgLoot` -- ChatInfo
-- `ChatMsgMoney` -- ChatInfo
 - `ChatMsgMonsterEmote` -- ChatInfo
 - `ChatMsgMonsterParty` -- ChatInfo
 - `ChatMsgMonsterSay` -- ChatInfo
@@ -66,7 +58,6 @@ Total: 286 entries across 20 conditions.
 - `ChatMsgRaidBossWhisper` -- ChatInfo
 - `ChatMsgRaidLeader` -- ChatInfo
 - `ChatMsgRaidWarning` -- ChatInfo
-- `ChatMsgRestricted` -- ChatInfo
 - `ChatMsgSay` -- ChatInfo
 - `ChatMsgSkill` -- ChatInfo
 - `ChatMsgSystem` -- ChatInfo
@@ -183,9 +174,10 @@ Total: 286 entries across 20 conditions.
 - `UnitPowerPercent` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `GetAuraDispelTypeColor` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 
-## `SecretWhenEncounterEvent` (2)
+## `SecretWhenEncounterEvent` (3)
 
 - `EncounterTimelineEventAdded` -- EncounterTimeline
+- `GetEventColor` -- EncounterTimeline (`SecretArguments`: NotAllowed)
 - `GetEventInfo` -- EncounterTimeline (`SecretArguments`: NotAllowed)
 
 ## `SecretWhenInCombat` (4)
@@ -251,7 +243,7 @@ Total: 286 entries across 20 conditions.
 
 ## `SecretWhenUnitHealthMaxRestricted` (1)
 
-> Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid.
+> Guarded APIs and events produce secret values when the unit isn't player-controlled.
 
 - `UnitHealthMax` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
@@ -277,7 +269,7 @@ Total: 286 entries across 20 conditions.
 
 ## `SecretWhenUnitPowerMaxRestricted` (1)
 
-> Guarded APIs and events produce secret values when the subject unit isn't player-controlled or in the party/raid. Individual power types may be flagged as never or always secret, which takes priority.
+> Guarded APIs and events produce secret values when the unit isn't player-controlled. Individual power types may be flagged as never or always secret, which takes priority.
 
 - `UnitPowerMax` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 

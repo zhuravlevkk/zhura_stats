@@ -1,7 +1,7 @@
-# WoW API Index (build 12.0.5.67823)
+# WoW API Index (build 12.0.7.68235)
 
-Generated from a `wow-ui-source` clone on 2026-06-16 07:13 UTC.
-Systems: 567 | Functions/events: 9866 | Conditionally-secret entries: 286
+Generated from a `wow-ui-source` clone on 2026-06-17 06:59 UTC.
+Systems: 573 | Functions/events: 9906 | Conditionally-secret entries: 278
 
 Regenerate with `python scripts/gen_api_index.py`.
 
@@ -57,15 +57,15 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **BarberShop** (37) -- `BarberShopDocumentation.lua`
 - **BarberShopInternal** (2) -- `BarberShopInternalDocumentation.lua`
 - **Base** (1) -- `BaseDocumentation.lua`
-- **BattleNet** (17) -- `BattleNetDocumentation.lua`
+- **BattleNet** (18) -- `BattleNetDocumentation.lua`
 - **BattlePet** (27) -- `BattlePetDocumentation.lua`
-- **BattlePetConstants** (23) -- `BattlePetConstantsDocumentation.lua`
+- **BattlePetConstants** (4) -- `BattlePetConstantsDocumentation.lua`
 - **BattlepayConstants** (7) -- `BattlepayConstantsDocumentation.lua`
 - **BehavioralMessaging** (3) -- `BehavioralMessagingDocumentation.lua`
 - **BlackMarketInfo** (8) -- `BlackMarketInfoDocumentation.lua`
 - **BountyShared** (1) -- `BountySharedDocumentation.lua`
 - **Browser** (6) -- `BrowserDocumentation.lua`
-- **Build** (12) -- `BuildDocumentation.lua`
+- **Build** (13) -- `BuildDocumentation.lua`
 - **CVar** (15) -- `CVarDocumentation.lua`
 - **Calendar** (116) -- 4 secret -- `CalendarDocumentation.lua`
 - **CalendarConstants** (19) -- `CalendarConstantsDocumentation.lua`
@@ -77,10 +77,10 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **CharacterCreationConstants** (2) -- `CharacterCreationConstantsDocumentation.lua`
 - **CharacterCustomizationShared** (9) -- `CharacterCustomizationSharedDocumentation.lua`
 - **CharacterSelectionConstants** (8) -- `CharacterSelectionConstantsDocumentation.lua`
-- **CharacterServicesConstants** (1) -- `CharacterServicesConstantsDocumentation.lua`
+- **CharacterServicesConstants** (2) -- `CharacterServicesConstantsDocumentation.lua`
 - **ChatBubbles** (2) -- `ChatBubblesDocumentation.lua`
-- **ChatConstants** (17) -- `ChatConstantsDocumentation.lua`
-- **ChatInfo** (148) -- 59 secret -- `ChatInfoDocumentation.lua`
+- **ChatConstants** (16) -- `ChatConstantsDocumentation.lua`
+- **ChatInfo** (148) -- 50 secret -- `ChatInfoDocumentation.lua`
 - **ChatShared** (1) -- `ChatSharedDocumentation.lua`
 - **ChromieTimeUI** (6) -- `ChromieTimeUIDocumentation.lua`
 - **Cinematic** (14) -- `CinematicDocumentation.lua`
@@ -89,7 +89,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **ClassColor** (2) -- `ClassColorDocumentation.lua`
 - **ClassTalents** (42) -- `ClassTalentsDocumentation.lua`
 - **ClassTrial** (3) -- `ClassTrialDocumentation.lua`
-- **ClickBindings** (13) -- `ClickBindingsDocumentation.lua`
+- **ClickBindings** (11) -- `ClickBindingsDocumentation.lua`
 - **ClickBindingsConstants** (3) -- `ClickBindingsConstantsDocumentation.lua`
 - **Client** (11) -- `ClientDocumentation.lua`
 - **ClientScene** (4) -- `ClientSceneDocumentation.lua`
@@ -115,10 +115,10 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **CompactUnitFrames** (2) -- `CompactUnitFramesDocumentation.lua`
 - **ConfigurationWarningConstants** (1) -- `ConfigurationWarningConstantsDocumentation.lua`
 - **ConfigurationWarnings** (5) -- `ConfigurationWarningsDocumentation.lua`
-- **Connection** (13) -- `ConnectionDocumentation.lua`
+- **Connection** (14) -- `ConnectionDocumentation.lua`
 - **Console** (22) -- `ConsoleDocumentation.lua`
 - **ConsoleScriptCollection** (9) -- `ConsoleScriptCollectionDocumentation.lua`
-- **Container** (69) -- `ContainerDocumentation.lua`
+- **Container** (70) -- `ContainerDocumentation.lua`
 - **ContentTracking** (24) -- `ContentTrackingDocumentation.lua`
 - **ContentTrackingTypes** (9) -- `ContentTrackingTypesDocumentation.lua`
 - **ContributionCollector** (26) -- `ContributionCollectorDocumentation.lua`
@@ -135,12 +135,12 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **CraftingOrderUIConstants** (3) -- `CraftingOrderUIConstantsDocumentation.lua`
 - **CraftingOrderUIShared** (16) -- `CraftingOrderUISharedDocumentation.lua`
 - **CreatureInfo** (14) -- `CreatureInfoDocumentation.lua`
-- **CurrencyConstants** (10) -- `CurrencyConstantsDocumentation.lua`
+- **CurrencyConstants** (11) -- `CurrencyConstantsDocumentation.lua`
 - **CurrencyConstants_Mainline** (2) -- `CurrencyConstants_MainlineDocumentation.lua`
 - **CurrencyInfo** (58) -- `CurrencyInfoDocumentation.lua`
 - **Cursor** (6) -- `CursorDocumentation.lua`
-- **CursorConst** (4) -- `CursorConstDocumentation.lua`
-- **CursorUtil** (1) -- `CursorUtilDocumentation.lua`
+- **CursorConst** (5) -- `CursorConstDocumentation.lua`
+- **CursorUtil** (2) -- `CursorUtilDocumentation.lua`
 - **CurveUtil** (6) -- `CurveUtilDocumentation.lua`
 - **DamageConstants** (6) -- `DamageConstantsDocumentation.lua`
 - **DamageMeter** (18) -- 4 secret -- `DamageMeterDocumentation.lua`
@@ -150,24 +150,26 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **DeathInfo** (23) -- `DeathInfoDocumentation.lua`
 - **DeathRecap** (6) -- `DeathRecapDocumentation.lua`
 - **DebugToggle** (10) -- `DebugToggleDocumentation.lua`
-- **DelvesConstants** (7) -- `DelvesConstantsDocumentation.lua`
-- **DelvesUI** (45) -- `DelvesUIDocumentation.lua`
+- **DelvesConstants** (8) -- `DelvesConstantsDocumentation.lua`
+- **DelvesUI** (47) -- `DelvesUIDocumentation.lua`
 - **DuelInfo** (6) -- `DuelInfoDocumentation.lua`
-- **DungeonEncounterConstants** (7) -- `DungeonEncounterConstantsDocumentation.lua`
-- **DurationUtil** (3) -- `DurationUtilDocumentation.lua`
+- **DungeonEncounterConstants** (3) -- `DungeonEncounterConstantsDocumentation.lua`
+- **DurationTextBindingObject** (25) -- `DurationTextBindingObjectAPIDocumentation.lua`
+- **DurationTextBindingShared** (2) -- `DurationTextBindingSharedDocumentation.lua`
+- **DurationUtil** (4) -- `DurationUtilDocumentation.lua`
 - **DyeColorInfo** (11) -- `DyeColorInfoDocumentation.lua`
 - **DyeColorInfoShared** (2) -- `DyeColorInfoSharedDocumentation.lua`
 - **EditModeManager** (18) -- `EditModeManagerDocumentation.lua`
-- **EditModeManagerConstants** (58) -- `EditModeManagerConstantsDocumentation.lua`
+- **EditModeManagerConstants** (59) -- `EditModeManagerConstantsDocumentation.lua`
 - **EditModeManagerConstants_Mainline** (1) -- `EditModeManagerConstants_MainlineDocumentation.lua`
 - **EncodingUtil** (16) -- `EncodingUtilDocumentation.lua`
 - **EncodingUtilConstants** (1) -- `EncodingUtilConstantsDocumentation.lua`
 - **EncounterEvents** (9) -- `EncounterEventsDocumentation.lua`
-- **EncounterEventsShared** (3) -- `EncounterEventsSharedDocumentation.lua`
-- **EncounterInfo** (11) -- `EncounterInfoDocumentation.lua`
+- **EncounterEventsShared** (4) -- `EncounterEventsSharedDocumentation.lua`
+- **EncounterInfo** (12) -- `EncounterInfoDocumentation.lua`
 - **EncounterJournal** (29) -- `EncounterJournalDocumentation.lua`
 - **EncounterJournalConstants** (8) -- `EncounterJournalConstantsDocumentation.lua`
-- **EncounterTimeline** (50) -- 2 secret -- `EncounterTimelineDocumentation.lua`
+- **EncounterTimeline** (52) -- 3 secret -- `EncounterTimelineDocumentation.lua`
 - **EncounterTimelineConstants** (9) -- `EncounterTimelineConstantsDocumentation.lua`
 - **EncounterWarnings** (13) -- `EncounterWarningsDocumentation.lua`
 - **EndOfMatchUI** (7) -- `EndOfMatchUIDocumentation.lua`
@@ -178,6 +180,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **Expansion** (31) -- `ExpansionDocumentation.lua`
 - **ExpansionConstants** (1) -- `ExpansionConstantsDocumentation.lua`
 - **ExpansionInfo** (4) -- `ExpansionInfoDocumentation.lua`
+- **ExpansionLandingPageConstants** (1) -- `ExpansionLandingPageConstantsDocumentation.lua`
 - **ExpansionLevelConstants** (1) -- `ExpansionLevelConstantsDocumentation.lua`
 - **ExpansionTrial** (3) -- `ExpansionTrialDocumentation.lua`
 - **ExternalEventURL** (4) -- `ExternalEventURLDocumentation.lua`
@@ -232,15 +235,15 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **HousingBasicModeUI** (30) -- `HousingBasicModeUIDocumentation.lua`
 - **HousingCatalogConstants** (9) -- `HousingCatalogConstantsDocumentation.lua`
 - **HousingCatalogSearcher** (48) -- `HousingCatalogSearcherAPIDocumentation.lua`
-- **HousingCatalogUI** (52) -- `HousingCatalogUIDocumentation.lua`
+- **HousingCatalogUI** (53) -- `HousingCatalogUIDocumentation.lua`
 - **HousingCleanupModeUI** (7) -- `HousingCleanupModeUIDocumentation.lua`
-- **HousingCustomizeModeUI** (40) -- `HousingCustomizeModeUIDocumentation.lua`
+- **HousingCustomizeModeUI** (41) -- `HousingCustomizeModeUIDocumentation.lua`
 - **HousingDecorShared** (3) -- `HousingDecorSharedDocumentation.lua`
-- **HousingDecorUI** (40) -- `HousingDecorUIDocumentation.lua`
+- **HousingDecorUI** (41) -- `HousingDecorUIDocumentation.lua`
 - **HousingExpertModeUI** (29) -- `HousingExpertModeUIDocumentation.lua`
 - **HousingFixturePointFrame** (7) -- `HousingFixturePointFrameAPIDocumentation.lua`
 - **HousingInspectModeUI** (8) -- `HousingInspectModeUIDocumentation.lua`
-- **HousingLayoutPinFrame** (16) -- `HousingLayoutPinFrameAPIDocumentation.lua`
+- **HousingLayoutPinFrame** (18) -- `HousingLayoutPinFrameAPIDocumentation.lua`
 - **HousingLayoutUI** (54) -- `HousingLayoutUIDocumentation.lua`
 - **HousingLayoutUITypes** (6) -- `HousingLayoutUITypesDocumentation.lua`
 - **HousingNeighborhoodUI** (45) -- `HousingNeighborhoodUIDocumentation.lua`
@@ -250,9 +253,9 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **ImmersiveInteractionManager** (4) -- `ImmersiveInteractionManagerDocumentation.lua`
 - **InGameNavigation** (11) -- `InGameNavigationDocumentation.lua`
 - **IncomingSummon** (4) -- `IncomingSummonDocumentation.lua`
-- **Input** (29) -- `InputDocumentation.lua`
+- **Input** (32) -- `InputDocumentation.lua`
 - **InputConstants** (1) -- `InputConstantsDocumentation.lua`
-- **Instance** (21) -- `InstanceDocumentation.lua`
+- **Instance** (22) -- `InstanceDocumentation.lua`
 - **InstanceEncounter** (11) -- `InstanceEncounterDocumentation.lua`
 - **InstanceLeaverInfo** (3) -- `InstanceLeaverInfoDocumentation.lua`
 - **InterfaceFileManifest** (2) -- `InterfaceFileManifestDocumentation.lua`
@@ -296,7 +299,9 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **LuaCurveObject** (11) -- `LuaCurveObjectAPIDocumentation.lua`
 - **LuaCurveObjectBase** (4) -- `LuaCurveObjectBaseAPIDocumentation.lua`
 - **LuaCurveObjectConstants** (1) -- `LuaCurveObjectConstantsDocumentation.lua`
-- **LuaDurationObject** (27) -- 8 secret -- `LuaDurationObjectAPIDocumentation.lua`
+- **LuaDurationClock** (2) -- `LuaDurationClockAPIDocumentation.lua`
+- **LuaDurationManualClock** (5) -- `LuaDurationManualClockAPIDocumentation.lua`
+- **LuaDurationObject** (32) -- 8 secret -- `LuaDurationObjectAPIDocumentation.lua`
 - **LuaDurationObjectShared** (1) -- `LuaDurationObjectSharedDocumentation.lua`
 - **LuaTableUtil** (6) -- `LuaTableUtilDocumentation.lua`
 - **MacOptions** (11) -- `MacOptionsDocumentation.lua`
@@ -306,13 +311,13 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **Map** (54) -- `MapDocumentation.lua`
 - **MapConstants** (6) -- `MapConstantsDocumentation.lua`
 - **MapExploration** (6) -- `MapExplorationDocumentation.lua`
-- **MerchantFrame** (12) -- `MerchantFrameDocumentation.lua`
-- **Minimap** (31) -- `MinimapDocumentation.lua`
+- **MerchantFrame** (13) -- `MerchantFrameDocumentation.lua`
+- **Minimap** (30) -- `MinimapDocumentation.lua`
 - **MinimapConstants** (1) -- `MinimapConstantsDocumentation.lua`
-- **MinimapFrame** (35) -- `MinimapFrameAPIDocumentation.lua`
+- **MinimapFrame** (29) -- `MinimapFrameAPIDocumentation.lua`
 - **MirrorTimer** (4) -- `MirrorTimerDocumentation.lua`
 - **ModelAnimationShared** (1) -- `ModelAnimationSharedDocumentation.lua`
-- **MoneyConstants** (1) -- `MoneyConstantsDocumentation.lua`
+- **MoneyConstants** (2) -- `MoneyConstantsDocumentation.lua`
 - **MountConstants** (3) -- `MountConstantsDocumentation.lua`
 - **MountJournal** (56) -- `MountJournalDocumentation.lua`
 - **Movie** (7) -- `MovieDocumentation.lua`
@@ -332,14 +337,14 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **PaperDollInfo** (43) -- `PaperDollInfoDocumentation.lua`
 - **ParentalControls** (2) -- `ParentalControlsDocumentation.lua`
 - **PartyConstants** (4) -- `PartyConstantsDocumentation.lua`
-- **PartyInfo** (80) -- 1 secret -- `PartyInfoDocumentation.lua`
+- **PartyInfo** (88) -- 1 secret -- `PartyInfoDocumentation.lua`
 - **PartyPoseUI** (7) -- `PartyPoseUIDocumentation.lua`
 - **PartyPoseUIConstants** (1) -- `PartyPoseUIConstantsDocumentation.lua`
-- **Performance** (7) -- `PerformanceDocumentation.lua`
+- **Performance** (10) -- `PerformanceDocumentation.lua`
 - **PerksActivities** (22) -- `PerksActivitiesDocumentation.lua`
 - **PerksProgram** (46) -- `PerksProgramDocumentation.lua`
 - **PerksVendorConstants** (3) -- `PerksVendorConstantsDocumentation.lua`
-- **PetBattleConstants** (19) -- `PetBattleConstantsDocumentation.lua`
+- **PetBattleConstants** (3) -- `PetBattleConstantsDocumentation.lua`
 - **PetBattles** (6) -- `PetBattlesDocumentation.lua`
 - **PetConstants** (10) -- `PetConstantsDocumentation.lua`
 - **PetInfo** (20) -- `PetInfoDocumentation.lua`
@@ -353,7 +358,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **PlayerChoice** (18) -- `PlayerChoiceDocumentation.lua`
 - **PlayerDataConstants** (1) -- `PlayerDataConstantsDocumentation.lua`
 - **PlayerHousingConstants** (30) -- `PlayerHousingConstantsDocumentation.lua`
-- **PlayerInfo** (34) -- `PlayerInfoDocumentation.lua`
+- **PlayerInfo** (35) -- `PlayerInfoDocumentation.lua`
 - **PlayerInfoShared** (2) -- `PlayerInfoSharedDocumentation.lua`
 - **PlayerInteractionManager** (10) -- `PlayerInteractionManagerDocumentation.lua`
 - **PlayerInteractionManagerConstants** (1) -- `PlayerInteractionManagerConstantsDocumentation.lua`
@@ -373,7 +378,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **QuestConstants** (9) -- `QuestConstantsDocumentation.lua`
 - **QuestHubInfo** (2) -- `QuestHubInfoDocumentation.lua`
 - **QuestInfoShared** (2) -- `QuestInfoSharedDocumentation.lua`
-- **QuestInfoSystem** (9) -- `QuestInfoSystemDocumentation.lua`
+- **QuestInfoSystem** (10) -- `QuestInfoSystemDocumentation.lua`
 - **QuestItemUse** (2) -- `QuestItemUseDocumentation.lua`
 - **QuestLineInfo** (10) -- `QuestLineInfoDocumentation.lua`
 - **QuestLog** (117) -- `QuestLogDocumentation.lua`
@@ -397,8 +402,8 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **ResearchInfo** (11) -- `ResearchInfoDocumentation.lua`
 - **RestrictedActions** (10) -- `RestrictedActionsDocumentation.lua`
 - **RestrictedActionsConstants** (2) -- `RestrictedActionsConstantsDocumentation.lua`
-- **RolodexConstants** (4) -- `RolodexConstantsDocumentation.lua`
-- **ScenarioInfo** (25) -- 1 secret -- `ScenarioInfoDocumentation.lua`
+- **RolodexConstants** (3) -- `RolodexConstantsDocumentation.lua`
+- **ScenarioInfo** (27) -- 1 secret -- `ScenarioInfoDocumentation.lua`
 - **ScrappingMachineUI** (16) -- `ScrappingMachineUIDocumentation.lua`
 - **Screen** (6) -- `ScreenDocumentation.lua`
 - **ScreenLocationConstants** (1) -- `ScreenLocationConstantsDocumentation.lua`
@@ -485,7 +490,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **StableInfo** (22) -- `StableInfoDocumentation.lua`
 - **StorePublicUI** (4) -- `StorePublicUIDocumentation.lua`
 - **Streaming** (5) -- `StreamingDocumentation.lua`
-- **StringUtil** (16) -- `StringUtilDocumentation.lua`
+- **StringUtil** (17) -- `StringUtilDocumentation.lua`
 - **SummonConstants** (1) -- `SummonConstantsDocumentation.lua`
 - **SummonInfo** (8) -- `SummonInfoDocumentation.lua`
 - **SuperTrackManager** (24) -- `SuperTrackManagerDocumentation.lua`
@@ -498,7 +503,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **TalkingHead** (3) -- `TalkingHeadDocumentation.lua`
 - **TargetScript** (24) -- `TargetScriptDocumentation.lua`
 - **TaxiMap** (11) -- `TaxiMapDocumentation.lua`
-- **TextureUtils** (15) -- `TextureUtilsDocumentation.lua`
+- **TextureUtils** (17) -- `TextureUtilsDocumentation.lua`
 - **Threat** (3) -- `ThreatDocumentation.lua`
 - **Time** (1) -- `TimeDocumentation.lua`
 - **TimerConstants** (1) -- `TimerConstantsDocumentation.lua`
@@ -535,6 +540,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **UICovenantDisplayInfoConstants** (1) -- `UICovenantDisplayInfoConstantsDocumentation.lua`
 - **UIEventToastConstants** (3) -- `UIEventToastConstantsDocumentation.lua`
 - **UIEventToastManager** (7) -- `UIEventToastManagerDocumentation.lua`
+- **UIFileAsset** (4) -- `UIFileAssetAPIDocumentation.lua`
 - **UIFrameManager** (5) -- `UIFrameManagerDocumentation.lua`
 - **UIGenericWidgetDisplay** (5) -- `UIGenericWidgetDisplayDocumentation.lua`
 - **UIMacros** (7) -- `UIMacrosDocumentation.lua`
