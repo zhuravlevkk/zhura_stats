@@ -1,8 +1,8 @@
-## Interface: 120005
+## Interface: 120007
 ## Title: NE Stats
 ## Notes: Shows configurable secondary stat priorities per character and talent setup.
 ## Author: dijtex
-## Version: 1.0.4
+## Version: 1.0.5
 ## SavedVariables: ZhuraStatsDB
 ## OptionalDeps: SharedMedia
 
