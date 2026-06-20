@@ -1,3 +1,45 @@
+# zhura_stats — Handoff (исследование Blizzard_MacroUI)
+
+Дата: 2026-06-20. Ветка: `claude/focused-feynman-8qpj3q`. Изменений нет — сессия исследовательская.
+
+## Что делали
+
+Проверили устройство базы знаний и попытались найти структуру окна макросов.
+
+### Подтверждено: база знаний в `docs/wow-api/`
+
+Построена из `wow-ui-source` скриптом `scripts/gen_api_index.py`. Парсит только `Interface/AddOns/Blizzard_APIDocumentationGenerated/*Documentation.lua`. Содержит:
+- `INDEX.md` — 573 системы, 9906 функций/событий (билд 12.0.7.68256)
+- `SECRET-VALUES.md` — Secret-значения (ключевое для аддона)
+- `ADDON-RESTRICTIONS.md` — енумы ограничений
+- `api-index.json` — машиночитаемый дайджест с сигнатурами
+
+### Что нашли по макросам в базе
+
+Система `UIMacros` — только 5 записей:
+- `GetMacroName(macroId)` → `name`
+- `GetSelectedMacroIcon(macroId)` → `textureNum`
+- `RunMacroText(text, button)`
+- `SetMacroExecuteLineCallback(cb)`
+- событие `UPDATE_MACROS`
+
+Это только задокументированный API. Само окно макросов (фрейм, кнопки, редактор) — в `Blizzard_MacroUI`, который наш дайджест не покрывает.
+
+## Что сделать локально
+
+Посмотреть устройство окна макросов:
+
+```
+C:\dev\wow-ui-source\Interface\AddOns\Blizzard_MacroUI\
+```
+
+Интересные файлы там (вероятно):
+- `Blizzard_MacroUI.lua` — основная логика фрейма
+- `Blizzard_MacroUI.xml` — XML-разметка фреймов (если есть)
+- `Blizzard_MacroUI.toc` — список файлов аддона
+
+---
+
 # NE Stats / zhura_stats — Handoff (layout + DR refactor)
 
 Дата: 2026-05-31. Ветка: `feature/ref-accord-wow-api`. Дерево было чистое в начале сессии (изменения НЕ закоммичены — закоммить сам).
