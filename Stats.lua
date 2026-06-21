@@ -428,6 +428,57 @@ function Stats.ReadStat(key)
     return MakeResult(key, nil)
 end
 
+-- Single-call live getters for the stripped-down in-combat display. Each returns
+-- exactly ONE raw API value (no arithmetic, no sums) so the result can be a
+-- Secret we pass straight to FontString:SetFormattedText without ever inspecting
+-- it. Stats that need Lua math are handled specially or omitted:
+--   MOVEMENT_SPEED -> needs (speed / 7) * 100, no clean passthrough (omitted).
+--   VERS           -> rating bonus only; the passive/aura component (a second
+--                     Secret we cannot add) is dropped while restricted.
+--   DURA/ILVL/GOLD -> never Secret, so they are absent here and keep the full
+--                     formatted path even in combat.
+local SECRET_LIVE_GETTERS = {
+    STR = function() return (select(2, UnitStat("player", STAT_IDS.STR))) end,
+    AGI = function() return (select(2, UnitStat("player", STAT_IDS.AGI))) end,
+    INT = function() return (select(2, UnitStat("player", STAT_IDS.INT))) end,
+    HASTE = function() return GetHaste and GetHaste() end,
+    CRIT = function() return GetCritChance and GetCritChance() end,
+    MASTERY = function() return GetMasteryEffect and (GetMasteryEffect()) end,
+    VERS = function()
+        local id = CR_VERSATILITY_DAMAGE_DONE or CR_VERSATILITY_DAMAGE_TAKEN or CR_VERSATILITY
+        return GetCombatRatingBonus and id and GetCombatRatingBonus(id)
+    end,
+    AVOIDANCE = function() return GetAvoidance and GetAvoidance() end,
+    PARRY = function() return GetParryChance and GetParryChance() end,
+    DODGE = function() return GetDodgeChance and GetDodgeChance() end,
+    BLOCK = function() return GetBlockChance and GetBlockChance() end,
+    LEECH = function() return GetLifesteal and GetLifesteal() end,
+    SPEED = function() return GetCombatRatingBonus and CR_SPEED and GetCombatRatingBonus(CR_SPEED) end,
+}
+
+-- Live passthrough probe. Returns (true, rawSecret) when the stat's live value
+-- is a Secret (combat / M+ / encounter / PvP) so the renderer can display it
+-- without reading it. Returns false when the value is readable (caller should
+-- use the normal formatted path) or the stat has no clean single-call value.
+-- Never inspects the raw value beyond issecretvalue.
+function Stats.ReadSecretPassthrough(key)
+    local getter = SECRET_LIVE_GETTERS[key]
+    if not getter then
+        return false
+    end
+
+    local ok, raw = pcall(getter)
+    if not ok then
+        return false
+    end
+
+    if IsSecret(raw) then
+        return true, raw
+    end
+
+    return false
+end
+
 function Stats.GetMovementSpeedPercent()
     return GetMovementSpeedPercent()
 end
