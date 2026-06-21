@@ -239,6 +239,20 @@ When modifying code:
 
 ---
 
+## Release Versioning (MANDATORY)
+
+When a change affects the shipped addon build, also bump `## Version` in `ZhuraStats.toc`.
+
+This includes at minimum:
+* compatibility updates for a new WoW patch or interface number
+* updates to shipped data such as `WoWLogsStatsPrio.lua`
+* user-visible feature changes or bug fixes
+
+Do not assume release automation will bump the addon version for you.
+GitHub workflows read the version from `ZhuraStats.toc`; they do not invent it.
+
+---
+
 ## Renderer Stability Rules
 
 The stats frame must feel anchored and predictable during live stat updates.
