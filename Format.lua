@@ -333,6 +333,21 @@ local function GetStatLabelOverride(profile, statKey)
     return nil
 end
 
+-- Public label resolver: user override (profile.stats[].nameOverride) or the
+-- localized default. Used by the renderer for stripped-down secret rows that
+-- bypass BuildStatSegments.
+function Addon:GetStatLabel(statKey, profile, def)
+    local override = GetStatLabelOverride(profile, statKey)
+    if override then
+        return override
+    end
+    local resolvedDef = def or (self.StatDefinitions and self.StatDefinitions[statKey])
+    if resolvedDef and resolvedDef.label then
+        return self:S(resolvedDef.label)
+    end
+    return statKey
+end
+
 -- Build the per-stat row as an ordered list of segments instead of one glued
 -- string. Each segment is its own grid cell so the renderer can align ratings,
 -- percents and reference deltas into independent sub-columns.

@@ -164,6 +164,87 @@ local function ResetRenderWidgets(addon, lines, lineOverlays, renderRows)
     end
 end
 
+-- Build a measured row for a stat whose live value is a Secret (combat / M+ /
+-- encounter / PvP). The number cannot be read or formatted in Lua, so we render
+-- it stripped down: [icon] [label] [value], pushing the raw Secret into the
+-- FontString via SetFormattedText at draw time. No rating split, DR, reference
+-- arrows or value-based coloring — all of those require reading the value.
+local function BuildSecretMeasuredStat(addon, entry, def, profile, defaults, measureLine, secretValue)
+    local resolvedDef = def or (addon.StatDefinitions and addon.StatDefinitions[entry.key])
+    if not resolvedDef then
+        return nil
+    end
+
+    local precision = math.max(0, math.min(3, profile.percentPrecision or defaults.percentPrecision or 0))
+    local isPercent = resolvedDef.suffix == "%"
+    local valueFormat = isPercent and ("%." .. precision .. "f%%") or "%.0f"
+    -- Non-secret placeholder sized to the widest realistic value. ALL width and
+    -- height measuring uses this string — never the Secret (see the value block).
+    local placeholder = string.format(valueFormat, isPercent and 188.8 or 1888888)
+
+    local segments = {}
+    local textHeight = 0
+
+    local statLabel = addon:GetStatLabel(entry.key, profile, resolvedDef)
+    if profile.showLabels and statLabel and statLabel ~= "" then
+        measureLine:SetText(statLabel)
+        textHeight = math.max(textHeight, measureLine:GetStringHeight())
+        table.insert(segments, {
+            col = "label",
+            text = statLabel,
+            justify = "LEFT",
+            width = GetStringWidth(measureLine),
+        })
+    end
+
+    if profile.showValues ~= false then
+        -- Measure width/height from the non-secret placeholder ONLY. We must
+        -- never put the Secret on measureLine: a FontString that has held secret
+        -- text returns a Secret width/height afterwards, and SetText does NOT
+        -- clear that aspect, so it would poison every later measurement (this
+        -- line shares measureLine with all other rows). The real Secret is
+        -- written straight to the row FontString via SetFormattedText at draw
+        -- time and is never measured.
+        measureLine:SetText(placeholder)
+        textHeight = math.max(textHeight, measureLine:GetStringHeight())
+
+        table.insert(segments, {
+            col = "value",
+            secret = true,
+            secretFormat = valueFormat,
+            secretValue = secretValue,
+            justify = "RIGHT",
+            width = GetStringWidth(measureLine),
+        })
+    end
+
+    if #segments == 0 then
+        return nil
+    end
+
+    if textHeight <= 0 then
+        measureLine:SetText("0")
+        textHeight = measureLine:GetStringHeight()
+    end
+
+    local iconSize = 0
+    if profile.showStatIcons == true and resolvedDef.icon then
+        iconSize = math.max(MIN_DYNAMIC_FONT_SIZE, math.ceil(textHeight))
+    end
+
+    return {
+        entry = entry,
+        def = resolvedDef,
+        -- Benign statResult: live (not stale, so ResolveSegmentColor won't dim)
+        -- and carries no rating/value/dr for the hover/reference paths to read.
+        statResult = { key = entry.key, source = "live_secret", stale = false, secret = true },
+        drPenalty = nil,
+        textHeight = textHeight,
+        iconSize = iconSize,
+        segments = segments,
+    }
+end
+
 -- Measure every visible stat into a segment list with per-segment widths.
 -- measured = {
 --   entry, def, statResult, drPenalty, textHeight,
@@ -176,57 +257,79 @@ local function BuildMeasuredStats(addon, statsReader, statDefinitions, visibleSt
 
     for _, entry in ipairs(visibleStats) do
         local def = statDefinitions[entry.key]
-        local readOk, statResult = pcall(function()
-            return statsReader and statsReader.ReadStat and statsReader.ReadStat(entry.key)
-        end)
-        if readOk and statResult and statResult.value ~= nil then
-            local segOk, segments = pcall(function()
-                return addon:BuildStatSegments(entry.key, statResult, profile, def)
+
+        -- In combat / M+ / encounter / PvP the live stat value is a Secret we
+        -- cannot read or format in Lua. Render it live but stripped down (label
+        -- + raw number via SetFormattedText) instead of the stale snapshot.
+        -- Stats that never go Secret (durability / ilvl / gold) report no secret
+        -- here and fall through to the full formatted path.
+        local hasSecret, secretValue = false, nil
+        if statsReader and statsReader.ReadSecretPassthrough then
+            local okSecret, isSecretLive, rawSecret = pcall(statsReader.ReadSecretPassthrough, entry.key)
+            if okSecret and isSecretLive then
+                hasSecret, secretValue = true, rawSecret
+            end
+        end
+
+        if hasSecret then
+            local measured = BuildSecretMeasuredStat(addon, entry, def, profile, defaults, measureLine, secretValue)
+            if measured then
+                table.insert(measuredStats, measured)
+                maxLineHeight = math.max(maxLineHeight, math.ceil(measured.textHeight))
+            end
+        else
+            local readOk, statResult = pcall(function()
+                return statsReader and statsReader.ReadStat and statsReader.ReadStat(entry.key)
             end)
-            if segOk and segments and #segments > 0 then
-                local measuredSegments = {}
-                local textHeight = 0
-                for _, seg in ipairs(segments) do
-                    local width
-                    if seg.col == "ref_arrow" then
-                        width = RefArrowSegmentWidth(seg)
-                        textHeight = math.max(textHeight, width)
-                    else
-                        measureLine:SetText(seg.text or "")
-                        textHeight = math.max(textHeight, measureLine:GetStringHeight())
-                        width = GetStringWidth(measureLine)
+            if readOk and statResult and statResult.value ~= nil then
+                local segOk, segments = pcall(function()
+                    return addon:BuildStatSegments(entry.key, statResult, profile, def)
+                end)
+                if segOk and segments and #segments > 0 then
+                    local measuredSegments = {}
+                    local textHeight = 0
+                    for _, seg in ipairs(segments) do
+                        local width
+                        if seg.col == "ref_arrow" then
+                            width = RefArrowSegmentWidth(seg)
+                            textHeight = math.max(textHeight, width)
+                        else
+                            measureLine:SetText(seg.text or "")
+                            textHeight = math.max(textHeight, measureLine:GetStringHeight())
+                            width = GetStringWidth(measureLine)
+                        end
+                        table.insert(measuredSegments, {
+                            col = seg.col,
+                            text = seg.text or "",
+                            texture = seg.texture,
+                            textureSize = seg.textureSize,
+                            color = seg.color,
+                            justify = seg.justify or "LEFT",
+                            drFlag = seg.drFlag,
+                            width = width,
+                        })
                     end
-                    table.insert(measuredSegments, {
-                        col = seg.col,
-                        text = seg.text or "",
-                        texture = seg.texture,
-                        textureSize = seg.textureSize,
-                        color = seg.color,
-                        justify = seg.justify or "LEFT",
-                        drFlag = seg.drFlag,
-                        width = width,
+                    if textHeight <= 0 then
+                        measureLine:SetText("0")
+                        textHeight = measureLine:GetStringHeight()
+                    end
+
+                    local iconSize = 0
+                    if profile.showStatIcons == true and def and def.icon then
+                        iconSize = math.max(MIN_DYNAMIC_FONT_SIZE, math.ceil(textHeight))
+                    end
+
+                    table.insert(measuredStats, {
+                        entry = entry,
+                        def = def,
+                        statResult = statResult,
+                        drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
+                        textHeight = textHeight,
+                        iconSize = iconSize,
+                        segments = measuredSegments,
                     })
+                    maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
                 end
-                if textHeight <= 0 then
-                    measureLine:SetText("0")
-                    textHeight = measureLine:GetStringHeight()
-                end
-
-                local iconSize = 0
-                if profile.showStatIcons == true and def and def.icon then
-                    iconSize = math.max(MIN_DYNAMIC_FONT_SIZE, math.ceil(textHeight))
-                end
-
-                table.insert(measuredStats, {
-                    entry = entry,
-                    def = def,
-                    statResult = statResult,
-                    drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
-                    textHeight = textHeight,
-                    iconSize = iconSize,
-                    segments = measuredSegments,
-                })
-                maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
             end
         end
     end
@@ -583,7 +686,14 @@ local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlay
                             fs:SetJustifyV("MIDDLE")
                         end
                         fs:SetTextColor(r, g, b, 1)
-                        fs:SetText(seg.text)
+                        if seg.secret then
+                            -- Live Secret value: the engine formats it; Lua never reads it.
+                            if not pcall(fs.SetFormattedText, fs, seg.secretFormat, seg.secretValue) then
+                                fs:SetText("")
+                            end
+                        else
+                            fs:SetText(seg.text)
+                        end
                         fs:Show()
 
                         if seg.col == "ref" and pendingRefArrow then
