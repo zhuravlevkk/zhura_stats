@@ -1,4 +1,4 @@
-# Addon Restrictions (build 12.0.7.68453)
+# Addon Restrictions (build 12.0.7.68887)
 
 Generated from `RestrictedActionsConstantsDocumentation.lua` and selected entries in `RestrictedActionsDocumentation.lua`.
 
