@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120007, 120100
 ## Title: NE Stats
 ## Notes: Shows configurable secondary stat priorities per character and talent setup.
 ## Author: dijtex
