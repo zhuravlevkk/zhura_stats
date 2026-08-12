@@ -1,10 +1,10 @@
-# Secret Values -- conditionally-secret API (build 12.0.7.68974)
+# Secret Values -- conditionally-secret API (build 12.1.0.69273)
 
 Functions whose return value becomes a **Secret** under the given condition. In tainted addon code you must call `issecretvalue(v)` before any comparison, arithmetic, or table-index on the result -- otherwise the game raises a Lua error.
 
 Predicate descriptions come from `SecretPredicatesDocumentation.lua`. See also `ADDON-RESTRICTIONS.md` for restriction types such as Challenge Mode (Mythic+).
 
-Total: 278 entries across 20 conditions.
+Total: 300 entries across 23 conditions.
 
 ## `SecretInActivePvPMatch` (2)
 
@@ -144,7 +144,13 @@ Total: 278 entries across 20 conditions.
 - `GetPoint` -- SimpleScriptRegionResizing (`SecretArguments`: AllowedWhenUntainted)
 - `GetPointByName` -- SimpleScriptRegionResizing (`SecretArguments`: AllowedWhenUntainted)
 
-## `SecretWhenCooldownsRestricted` (14)
+## `SecretWhenAurasRestricted` (1)
+
+> Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect.
+
+- `UnitAura` -- UnitAura
+
+## `SecretWhenCooldownsRestricted` (15)
 
 > Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect. Individual spells may be flagged as never or always secret, which takes priority over restrictions.
 
@@ -153,6 +159,7 @@ Total: 278 entries across 20 conditions.
 - `GetActionDisplayCount` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
 - `GetActionLossOfControlCooldownInfo` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
 - `GetActionUseCount` -- ActionBarFrame (`SecretArguments`: AllowedWhenUntainted)
+- `GetLastCategoryCooldownSource` -- Spell (`SecretArguments`: AllowedWhenTainted)
 - `GetSpellCastCount` -- Spell (`SecretArguments`: AllowedWhenTainted)
 - `GetSpellCharges` -- Spell (`SecretArguments`: AllowedWhenTainted)
 - `GetSpellCooldown` -- Spell (`SecretArguments`: AllowedWhenTainted)
@@ -247,25 +254,55 @@ Total: 278 entries across 20 conditions.
 
 - `UnitHealthMax` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
-## `SecretWhenUnitIdentityRestricted` (15)
+## `SecretWhenUnitIdentityRestricted` (32)
 
 > Guarded APIs and events produce secret values when the unit isn't player-controlled or in the party/raid. For compound tokens (eg. 'boss1target'), results are secret if any unit in the chain fails this.
 
 - `GetUnitCriteriaProgressValues` -- ScenarioInfo (`SecretArguments`: AllowedWhenUntainted)
+- `GetInspectSpecialization` -- SpecializationInfo (`SecretArguments`: AllowedWhenUntainted)
 - `PartyKill` -- Unit
 - `PlayerSoftInteractChanged` -- Unit
+- `UnitClass` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitClassBase` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitCreatureFamily` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitCreatureID` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitCreatureType` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitDied` -- Unit
 - `UnitFullName` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitGUID` -- Unit (`SecretArguments`: AllowedWhenUntainted)
-- `UnitName` -- Unit (`SecretArguments`: AllowedWhenTainted)
+- `UnitGroupRolesAssigned` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitGroupRolesAssignedEnum` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitHonorLevel` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitInRaid` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitIsGroupAssistant` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitIsGroupLeader` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitIsOwnerOrControllerOfUnit` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitIsPVP` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitIsRaidOfficer` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitLeadsAnyGroup` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitNameFromGUID` -- Unit (`SecretArguments`: AllowedWhenTainted)
 - `UnitNameUnmodified` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitOwnerGUID` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitPVPName` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitPhaseReason` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitRace` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitSex` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitSexBase` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitTokenFromGUID` -- Unit (`SecretArguments`: AllowedWhenTainted)
+- `UnitGetAvailableRoles` -- UnitRole (`SecretArguments`: AllowedWhenUntainted)
+
+## `SecretWhenUnitNameIdentityRestricted` (1)
+
+> Guarded APIs and events produce secret values under regular unit identity secrecy rules, except in PvP when the queried unit is a player.
+
+- `UnitName` -- Unit (`SecretArguments`: AllowedWhenTainted)
+
+## `SecretWhenUnitPossessionRestricted` (2)
+
+> Guarded APIs and events produce secret values based on aura secrecy, except for unit tokens under the player's direct control.
+
+- `UnitIsCharmed` -- Unit (`SecretArguments`: AllowedWhenUntainted)
+- `UnitIsPossessed` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 
 ## `SecretWhenUnitPowerMaxRestricted` (1)
 
@@ -313,7 +350,7 @@ Total: 278 entries across 20 conditions.
 
 ## `SecretWhenUnitStatsRestricted` (50)
 
-> Guarded APIs and events produce secret values when access to unit auras would generally produce secret values.
+> Guarded APIs and events produce secret values when access to unit stats would generally produce secret values.
 
 > **Related:** `SecretWhenUnitAuraRestricted`: Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect. Individual spells may be flagged as never or always secret, which takes priority over restrictions.
 
