@@ -1,7 +1,7 @@
-# WoW API Index (build 12.1.0.69273)
+# WoW API Index (build 12.1.0.69283)
 
-Generated from a `wow-ui-source` clone on 2026-08-12 03:54 UTC.
-Systems: 593 | Functions/events: 10243 | Conditionally-secret entries: 300
+Generated from a `wow-ui-source` clone on 2026-08-13 03:59 UTC.
+Systems: 593 | Functions/events: 10244 | Conditionally-secret entries: 300
 
 Regenerate with `python scripts/gen_api_index.py`.
 
@@ -155,7 +155,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **DebugToggle** (10) -- `DebugToggleDocumentation.lua`
 - **DelvesConstants** (9) -- `DelvesConstantsDocumentation.lua`
 - **DelvesUI** (52) -- `DelvesUIDocumentation.lua`
-- **Discord** (26) -- `DiscordDocumentation.lua`
+- **Discord** (27) -- `DiscordDocumentation.lua`
 - **DiscordConstants** (4) -- `DiscordConstantsDocumentation.lua`
 - **DuelInfo** (6) -- `DuelInfoDocumentation.lua`
 - **DungeonEncounterConstants** (3) -- `DungeonEncounterConstantsDocumentation.lua`
