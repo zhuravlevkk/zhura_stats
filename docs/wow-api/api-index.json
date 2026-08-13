@@ -1,5 +1,5 @@
 {
- "version": "12.1.0.69273",
+ "version": "12.1.0.69283",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -45815,6 +45815,29 @@
       {
        "name": "userID",
        "type": "DiscordID",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetDiscordUserName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "userID",
+       "type": "DiscordID",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "userName",
+       "type": "KStringDiscordUserName",
        "nilable": false
       }
      ],
