@@ -57,7 +57,13 @@ $AllSpecs = @(
 
 $Activities = @(
     @{ slug = "m+";   overviewPart = "mythic-plus/overview/10/all-dungeons/this-week"; talentsPart = "mythic-plus/talents/10/all-dungeons/this-week" },
-    @{ slug = "raid"; overviewPart = "raid/overview/mythic/all-bosses";                talentsPart = "raid/talents/mythic/all-bosses" }
+    @{
+        slug                 = "raid"
+        overviewPart         = "raid/overview/mythic/all-bosses"
+        talentsPart          = "raid/talents/mythic/all-bosses"
+        fallbackOverviewPart = "raid/overview/heroic/all-bosses"
+        fallbackTalentsPart  = "raid/talents/heroic/all-bosses"
+    }
 )
 
 # Two job types: "overview" (stat priority) and "talents" (hero breakdown)
@@ -68,15 +74,17 @@ foreach ($act in $Activities) {
             type     = "overview"
             class    = $s.class
             spec     = $s.spec
-            activity = $act.slug
-            url      = "https://www.archon.gg/wow/builds/$($s.spec)/$($s.class)/$($act.overviewPart)"
+            activity    = $act.slug
+            url         = "https://www.archon.gg/wow/builds/$($s.spec)/$($s.class)/$($act.overviewPart)"
+            fallbackUrl = if ($act.fallbackOverviewPart) { "https://www.archon.gg/wow/builds/$($s.spec)/$($s.class)/$($act.fallbackOverviewPart)" } else { $null }
         })
         $jobs.Add(@{
             type     = "talents"
             class    = $s.class
             spec     = $s.spec
-            activity = $act.slug
-            url      = "https://www.archon.gg/wow/builds/$($s.spec)/$($s.class)/$($act.talentsPart)"
+            activity    = $act.slug
+            url         = "https://www.archon.gg/wow/builds/$($s.spec)/$($s.class)/$($act.talentsPart)"
+            fallbackUrl = if ($act.fallbackTalentsPart) { "https://www.archon.gg/wow/builds/$($s.spec)/$($s.class)/$($act.fallbackTalentsPart)" } else { $null }
         })
     }
 }
@@ -104,11 +112,26 @@ $worker = {
     }
 
     try {
-        $resp = Invoke-WebRequest -Uri $job.url -UseBasicParsing -TimeoutSec 20 -Headers $headers
-        $m    = [regex]::Match($resp.Content, '<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', 'Singleline')
-        if (-not $m.Success) { $result.status = "skip:no-next-data"; return $result }
+        $page = $null
+        foreach ($url in @($job.url, $job.fallbackUrl)) {
+            if (-not $url) { continue }
 
-        $page     = ($m.Groups[1].Value | ConvertFrom-Json).props.pageProps.page
+            $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20 -Headers $headers
+            $m    = [regex]::Match($resp.Content, '<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', 'Singleline')
+            if (-not $m.Success) { continue }
+
+            $candidatePage = ($m.Groups[1].Value | ConvertFrom-Json).props.pageProps.page
+            $hasParseCount = $candidatePage.PSObject.Properties.Name -contains "totalParses"
+            if ($hasParseCount -and [long]$candidatePage.totalParses -eq 0 -and $url -ne $job.fallbackUrl) {
+                continue
+            }
+
+            $page = $candidatePage
+            if ($url -eq $job.fallbackUrl) { $result.label += " [heroic fallback]" }
+            break
+        }
+        if (-not $page) { $result.status = "skip:no-page-data"; return $result }
+
         $sections = $page.sections
 
         # ---- OVERVIEW: stat priority ----
@@ -120,6 +143,7 @@ $worker = {
             if (-not $statSection) { $result.status = "skip:no-stat-section"; return $result }
 
             $stats       = $statSection.props.stats
+            if (-not $stats -or @($stats).Count -lt 2) { $result.status = "skip:no-stat-data"; return $result }
             $primary     = ($stats | Where-Object { $_.order -eq 1 } | Select-Object -First 1)
             $primaryName = if ($primary) { $primary.name.ToLower() } else { "primary" }
 
@@ -140,39 +164,47 @@ $worker = {
             }
             if (-not $heroSection) { $result.status = "skip:no-hero-section"; return $result }
 
-            # Build id->name map from talentTreeBlueprints
+            # Build hero tree and root talent maps from talentTreeBlueprints.
             $idToName = @{}
+            $rootTalentToTree = @{}
             $blueprints = $page.talentTreeBlueprints
             if ($blueprints) {
                 foreach ($bp in $blueprints.PSObject.Properties) {
                     foreach ($ht in $bp.Value.heroTrees) {
                         $idToName[[int]$ht.id] = $ht.name
                     }
+                    foreach ($node in $bp.Value.changeSet.allNodes) {
+                        if ($node.type -ne "subtree") { continue }
+                        foreach ($ability in $node.abilities) {
+                            if ($null -ne $ability.heroTreeId) {
+                                $rootTalentToTree[[int]$ability.id] = [int]$ability.heroTreeId
+                            }
+                        }
+                    }
                 }
             }
 
-            $subTreeStats = $heroSection.props.subTreeStats
-            if (-not $subTreeStats) { $result.status = "skip:no-subtree-stats"; return $result }
-
-            # Parse usage % from description with regex
-            $desc        = $heroSection.props.description
-            $usageMap    = @{}
-            $usageRex    = [regex]'<Styled type=''[^'']+''>([\d.]+)%</Styled> usage'
-            $nameRex     = [regex]'<Styled type=''[^'']+''>([\w ]+)</Styled> with'
-            $nameMatches = $nameRex.Matches($desc)
-            $pctMatches  = $usageRex.Matches($desc)
-            for ($i = 0; $i -lt [math]::Min($nameMatches.Count, $pctMatches.Count); $i++) {
-                $usageMap[$nameMatches[$i].Groups[1].Value] = [double]$pctMatches[$i].Groups[1].Value
+            # Usage now lives in selectedNodes. Normalize the root hero talent
+            # weights because some parses may not have a recognized hero tree.
+            $usageByTree = @{}
+            foreach ($selection in $heroSection.props.talentTree.dehydratedBuild.selectedNodes) {
+                $talentId = [int]$selection[0]
+                if ($rootTalentToTree.ContainsKey($talentId)) {
+                    $usageByTree[$rootTalentToTree[$talentId]] = [double]$selection[1]
+                }
             }
+            $usageTotal = ($usageByTree.Values | Measure-Object -Sum).Sum
+            if (-not $usageByTree.Count -or $usageTotal -le 0) { $result.status = "skip:no-hero-usage"; return $result }
 
-            $heroLines = ($subTreeStats | Sort-Object rank | ForEach-Object {
-                $id   = [int]$_.id
+            $rank = 0
+            $heroLines = ($usageByTree.GetEnumerator() | Sort-Object Value -Descending | ForEach-Object {
+                $rank++
+                $id   = [int]$_.Key
                 $name = if ($idToName.ContainsKey($id)) { $idToName[$id] } else { "hero_$id" }
                 $slug = $name.ToLower() -replace ' ', '-'
-                $pct  = if ($usageMap.ContainsKey($name)) { $usageMap[$name] } else { 0 }
-                "        { hero = `"$slug`", rank = $($_.rank), usage_pct = $pct },"
+                $pct  = [math]::Round(100 * [double]$_.Value / $usageTotal, 1)
+                "        { hero = `"$slug`", rank = $rank, usage_pct = $pct },"
             }) -join "`n"
-
             $key = "$($job.class)/$($job.spec)/$($job.activity)"
             $result.lua = "WoWLogsStatsPrio[`"$key`"].heroes = {`n$heroLines`n}`n"
         }
