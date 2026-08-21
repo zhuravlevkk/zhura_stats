@@ -1,5 +1,5 @@
 {
- "version": "12.1.0.69382",
+ "version": "12.1.0.69404",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -126071,7 +126071,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
@@ -126330,7 +126330,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
@@ -126989,7 +126989,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
@@ -127214,7 +127214,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
@@ -139418,7 +139418,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
@@ -139817,7 +139817,7 @@
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
-     "secret_args": "NotAllowed",
+     "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
       {
