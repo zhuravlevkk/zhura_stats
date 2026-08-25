@@ -1,5 +1,5 @@
 {
- "version": "12.1.0.69404",
+ "version": "12.1.0.69465",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -172522,6 +172522,29 @@
        "name": "partyIndex",
        "type": "luaIndex",
        "nilable": true
+      }
+     ],
+     "returns": [
+      {
+       "name": "result",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "UnitIsPlayerControlledOrGroupMember",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true for 'player', 'pet', 'vehicle', or any of 'partyn', 'partypetn', 'raidn', 'raidpetn'",
+     "arguments": [
+      {
+       "name": "unit",
+       "type": "UnitToken",
+       "nilable": false
       }
      ],
      "returns": [

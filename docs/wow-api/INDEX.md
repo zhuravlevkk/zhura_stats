@@ -1,7 +1,7 @@
-# WoW API Index (build 12.1.0.69404)
+# WoW API Index (build 12.1.0.69465)
 
-Generated from a `wow-ui-source` clone on 2026-08-24 02:54 UTC.
-Systems: 593 | Functions/events: 10244 | Conditionally-secret entries: 300
+Generated from a `wow-ui-source` clone on 2026-08-25 02:50 UTC.
+Systems: 593 | Functions/events: 10245 | Conditionally-secret entries: 300
 
 Regenerate with `python scripts/gen_api_index.py`.
 
@@ -575,7 +575,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **UIWidgetManagerShared** (9) -- `UIWidgetManagerSharedDocumentation.lua`
 - **URL** (3) -- `URLDocumentation.lua`
 - **UiModelSceneConstants** (2) -- `UiModelSceneConstantsDocumentation.lua`
-- **Unit** (358) -- 81 secret -- `UnitDocumentation.lua`
+- **Unit** (359) -- 81 secret -- `UnitDocumentation.lua`
 - **UnitAura** (43) -- 14 secret -- `UnitAuraDocumentation.lua`
 - **UnitAuraConstants** (2) -- `UnitAuraConstantsDocumentation.lua`
 - **UnitAuraShared** (3) -- `UnitAuraSharedDocumentation.lua`
