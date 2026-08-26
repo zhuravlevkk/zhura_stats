@@ -1,5 +1,5 @@
 {
- "version": "12.1.0.69465",
+ "version": "12.1.0.69497",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -180353,13 +180353,7 @@
      "secret_flags": [],
      "secret_args": "AllowedWhenTainted",
      "documentation": "SpeakText also supports XML TTS tags on Windows including bookmarks - see SAPI XML TTS Tutorial in Microsoft's online documentation for more information.",
-     "arguments": [
-      {
-       "name": "text",
-       "type": "cstring",
-       "nilable": false
-      }
-     ],
+     "arguments": [],
      "returns": [],
      "payload": []
     },
@@ -181243,11 +181237,6 @@
       {
        "name": "utteranceID",
        "type": "number",
-       "nilable": false
-      },
-      {
-       "name": "bookmarkName",
-       "type": "cstring",
        "nilable": false
       }
      ]
