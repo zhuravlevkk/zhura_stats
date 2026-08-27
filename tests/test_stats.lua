@@ -2,8 +2,32 @@ local stub = require("tests/wow_stub")
 require("Stats")
 
 local Stats = stub.ns.Stats
+local Addon = stub.Addon
 
 describe("Stats", function()
+  describe("GetPlayerClassColor", function()
+    it("returns the player's class color", function()
+      local oldColors = _G.RAID_CLASS_COLORS
+      _G.RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.5, b = 0.75 } }
+
+      local color = Addon:GetPlayerClassColor()
+      assert.are.same({ 0.25, 0.5, 0.75 }, color)
+
+      _G.RAID_CLASS_COLORS = oldColors
+    end)
+
+    it("does not index a secret class token", function()
+      local oldUnitClass = _G.UnitClass
+      _G.UnitClass = function()
+        return { __secret = true }, { __secret = true }
+      end
+
+      assert.is_nil(Addon:GetPlayerClassColor())
+
+      _G.UnitClass = oldUnitClass
+    end)
+  end)
+
   describe("ReadStat", function()
     it("falls back to the cached primary stat when UnitStat returns a secret value", function()
       local oldUnitStat = _G.UnitStat

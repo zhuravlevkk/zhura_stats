@@ -4,8 +4,7 @@
 name: Update Stat Priority
 
 on:
-  schedule:
-    - cron: "0 23 * * 6"
+  # Scheduled updates are paused until Archon exposes an approved API endpoint.
   workflow_dispatch:
 
 permissions:
@@ -23,7 +22,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          ref: master
           fetch-depth: 0
 
       - name: Skip if already fetched today (UTC)
@@ -42,10 +40,19 @@ jobs:
           }
           "skip=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Scrape archon.gg and regenerate WoWLogsStatsPrio.lua
+      - name: Set up Node.js
         if: steps.freshness.outputs.skip != 'true'
-        shell: pwsh
-        run: ./scripts/Get-AllStats.ps1 -OutFile "./WoWLogsStatsPrio.lua" -Threads 15
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Query Warcraft Logs API and regenerate WoWLogsStatsPrio.lua
+        if: steps.freshness.outputs.skip != 'true'
+        env:
+          WCL_CLIENT_ID: ${{ secrets.WCL_CLIENT_ID }}
+          WCL_CLIENT_SECRET: ${{ secrets.WCL_CLIENT_SECRET }}
+        run: |
+          node ./scripts/Get-AllStats.mjs --out-file "./WoWLogsStatsPrio.lua" --threads 3 --max-attempts 3 --retry-base-delay-seconds 5
 
       - name: Bump version, commit, and push if data changed
         if: steps.freshness.outputs.skip != 'true'

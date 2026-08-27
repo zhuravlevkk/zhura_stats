@@ -574,13 +574,13 @@ local function BuildRenderLayout(addon, profile, defaults, measuredStats, maxLin
     }
 end
 
-local function ResolveSegmentColor(addon, measured, seg, profile)
+local function ResolveSegmentColor(addon, measured, seg, profile, classColor)
     -- ref segments carry their own color verbatim.
     if seg.color then
         return seg.color[1], seg.color[2], seg.color[3]
     end
 
-    local color = measured.entry.color
+    local color = classColor or measured.entry.color
     local r, g, b = color[1], color[2], color[3]
 
     -- DR coloring: only segments explicitly flagged (percent/value + the DR tag)
@@ -600,7 +600,7 @@ local function ResolveSegmentColor(addon, measured, seg, profile)
     return r, g, b
 end
 
-local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile)
+local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile, classColor)
     for _, rowLayout in ipairs(layout.rows) do
         local measured = rowLayout.measured
         local row = renderRows and renderRows[rowLayout.index]
@@ -664,7 +664,7 @@ local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlay
                     cellX = subOffsets[seg.col] or 0
                 end
 
-                local r, g, b = ResolveSegmentColor(addon, measured, seg, profile)
+                local r, g, b = ResolveSegmentColor(addon, measured, seg, profile, classColor)
 
                 if seg.col == "ref_arrow" and seg.texture then
                     pendingRefArrow = {
@@ -835,6 +835,7 @@ function Addon:RefreshStatsImpl()
     local visibleStats = self:GetVisibleStats()
     local fontPath, fontFlags = self:GetFontInfo(profile.fontKey)
     local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
+    local classColor = profile.useClassColor and self:GetPlayerClassColor() or nil
     local controlsWidth, controlsHeight, controlsGap = self:GetFrameControlsSize()
     -- Signature kept for potential future caching; layout itself is now fully
     -- deterministic from measured widths, so no reserved-width memo is needed.
@@ -845,7 +846,7 @@ function Addon:RefreshStatsImpl()
     measureLine:SetFont(fontPath, fontSize, fontFlags)
     local measuredStats, maxLineHeight = BuildMeasuredStats(self, ns.Stats, self.StatDefinitions, visibleStats, profile, defaults, measureLine)
     local layout = BuildRenderLayout(self, profile, defaults, measuredStats, maxLineHeight, fontSize, controlsWidth, controlsHeight, controlsGap)
-    ApplyRenderRows(self, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile)
+    ApplyRenderRows(self, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile, classColor)
     ResizeStatsFrame(self, statsFrame, statsAnchor, profile, defaults, layout)
 
     self:UpdateTooltipOverlayVisibility()

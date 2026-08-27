@@ -1,8 +1,10 @@
 local _, ns = ...
 
 ns = ns or {}
+ns.ZhuraStats = ns.ZhuraStats or {}
 ns.Stats = ns.Stats or {}
 
+local Addon = ns.ZhuraStats
 local Stats = ns.Stats
 
 local DR_THRESHOLDS = { 30, 39, 47, 54, 66 }
@@ -72,6 +74,44 @@ local function CallNumber(fn)
     end
 
     return AsNumber(value)
+end
+
+function Addon:GetPlayerClassColor()
+    if type(UnitClass) ~= "function" then
+        return nil
+    end
+
+    local ok, className, classToken = pcall(UnitClass, "player")
+    if not ok or IsSecret(className) or IsSecret(classToken) then
+        return nil
+    end
+
+    -- Midnight documents UnitClass as classFilename + classID, while older
+    -- clients/stubs return localized name + class token. Support both shapes.
+    if type(classToken) ~= "string" then
+        classToken = className
+    end
+    if type(classToken) ~= "string" then
+        return nil
+    end
+
+    local customColors = _G.CUSTOM_CLASS_COLORS
+    local defaultColors = _G.RAID_CLASS_COLORS
+    local color = type(customColors) == "table" and customColors[classToken] or nil
+    if type(color) ~= "table" then
+        color = type(defaultColors) == "table" and defaultColors[classToken] or nil
+    end
+    if type(color) ~= "table" then
+        return nil
+    end
+
+    local r = AsNumber(color.r or color[1])
+    local g = AsNumber(color.g or color[2])
+    local b = AsNumber(color.b or color[3])
+    if not r or not g or not b then
+        return nil
+    end
+    return { r, g, b }
 end
 
 local SNAPSHOT_FIELDS = { "value", "rating", "ratingBonus", "dr", "coefficient", "mitigation", "passiveBonus" }

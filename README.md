@@ -88,21 +88,33 @@ In the settings panel you can:
 
 Contains generated stat priority data used by Archon priority modes.
 
-- Generated locally by script (not by CI)
+- Generated through the official Warcraft Logs GraphQL API locally or in CI
 - Key format: `"class/spec/activity"` where `activity` is `m+` or `raid`
 - Used at runtime to lock and apply stat ordering for secondary stats
 
-Update command (PowerShell, repo root):
+Create a Warcraft Logs API client at `https://www.warcraftlogs.com/api/clients/`,
+then provide its client credentials and update from the repo root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Get-AllStats.ps1 -OutFile ".\WoWLogsStatsPrio.lua"
+$env:WCL_CLIENT_ID = "<client id>"
+$env:WCL_CLIENT_SECRET = "<client secret>"
+node ./scripts/Get-AllStats.mjs --out-file "./WoWLogsStatsPrio.lua"
 ```
 
 Optional custom thread count:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Get-AllStats.ps1 -Threads 20 -OutFile ".\WoWLogsStatsPrio.lua"
+node ./scripts/Get-AllStats.mjs --threads 3 --out-file "./WoWLogsStatsPrio.lua"
 ```
+
+The GitHub Actions workflow expects repository secrets named `WCL_CLIENT_ID`
+and `WCL_CLIENT_SECRET`. Credentials are used only to obtain a short-lived OAuth
+token and are never written to the generated Lua file or logs.
+
+While approved API access is unavailable, `scripts/Get-AllStats.browser.js` can
+be run manually from DevTools on an already verified `https://www.archon.gg/wow`
+page. It collects sequentially with delays and downloads the Lua file only after
+all expected stat and hero-talent entries pass validation.
 
 ### `ArchonPriority.lua`
 

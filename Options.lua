@@ -707,6 +707,7 @@ function Addon:ApplyCurrentProfileStateImpl()
     end
     if controlRefs.showLabelsCheckbox then controlRefs.showLabelsCheckbox:SetChecked(profile.showLabels) end
     if controlRefs.showValuesCheckbox then controlRefs.showValuesCheckbox:SetChecked(profile.showValues) end
+    if controlRefs.useClassColorCheckbox then controlRefs.useClassColorCheckbox:SetChecked(profile.useClassColor) end
     if controlRefs.showStatIconsCheckbox then controlRefs.showStatIconsCheckbox:SetChecked(profile.showStatIcons) end
     if controlRefs.compactValueColumnsCheckbox then controlRefs.compactValueColumnsCheckbox:SetChecked(profile.compactValueColumns) end
     if controlRefs.textAlignDropDown then controlRefs.textAlignDropDown:Refresh(profile.textAlign or defaults.textAlign) end
@@ -1366,6 +1367,13 @@ local function BuildStatsPage(content, addonName, statKeys)
     controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
 
     preferCurrentSpecMainStatCheckbox.label:SetWidth(hintWidth - 30)
+
+    local useClassColorCheckbox = CreateCheckbox(card, "NE_STATS_USE_CLASS_COLOR", nil, function(self)
+        SetValue("useClassColor", self:GetChecked())
+        Addon:RefreshStats()
+    end)
+    card:AddCheckboxRow(useClassColorCheckbox)
+    controlRefs.useClassColorCheckbox = useClassColorCheckbox
 
     local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontDisableSmall")
     BindLocalizedText(hint, "NE_STATS_ARCHON_LOCK_ORDER_HINT")
