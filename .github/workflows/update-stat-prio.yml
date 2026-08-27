@@ -47,36 +47,13 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Install Playwright Chromium
+      - name: Query Warcraft Logs API and regenerate WoWLogsStatsPrio.lua
         if: steps.freshness.outputs.skip != 'true'
-        shell: bash
-        run: |
-          npm install --no-save --no-package-lock playwright@1.62.1
-          npx playwright install --with-deps chromium
-
-      - name: Scrape archon.gg and regenerate WoWLogsStatsPrio.lua
-        if: steps.freshness.outputs.skip != 'true'
-        shell: pwsh
         env:
-          ARCHON_DIAGNOSTICS_DIR: ./artifacts/archon-preflight
+          WCL_CLIENT_ID: ${{ secrets.WCL_CLIENT_ID }}
+          WCL_CLIENT_SECRET: ${{ secrets.WCL_CLIENT_SECRET }}
         run: |
-          try {
-            $runnerIp = (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 10).Trim()
-            Write-Host "Runner egress IP: $runnerIp"
-          } catch {
-            Write-Warning "Could not resolve runner egress IP: $($_.Exception.Message)"
-          }
-
           node ./scripts/Get-AllStats.mjs --out-file "./WoWLogsStatsPrio.lua" --threads 3 --max-attempts 3 --retry-base-delay-seconds 5
-
-      - name: Upload preflight diagnostics
-        if: failure() && steps.freshness.outputs.skip != 'true'
-        uses: actions/upload-artifact@v6
-        with:
-          name: archon-preflight-${{ github.run_id }}
-          path: ./artifacts/archon-preflight
-          if-no-files-found: ignore
-          retention-days: 7
 
       - name: Bump version, commit, and push if data changed
         if: steps.freshness.outputs.skip != 'true'

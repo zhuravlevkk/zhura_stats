@@ -1,6 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { chromium } from "playwright";
+
+const TOKEN_URL = "https://www.warcraftlogs.com/oauth/token";
+const API_URL = "https://www.warcraftlogs.com/api/v2/client";
 
 const DEFAULTS = {
   outFile: "./WoWLogsStatsPrio.lua",
@@ -28,24 +30,51 @@ const ALL_SPECS = [
 const ACTIVITIES = [
   {
     slug: "m+",
-    overviewPart: "mythic-plus/overview/10/all-dungeons/this-week",
-    talentsPart: "mythic-plus/talents/10/all-dungeons/this-week",
+    request: {
+      zoneTypeSlug: "mythic-plus",
+      difficultySlug: "10",
+      encounterSlug: "all-dungeons",
+      affixesSlug: "this-week",
+    },
   },
   {
     slug: "raid",
-    overviewPart: "raid/overview/mythic/all-bosses",
-    talentsPart: "raid/talents/mythic/all-bosses",
-    fallbackOverviewPart: "raid/overview/heroic/all-bosses",
-    fallbackTalentsPart: "raid/talents/heroic/all-bosses",
+    request: {
+      zoneTypeSlug: "raid",
+      difficultySlug: "mythic",
+      encounterSlug: "all-bosses",
+      affixesSlug: null,
+    },
+    fallbackRequest: {
+      zoneTypeSlug: "raid",
+      difficultySlug: "heroic",
+      encounterSlug: "all-bosses",
+      affixesSlug: null,
+    },
   },
 ];
 
-const RETRYABLE_STATUS_CODES = new Set([403, 408, 429, 500, 502, 503, 504]);
+const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
-class RequestError extends Error {
+const ARCHON_ROOT_QUERY = `
+  query FindArchonViewModels {
+    __type(name: "Query") {
+      fields {
+        name
+        args {
+          name
+          type { kind name ofType { kind name ofType { kind name } } }
+        }
+        type { kind name ofType { kind name ofType { kind name } } }
+      }
+    }
+  }
+`;
+
+class ApiError extends Error {
   constructor(message, details = {}) {
     super(message);
-    this.name = "RequestError";
+    this.name = "ApiError";
     Object.assign(this, details);
   }
 }
@@ -83,21 +112,30 @@ function parseArgs(argv) {
   return options;
 }
 
+function requireCredentials() {
+  const clientId = process.env.WCL_CLIENT_ID?.trim();
+  const clientSecret = process.env.WCL_CLIENT_SECRET?.trim();
+  const missing = [];
+  if (!clientId) missing.push("WCL_CLIENT_ID");
+  if (!clientSecret) missing.push("WCL_CLIENT_SECRET");
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}. Create a Warcraft Logs API client and add both values as GitHub Actions secrets.`);
+  }
+  return { clientId, clientSecret };
+}
+
 function buildJobs() {
   const jobs = [];
   for (const activity of ACTIVITIES) {
     for (const [classSlug, specSlug] of ALL_SPECS) {
       for (const type of ["overview", "talents"]) {
-        const partName = type === "overview" ? "overviewPart" : "talentsPart";
-        const fallbackName = type === "overview" ? "fallbackOverviewPart" : "fallbackTalentsPart";
-        const prefix = `https://www.archon.gg/wow/builds/${specSlug}/${classSlug}/`;
         jobs.push({
           type,
           classSlug,
           specSlug,
           activity: activity.slug,
-          url: prefix + activity[partName],
-          fallbackUrl: activity[fallbackName] ? prefix + activity[fallbackName] : null,
+          request: { ...activity.request, categorySlug: type },
+          fallbackRequest: activity.fallbackRequest ? { ...activity.fallbackRequest, categorySlug: type } : null,
         });
       }
     }
@@ -113,70 +151,177 @@ function luaString(value) {
   return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\r", "\\r").replaceAll("\n", "\\n");
 }
 
-function requestMarker(html) {
-  if (/Human Verification|One Quick Check|I am a human and not a bot/i.test(html)) return "human-verification";
-  if (/cf_chl_opt|Just a moment|Enable JavaScript and cookies/i.test(html)) return "cloudflare-challenge";
-  return "missing-next-data";
+function retryAfterMilliseconds(response) {
+  const value = response.headers.get("retry-after");
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const date = Date.parse(value);
+  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : null;
 }
 
-function logRequestFailure({ attempt, maxAttempts, status, headers, marker, action, delayMilliseconds, url }) {
-  const fields = [
-    `attempt=${attempt}/${maxAttempts}`,
-    `status=${status ?? "none"}`,
-    `server=${headers.server ?? "-"}`,
-    `cf-ray=${headers["cf-ray"] ?? "-"}`,
-    `marker=${marker}`,
-    `action=${action}`,
-  ];
-  if (delayMilliseconds !== undefined) fields.push(`delay_ms=${delayMilliseconds}`);
-  fields.push(`url=${url}`);
-  console.warn(`Archon request ${fields.join(" ")}`);
+function responseErrorMessage(payload, fallback) {
+  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+    return payload.errors.map((error) => error.message).filter(Boolean).join("; ").slice(0, 1000);
+  }
+  if (typeof payload?.error_description === "string") return payload.error_description.slice(0, 1000);
+  if (typeof payload?.error === "string") return payload.error.slice(0, 1000);
+  return fallback;
 }
 
-async function fetchNextData(page, url, options) {
+async function fetchJson(url, init, label, options) {
   for (let attempt = 1; attempt <= options.maxAttempts; attempt += 1) {
     let response = null;
-    let status = null;
-    let headers = {};
-    let marker = "unknown";
-
     try {
-      response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
-      status = response?.status() ?? null;
-      headers = response ? await response.allHeaders() : {};
-
+      response = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) });
+      const text = await response.text();
+      let payload = null;
       try {
-        await page.waitForSelector("script#__NEXT_DATA__", { state: "attached", timeout: 8_000 });
-      } catch {}
-
-      const nextData = await page.locator("script#__NEXT_DATA__").textContent().catch(() => null);
-      if (!nextData) {
-        const html = await page.content().catch(() => "");
-        marker = requestMarker(html);
-        throw new RequestError("Response is missing __NEXT_DATA__.", { status, headers, marker });
+        payload = text ? JSON.parse(text) : null;
+      } catch {
+        throw new ApiError(`${label} returned non-JSON data.`, { status: response.status });
       }
-      return JSON.parse(nextData);
+      if (!response.ok) {
+        throw new ApiError(`${label} failed: ${responseErrorMessage(payload, `HTTP ${response.status}`)}`, {
+          status: response.status,
+          retryAfterMilliseconds: retryAfterMilliseconds(response),
+        });
+      }
+      return payload;
     } catch (error) {
-      if (error instanceof RequestError) {
-        status = error.status ?? status;
-        headers = error.headers ?? headers;
-        marker = error.marker ?? marker;
-      } else {
-        marker = error?.name || "Error";
-      }
-
-      const retryable = marker === "cloudflare-challenge" || marker === "human-verification" || marker === "missing-next-data" || status === null || RETRYABLE_STATUS_CODES.has(status);
+      const status = error?.status ?? response?.status ?? null;
+      const retryable = status === null || RETRYABLE_STATUS_CODES.has(status);
       if (!retryable || attempt === options.maxAttempts) {
-        logRequestFailure({ attempt, maxAttempts: options.maxAttempts, status, headers, marker, action: "fail", url });
+        console.warn(`WCL API request label=${label} attempt=${attempt}/${options.maxAttempts} status=${status ?? "none"} action=fail`);
         throw error;
       }
-
-      const delayMilliseconds = options.retryBaseDelaySeconds * 1000 * (2 ** (attempt - 1)) + Math.floor(Math.random() * 1000);
-      logRequestFailure({ attempt, maxAttempts: options.maxAttempts, status, headers, marker, action: "retry", delayMilliseconds, url });
+      const delayMilliseconds = error?.retryAfterMilliseconds ?? options.retryBaseDelaySeconds * 1000 * (2 ** (attempt - 1)) + Math.floor(Math.random() * 1000);
+      console.warn(`WCL API request label=${label} attempt=${attempt}/${options.maxAttempts} status=${status ?? "none"} action=retry delay_ms=${delayMilliseconds}`);
       await sleep(delayMilliseconds);
     }
   }
-  throw new Error("Request attempts exhausted.");
+  throw new Error(`${label} attempts exhausted.`);
+}
+
+async function getAccessToken(credentials, options) {
+  const authorization = Buffer.from(`${credentials.clientId}:${credentials.clientSecret}`, "utf8").toString("base64");
+  const payload = await fetchJson(TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${authorization}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ grant_type: "client_credentials" }),
+  }, "OAuth token", options);
+  if (typeof payload?.access_token !== "string" || payload.access_token.length === 0) {
+    throw new Error("OAuth token response did not contain access_token.");
+  }
+  return payload.access_token;
+}
+
+async function graphqlRequest(accessToken, query, variables, label, options) {
+  const payload = await fetchJson(API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  }, label, options);
+  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+    const message = responseErrorMessage(payload, "GraphQL request failed.");
+    throw new ApiError(`${label} failed: ${message}`, { graphqlErrors: payload.errors });
+  }
+  if (!payload?.data) throw new Error(`${label} response did not contain data.`);
+  return payload.data;
+}
+
+function namedType(type) {
+  let current = type;
+  while (current?.ofType) current = current.ofType;
+  return current?.name ?? null;
+}
+
+function isRequiredType(type) {
+  return type?.kind === "NON_NULL";
+}
+
+async function discoverArchonRootField(accessToken, options) {
+  const data = await graphqlRequest(accessToken, ARCHON_ROOT_QUERY, {}, "schema introspection", options);
+  const fields = data?.__type?.fields;
+  if (!Array.isArray(fields)) {
+    throw new Error("GraphQL introspection did not return Query fields.");
+  }
+  const field = fields.find((candidate) => namedType(candidate.type) === "ArchonViewModels");
+  if (!field) {
+    throw new Error("This Warcraft Logs API client cannot access ArchonViewModels. Contact Warcraft Logs support or use an approved endpoint that exposes buildsSpecPage.");
+  }
+  const requiredArguments = (field.args ?? []).filter((argument) => isRequiredType(argument.type));
+  if (requiredArguments.length > 0) {
+    throw new Error(`Query.${field.name} requires unsupported arguments: ${requiredArguments.map((argument) => argument.name).join(", ")}.`);
+  }
+  if (!/^[_A-Za-z][_0-9A-Za-z]*$/.test(field.name)) {
+    throw new Error(`GraphQL returned an invalid Query field name: ${field.name}`);
+  }
+  console.log(`Using Warcraft Logs GraphQL field Query.${field.name} -> ArchonViewModels.`);
+  return field.name;
+}
+
+function buildsSpecPageQuery(rootField) {
+  return `
+    query BuildsSpecPage(
+      $gameSlug: String,
+      $classSlug: String,
+      $specSlug: String,
+      $zoneTypeSlug: String,
+      $categorySlug: String,
+      $difficultySlug: String,
+      $encounterSlug: String,
+      $affixesSlug: String
+    ) {
+      archon: ${rootField} {
+        page: buildsSpecPage(
+          gameSlug: $gameSlug,
+          classSlug: $classSlug,
+          specSlug: $specSlug,
+          zoneTypeSlug: $zoneTypeSlug,
+          categorySlug: $categorySlug,
+          difficultySlug: $difficultySlug,
+          encounterSlug: $encounterSlug,
+          affixesSlug: $affixesSlug
+        )
+      }
+    }
+  `;
+}
+
+function normalizePageData(value) {
+  let current = value;
+  if (typeof current === "string") {
+    try {
+      current = JSON.parse(current);
+    } catch {
+      return null;
+    }
+  }
+  const candidates = [
+    current?.props?.pageProps?.page,
+    current?.pageProps?.page,
+    current?.page,
+    current,
+  ];
+  return candidates.find((candidate) => Array.isArray(candidate?.sections)) ?? null;
+}
+
+async function fetchBuildsSpecPage(api, jobRequest, label) {
+  const variables = {
+    gameSlug: "wow",
+    classSlug: api.job.classSlug,
+    specSlug: api.job.specSlug,
+    ...jobRequest,
+  };
+  const data = await graphqlRequest(api.accessToken, api.query, variables, label, api.options);
+  return normalizePageData(data?.archon?.page);
 }
 
 function buildOverviewLua(job, pageData, timestamp) {
@@ -242,75 +387,40 @@ function buildTalentsLua(job, pageData) {
   return { status: "ok", lua: `WoWLogsStatsPrio["${key}"].heroes = {\n${heroLines}\n}\n` };
 }
 
-async function processJob(page, job, timestamp, options) {
+async function processJob(api, job, timestamp) {
   let label = `${job.type} ${job.classSlug}/${job.specSlug}/${job.activity}`;
   try {
     let pageData = null;
-    for (const url of [job.url, job.fallbackUrl]) {
-      if (!url) continue;
-      const nextData = await fetchNextData(page, url, options);
-      const candidate = nextData?.props?.pageProps?.page;
+    for (const request of [job.request, job.fallbackRequest]) {
+      if (!request) continue;
+      const candidate = await fetchBuildsSpecPage({ ...api, job }, request, label);
       if (!candidate) continue;
-      if (Object.hasOwn(candidate, "totalParses") && Number(candidate.totalParses) === 0 && url !== job.fallbackUrl) continue;
+      if (Object.hasOwn(candidate, "totalParses") && Number(candidate.totalParses) === 0 && request !== job.fallbackRequest) continue;
       pageData = candidate;
-      if (url === job.fallbackUrl) label += " [heroic fallback]";
+      if (request === job.fallbackRequest) label += " [heroic fallback]";
       break;
     }
     if (!pageData) return { ...job, label, status: "skip:no-page-data", lua: null };
     const built = job.type === "overview" ? buildOverviewLua(job, pageData, timestamp) : buildTalentsLua(job, pageData);
     return { ...job, label, lua: built.lua ?? null, status: built.status };
   } catch (error) {
-    return {
-      ...job,
-      label,
-      status: `err:${error?.status ?? error?.name ?? "unknown"}`,
-      lua: null,
-      diagnostic: {
-        name: error?.name ?? "Error",
-        message: error?.message ?? String(error),
-        status: error?.status ?? null,
-        marker: error?.marker ?? null,
-        server: error?.headers?.server ?? null,
-        cfRay: error?.headers?.["cf-ray"] ?? null,
-      },
-    };
+    return { ...job, label, status: `err:${error?.status ?? error?.name ?? "unknown"}`, lua: null, error };
   }
 }
 
-async function savePreflightDiagnostics(page, result, directory) {
-  if (!directory) return;
-  const outputDirectory = resolve(directory);
-  await mkdir(outputDirectory, { recursive: true });
-  await page.screenshot({ path: resolve(outputDirectory, "preflight.png"), fullPage: true });
-  const details = {
-    capturedAt: new Date().toISOString(),
-    title: await page.title().catch(() => null),
-    url: page.url(),
-    visibleText: (await page.locator("body").innerText().catch(() => "")).slice(0, 2000),
-    result: result.diagnostic ?? { status: result.status },
-  };
-  await writeFile(resolve(outputDirectory, "preflight.json"), `${JSON.stringify(details, null, 2)}\n`, "utf8");
-  console.error(`Saved preflight diagnostics to ${outputDirectory}`);
-}
-
-async function collectJobs(context, jobs, timestamp, options) {
+async function collectJobs(api, jobs, timestamp, options) {
   const results = [];
   let nextIndex = 0;
 
   async function worker() {
-    const page = await context.newPage();
-    try {
-      while (true) {
-        const index = nextIndex;
-        nextIndex += 1;
-        if (index >= jobs.length) return;
-        const result = await processJob(page, jobs[index], timestamp, options);
-        results.push(result);
-        const info = result.lua ? "OK" : result.status;
-        console.log(`[${String(results.length).padStart(3)}/${jobs.length}] ${result.label.padEnd(55)} ${info}`);
-      }
-    } finally {
-      await page.close();
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= jobs.length) return;
+      const result = await processJob(api, jobs[index], timestamp);
+      results.push(result);
+      const info = result.lua ? "OK" : result.status;
+      console.log(`[${String(results.length).padStart(3)}/${jobs.length}] ${result.label.padEnd(55)} ${info}`);
     }
   }
 
@@ -320,45 +430,35 @@ async function collectJobs(context, jobs, timestamp, options) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+  const credentials = requireCredentials();
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
   const jobs = buildJobs();
-  console.log(`Launching Playwright Chromium for ${jobs.length} Archon pages with ${options.threads} pages...`);
+  console.log(`Authenticating with Warcraft Logs for ${jobs.length} Archon API queries...`);
 
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const context = await browser.newContext({
-      locale: "en-US",
-      userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-      viewport: { width: 1440, height: 1000 },
-      extraHTTPHeaders: { "Accept-Language": "en-US,en;q=0.9" },
-    });
+  const accessToken = await getAccessToken(credentials, options);
+  const rootField = await discoverArchonRootField(accessToken, options);
+  const api = { accessToken, query: buildsSpecPageQuery(rootField), options };
 
-    const preflightPage = await context.newPage();
-    const preflight = await processJob(preflightPage, jobs[0], timestamp, options);
-    if (!preflight.lua) {
-      await savePreflightDiagnostics(preflightPage, preflight, process.env.ARCHON_DIAGNOSTICS_DIR);
-      await preflightPage.close();
-      throw new Error(`Preflight failed: ${preflight.status}. Remaining pages were not requested.`);
-    }
-    await preflightPage.close();
-    console.log(`[  1/${jobs.length}] ${preflight.label.padEnd(55)} OK (preflight)`);
-
-    const remaining = await collectJobs(context, jobs.slice(1), timestamp, options);
-    const collected = [preflight, ...remaining];
-    const overviews = collected.filter((result) => result.type === "overview" && result.lua).sort((a, b) => `${a.classSlug}/${a.specSlug}/${a.activity}`.localeCompare(`${b.classSlug}/${b.specSlug}/${b.activity}`));
-    const heroes = collected.filter((result) => result.type === "talents" && result.lua).sort((a, b) => `${a.classSlug}/${a.specSlug}/${a.activity}`.localeCompare(`${b.classSlug}/${b.specSlug}/${b.activity}`));
-    const expectedPerType = ALL_SPECS.length * ACTIVITIES.length;
-    if (overviews.length !== expectedPerType || heroes.length !== expectedPerType) {
-      throw new Error(`Incomplete scrape: expected ${expectedPerType} stat and ${expectedPerType} hero entries, got ${overviews.length} stat and ${heroes.length} hero. Not writing file.`);
-    }
-
-    const header = `-- Auto-generated by Get-AllStats.mjs\n-- Source: archon.gg\n-- ${timestamp}\n-- Fetched: ${overviews.length + heroes.length} entries (${overviews.length} stat, ${heroes.length} hero), skipped: 0\n\nWoWLogsStatsPrio = WoWLogsStatsPrio or {}\n\n`;
-    const lua = header + overviews.map((result) => result.lua).join("\n") + "\n" + heroes.map((result) => result.lua).join("\n");
-    await writeFile(options.outFile, lua, "utf8");
-    console.log(`Done: ${overviews.length + heroes.length} ok, 0 skipped -> ${options.outFile}`);
-  } finally {
-    await browser.close();
+  const preflight = await processJob(api, jobs[0], timestamp);
+  if (!preflight.lua) {
+    const reason = preflight.error?.message ?? preflight.status;
+    throw new Error(`Preflight failed: ${reason}. Remaining queries were not requested.`);
   }
+  console.log(`[  1/${jobs.length}] ${preflight.label.padEnd(55)} OK (preflight)`);
+
+  const remaining = await collectJobs(api, jobs.slice(1), timestamp, options);
+  const collected = [preflight, ...remaining];
+  const overviews = collected.filter((result) => result.type === "overview" && result.lua).sort((a, b) => `${a.classSlug}/${a.specSlug}/${a.activity}`.localeCompare(`${b.classSlug}/${b.specSlug}/${b.activity}`));
+  const heroes = collected.filter((result) => result.type === "talents" && result.lua).sort((a, b) => `${a.classSlug}/${a.specSlug}/${a.activity}`.localeCompare(`${b.classSlug}/${b.specSlug}/${b.activity}`));
+  const expectedPerType = ALL_SPECS.length * ACTIVITIES.length;
+  if (overviews.length !== expectedPerType || heroes.length !== expectedPerType) {
+    throw new Error(`Incomplete API result: expected ${expectedPerType} stat and ${expectedPerType} hero entries, got ${overviews.length} stat and ${heroes.length} hero. Not writing file.`);
+  }
+
+  const header = `-- Auto-generated by Get-AllStats.mjs\n-- Source: Warcraft Logs GraphQL API (ArchonViewModels)\n-- ${timestamp}\n-- Fetched: ${overviews.length + heroes.length} entries (${overviews.length} stat, ${heroes.length} hero), skipped: 0\n\nWoWLogsStatsPrio = WoWLogsStatsPrio or {}\n\n`;
+  const lua = header + overviews.map((result) => result.lua).join("\n") + "\n" + heroes.map((result) => result.lua).join("\n");
+  await writeFile(options.outFile, lua, "utf8");
+  console.log(`Done: ${overviews.length + heroes.length} ok, 0 skipped -> ${options.outFile}`);
 }
 
 main().catch((error) => {
