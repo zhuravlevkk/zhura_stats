@@ -4,8 +4,7 @@
 name: Update Stat Priority
 
 on:
-  schedule:
-    - cron: "0 2 * * *"
+  # Scheduled updates are paused until Archon exposes an approved API endpoint.
   workflow_dispatch:
 
 permissions:
