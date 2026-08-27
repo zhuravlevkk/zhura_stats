@@ -326,6 +326,7 @@ function Addon:MigrateProfile(profile)
     profile.showPotionState = nil
     profile.showLabels = profile.showLabels ~= false
     profile.showValues = profile.showValues ~= false
+    profile.useClassColor = profile.useClassColor == true
     profile.showStatIcons = profile.showStatIcons == true
     profile.textAlign = profile.textAlign or defaults.textAlign
     if profile.textAlign ~= "LEFT" and profile.textAlign ~= "CENTER" and profile.textAlign ~= "RIGHT" then

@@ -169,6 +169,16 @@ describe("Database", function()
       assert.are.equal(Addon.Defaults.profile.textAlign, profile.textAlign)
     end)
 
+    it("normalizes useClassColor to a strict boolean", function()
+      local enabled = copy_profile({ useClassColor = true })
+      Addon:MigrateProfile(enabled)
+      assert.is_true(enabled.useClassColor)
+
+      local invalid = copy_profile({ useClassColor = "true" })
+      Addon:MigrateProfile(invalid)
+      assert.is_false(invalid.useClassColor)
+    end)
+
     it("normalizes invalid frameControlsPosition to default", function()
       local profile = copy_profile({
         statsMigrationVersion = 0,

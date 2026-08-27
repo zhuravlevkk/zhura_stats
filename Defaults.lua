@@ -49,6 +49,7 @@ local defaults = {
     drDisplayMode = "off",
     showLabels = true,
     showValues = true,
+    useClassColor = false,
     showStatIcons = false,
     textAlign = "LEFT",
     goldUseSeparator = true,
