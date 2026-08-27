@@ -111,6 +111,11 @@ The GitHub Actions workflow expects repository secrets named `WCL_CLIENT_ID`
 and `WCL_CLIENT_SECRET`. Credentials are used only to obtain a short-lived OAuth
 token and are never written to the generated Lua file or logs.
 
+While approved API access is unavailable, `scripts/Get-AllStats.browser.js` can
+be run manually from DevTools on an already verified `https://www.archon.gg/wow`
+page. It collects sequentially with delays and downloads the Lua file only after
+all expected stat and hero-talent entries pass validation.
+
 ### `ArchonPriority.lua`
 
 Runtime mapping and resolution layer that:
