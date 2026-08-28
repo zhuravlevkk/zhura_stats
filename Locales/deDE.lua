@@ -99,6 +99,7 @@ L["NE_STATS_PROFILE_CREATE_FAILED"] = "NE Stats: Profil konnte nicht erstellt we
 L["NE_STATS_PROFILE_APPLY_FAILED"] = "NE Stats: Profil konnte nicht angewendet werden."
 L["NE_STATS_CLIENT_LANGUAGE"] = "Client-Sprache"
 L["NE_STATS_ADDON_LANGUAGE"] = "Addon-Sprache"
+L["NE_STATS_SHOW_FRAME_BUTTONS"] = "Fensterschaltflächen anzeigen"
 L["NE_STATS_SHOW_LOCK_ICON_ONLY_ON_HOVER"] = "Schloss nur bei Mouseover anzeigen"
 L["NE_STATS_LOCK_ON_HOVER_HINT"] = "Zeigt die Schloss-Schaltflaeche nur an, solange sich die Maus ueber dem Fenster befindet."
 L["NE_STATS_BUTTON_POSITION"] = "Schaltflaechenposition"

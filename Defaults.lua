@@ -55,6 +55,7 @@ local defaults = {
     goldUseSeparator = true,
     goldSeparator = " ",
     locked = false,
+    showFrameControls = true,
     showLockOnHover = false,
     frameControlsPosition = "BOTTOM",
     frameControlsDirection = "HORIZONTAL",

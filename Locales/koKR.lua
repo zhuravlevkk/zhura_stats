@@ -100,6 +100,7 @@ L["NE_STATS_PROFILE_CREATE_FAILED"] = "NE Stats: 프로필을 만들 수 없습�
 L["NE_STATS_PROFILE_APPLY_FAILED"] = "NE Stats: 프로필을 적용할 수 없습니다."
 L["NE_STATS_CLIENT_LANGUAGE"] = "클라이언트 언어"
 L["NE_STATS_ADDON_LANGUAGE"] = "애드온 언어"
+L["NE_STATS_SHOW_FRAME_BUTTONS"] = "프레임 버튼 표시"
 L["NE_STATS_SHOW_LOCK_ICON_ONLY_ON_HOVER"] = "마우스를 올렸을 때만 자물쇠 아이콘 표시"
 L["NE_STATS_LOCK_ON_HOVER_HINT"] = "마우스가 프레임 위에 있을 때만 자물쇠 버튼을 표시합니다."
 L["NE_STATS_BUTTON_POSITION"] = "버튼 위치"

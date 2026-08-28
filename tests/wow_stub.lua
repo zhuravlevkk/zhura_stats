@@ -166,6 +166,13 @@ end
 
 register_preload("Database", "Database.lua", { "Defaults", "StatDefinitions" })
 
+package.preload["Frame"] = function()
+  require("Defaults")
+  install_profile_stubs()
+  ensure_loaded("Frame.lua")
+  return true
+end
+
 local Addon = ns.ZhuraStats
 
 local M = {

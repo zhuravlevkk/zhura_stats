@@ -714,6 +714,7 @@ function Addon:ApplyCurrentProfileStateImpl()
     if controlRefs.goldUseSeparatorCheckbox then controlRefs.goldUseSeparatorCheckbox:SetChecked(profile.goldUseSeparator) end
     if controlRefs.goldSeparatorDropDown then controlRefs.goldSeparatorDropDown:Refresh(profile.goldSeparator or defaults.goldSeparator) end
     if controlRefs.lockCheckbox then controlRefs.lockCheckbox:SetChecked(profile.locked) end
+    if controlRefs.showFrameControlsCheckbox then controlRefs.showFrameControlsCheckbox:SetChecked(profile.showFrameControls ~= false) end
     if controlRefs.showLockOnHoverCheckbox then controlRefs.showLockOnHoverCheckbox:SetChecked(profile.showLockOnHover) end
     if controlRefs.frameControlsPositionDropDown then
         controlRefs.frameControlsPositionDropDown:Refresh(profile.frameControlsPosition or defaults.frameControlsPosition)
@@ -1166,6 +1167,14 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     end)
     frameCard:AddCheckboxRow(lockCheckbox)
     controlRefs.lockCheckbox = lockCheckbox
+
+    local showFrameControlsCheckbox = CreateCheckbox(frameCard, "NE_STATS_SHOW_FRAME_BUTTONS", nil, function(self)
+        SetValue("showFrameControls", self:GetChecked())
+        Addon:UpdateFrameLockState()
+        Addon:RefreshStats()
+    end)
+    frameCard:AddCheckboxRow(showFrameControlsCheckbox)
+    controlRefs.showFrameControlsCheckbox = showFrameControlsCheckbox
 
     local showLockOnHoverCheckbox = CreateCheckbox(frameCard, "NE_STATS_SHOW_LOCK_ICON_ONLY_ON_HOVER", "NE_STATS_LOCK_ON_HOVER_HINT", function(self)
         SetValue("showLockOnHover", self:GetChecked())

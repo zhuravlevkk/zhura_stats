@@ -99,6 +99,7 @@ L["NE_STATS_PROFILE_CREATE_FAILED"] = "NE Stats: nao foi possivel criar o perfil
 L["NE_STATS_PROFILE_APPLY_FAILED"] = "NE Stats: nao foi possivel aplicar o perfil."
 L["NE_STATS_CLIENT_LANGUAGE"] = "Idioma do cliente"
 L["NE_STATS_ADDON_LANGUAGE"] = "Idioma do addon"
+L["NE_STATS_SHOW_FRAME_BUTTONS"] = "Mostrar os botões do quadro"
 L["NE_STATS_SHOW_LOCK_ICON_ONLY_ON_HOVER"] = "Mostrar o icone de cadeado apenas ao passar o mouse"
 L["NE_STATS_LOCK_ON_HOVER_HINT"] = "Mostra o botao de cadeado apenas enquanto o mouse estiver sobre a janela."
 L["NE_STATS_BUTTON_POSITION"] = "Posicao dos botoes"

@@ -103,6 +103,7 @@ L["NE_STATS_PROFILE_CREATE_FAILED"] = "NE Stats: не удалось созда�
 L["NE_STATS_PROFILE_APPLY_FAILED"] = "NE Stats: не удалось применить профиль."
 L["NE_STATS_CLIENT_LANGUAGE"] = "Язык клиента"
 L["NE_STATS_ADDON_LANGUAGE"] = "Язык аддона"
+L["NE_STATS_SHOW_FRAME_BUTTONS"] = "Показывать кнопки на панели"
 L["NE_STATS_SHOW_LOCK_ICON_ONLY_ON_HOVER"] = "Показывать значок замка только при наведении"
 L["NE_STATS_LOCK_ON_HOVER_HINT"] = "Показывает кнопку замка только когда курсор находится над окном."
 L["NE_STATS_BUTTON_POSITION"] = "Положение кнопок"

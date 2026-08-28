@@ -292,6 +292,10 @@ function Addon:HideRowRefArrowsFrom(row, fromIndex)
 end
 
 function Addon:GetFrameControlsSize()
+    if self:GetProfileValue("showFrameControls") == false then
+        return 0, 0, 0
+    end
+
     local direction = self:GetProfileValue("frameControlsDirection") or self.Defaults.profile.frameControlsDirection
     local priorityCount = 3
     if direction == "VERTICAL" then
@@ -370,7 +374,13 @@ function Addon:UpdateFrameLockState()
     statsFrame:SetBackdropColor(0, 0, 0, 0)
     statsFrame:SetBackdropBorderColor(0, 0, 0, 0)
 
-    local controlsVisible = (not self:GetProfileValue("showLockOnHover")) or isStatsFrameHovered or isLockButtonHovered or isPriorityModeHovered
+    local controlsEnabled = self:GetProfileValue("showFrameControls") ~= false
+    local controlsVisible = controlsEnabled and (
+        (not self:GetProfileValue("showLockOnHover"))
+        or isStatsFrameHovered
+        or isLockButtonHovered
+        or isPriorityModeHovered
+    )
 
     if lockButton then
         if locked then
