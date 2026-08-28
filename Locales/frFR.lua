@@ -99,6 +99,7 @@ L["NE_STATS_PROFILE_CREATE_FAILED"] = "NE Stats : le profil n'a pas pu etre cree
 L["NE_STATS_PROFILE_APPLY_FAILED"] = "NE Stats : le profil n'a pas pu etre applique."
 L["NE_STATS_CLIENT_LANGUAGE"] = "Langue du client"
 L["NE_STATS_ADDON_LANGUAGE"] = "Langue de l'addon"
+L["NE_STATS_SHOW_FRAME_BUTTONS"] = "Afficher les boutons du cadre"
 L["NE_STATS_SHOW_LOCK_ICON_ONLY_ON_HOVER"] = "Afficher l'icone du verrou uniquement au survol"
 L["NE_STATS_LOCK_ON_HOVER_HINT"] = "Affiche le bouton de verrou uniquement lorsque la souris survole le cadre."
 L["NE_STATS_BUTTON_POSITION"] = "Position des boutons"
