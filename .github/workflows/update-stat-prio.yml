@@ -4,7 +4,7 @@
 name: Update Stat Priority
 
 on:
-  # Scheduled updates are paused until Archon exposes an approved API endpoint.
+  # Scheduled updates are paused for now.
   workflow_dispatch:
 
 permissions:
@@ -80,13 +80,14 @@ jobs:
           tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gh_${gh_version}_linux_${gh_arch}/bin" >> "$GITHUB_PATH"
 
-      - name: Query Warcraft Logs API and regenerate WoWLogsStatsPrio.lua
+      - name: Scrape Archon and regenerate WoWLogsStatsPrio.lua
         if: steps.freshness.outputs.skip != 'true'
-        env:
-          WCL_CLIENT_ID: ${{ secrets.WCL_CLIENT_ID }}
-          WCL_CLIENT_SECRET: ${{ secrets.WCL_CLIENT_SECRET }}
         run: |
-          node ./scripts/Get-AllStats.mjs --out-file "./WoWLogsStatsPrio.lua" --threads 3 --max-attempts 3 --retry-base-delay-seconds 5
+          node ./scripts/Get-AllStats.mjs \
+            --out-file "./WoWLogsStatsPrio.lua" \
+            --threads 3 \
+            --max-attempts 3 \
+            --retry-base-delay-seconds 5
 
       - name: Bump version, commit, and push if data changed
         if: steps.freshness.outputs.skip != 'true'
