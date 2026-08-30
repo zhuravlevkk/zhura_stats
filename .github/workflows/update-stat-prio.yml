@@ -1,5 +1,5 @@
 # Regenerates WoWLogsStatsPrio.lua from archon.gg and bumps patch in ZhuraStats.toc when data changes.
-# Pushes to master only; tag-release.yml creates the tag from the new TOC version.
+# Manual runs always refresh and leave a PR open; scheduled runs keep auto-merge behavior.
 
 name: Update Stat Priority
 
@@ -26,25 +26,59 @@ jobs:
 
       - name: Skip if already fetched today (UTC)
         id: freshness
-        shell: pwsh
+        shell: bash
         run: |
-          $luaPath = Join-Path $env:GITHUB_WORKSPACE 'WoWLogsStatsPrio.lua'
-          $today   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
-          if (Test-Path $luaPath) {
-            $head = (Get-Content $luaPath -TotalCount 5) -join "`n"
-            if ($head -match $today) {
-              Write-Host "Already have archon data for $today — skipping scrape."
-              "skip=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-              exit 0
-            }
-          }
-          "skip=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          set -euo pipefail
+
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "Manual run — forcing refresh."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          lua_path="$GITHUB_WORKSPACE/WoWLogsStatsPrio.lua"
+          today="$(date -u +%F)"
+
+          if [[ -f "$lua_path" ]] && head -n 5 "$lua_path" | grep -Fq "$today"; then
+            echo "Already have archon data for $today — skipping scrape."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node.js
         if: steps.freshness.outputs.skip != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "24"
+
+      - name: Set up GitHub CLI
+        if: steps.freshness.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if command -v gh >/dev/null 2>&1; then
+            gh --version
+            exit 0
+          fi
+
+          case "$(uname -m)" in
+            x86_64) gh_arch="amd64" ;;
+            aarch64|arm64) gh_arch="arm64" ;;
+            *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
+
+          latest_url="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/cli/cli/releases/latest)"
+          gh_version="${latest_url##*/v}"
+          archive="gh_${gh_version}_linux_${gh_arch}.tar.gz"
+
+          curl -fsSL \
+            "https://github.com/cli/cli/releases/download/v${gh_version}/${archive}" \
+            -o "$RUNNER_TEMP/$archive"
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gh_${gh_version}_linux_${gh_arch}/bin" >> "$GITHUB_PATH"
 
       - name: Query Warcraft Logs API and regenerate WoWLogsStatsPrio.lua
         if: steps.freshness.outputs.skip != 'true'
@@ -56,55 +90,64 @@ jobs:
 
       - name: Bump version, commit, and push if data changed
         if: steps.freshness.outputs.skip != 'true'
-        shell: pwsh
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          Set-Location $env:GITHUB_WORKSPACE
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git diff --quiet WoWLogsStatsPrio.lua
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "Stat priority data is up to date, nothing to do."
+          if git diff --quiet -- WoWLogsStatsPrio.lua; then
+            echo "Stat priority data is up to date, nothing to do."
             exit 0
-          }
+          fi
 
-          $tocPath = Join-Path $env:GITHUB_WORKSPACE 'ZhuraStats.toc'
-          $raw = Get-Content -LiteralPath $tocPath -Raw
-          if ($raw -notmatch '(?m)^## Version:\s*(\d+)\.(\d+)\.(\d+)\s*$') {
-            throw "Could not parse ## Version in ZhuraStats.toc"
-          }
+          toc_path="$GITHUB_WORKSPACE/ZhuraStats.toc"
+          version_line="$(grep -m1 -E '^## Version:[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+[[:space:]]*$' "$toc_path" || true)"
+          if [[ -z "$version_line" ]]; then
+            echo "Could not parse ## Version in ZhuraStats.toc" >&2
+            exit 1
+          fi
 
-          $major = [int]$Matches[1]
-          $minor = [int]$Matches[2]
-          $patch = [int]$Matches[3] + 1
-          $newVersion = "$major.$minor.$patch"
+          version="${version_line#\#\# Version:}"
+          version="$(printf '%s' "$version" | tr -d '[:space:]')"
+          IFS='.' read -r major minor patch <<< "$version"
+          patch=$((patch + 1))
+          new_version="$major.$minor.$patch"
 
-          $versionPattern = '(?m)^(## Version:\s*)\d+\.\d+\.\d+(\s*)$'
-          $versionReplace = '${1}' + $newVersion + '${2}'
-          $updated = $raw -replace $versionPattern, $versionReplace
-          $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-          [System.IO.File]::WriteAllText($tocPath, $updated, $utf8NoBom)
+          sed -E -i \
+            "s/^(## Version:[[:space:]]*)[0-9]+\.[0-9]+\.[0-9]+([[:space:]]*)$/\\1${new_version}\\2/" \
+            "$toc_path"
 
-          $timestamp = Get-Date -Format "yyyyMMdd-HHmm"
-          $branch = "chore/stat-prio-update-$timestamp"
+          timestamp="$(date -u +%Y%m%d-%H%M%S)"
+          branch="chore/stat-prio-update-$timestamp"
+          commit_msg="chore: update stat priority data (archon.gg) -> v$new_version"
 
           git add WoWLogsStatsPrio.lua ZhuraStats.toc
-          $commitMsg = "chore: update stat priority data (archon.gg) -> v$newVersion"
-          git commit -m $commitMsg
-          git push origin HEAD:refs/heads/$branch
+          git commit -m "$commit_msg"
+          git push origin "HEAD:refs/heads/$branch"
 
-          gh pr create `
-            --base master `
-            --head $branch `
-            --title "chore: update stat priority data (archon.gg) -> v$newVersion" `
-            --body "Automated stat priority update from archon.gg. Auto-merged by workflow."
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            pr_url="$(gh pr create \
+              --base master \
+              --head "$branch" \
+              --title "$commit_msg" \
+              --body "Manual stat priority refresh from archon.gg. Review and merge this PR when ready.")"
+            echo "Manual run — PR created and left open: $pr_url"
+          else
+            gh pr create \
+              --base master \
+              --head "$branch" \
+              --title "$commit_msg" \
+              --body "Automated stat priority update from archon.gg. Auto-merged by workflow."
 
-          gh pr merge --auto --squash `
-            --subject "chore: update stat priority data (archon.gg) -> v$newVersion" `
-            $branch
+            gh pr merge --auto --squash \
+              --subject "$commit_msg" \
+              "$branch"
+          fi
 
   notify-failure:
     name: Notify on failure
