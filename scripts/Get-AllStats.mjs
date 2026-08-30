@@ -1,8 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const TOKEN_URL = "https://www.warcraftlogs.com/oauth/token";
-const API_URL = "https://www.warcraftlogs.com/api/v2/client";
+const ARCHON_ORIGIN = "https://www.archon.gg";
 
 const DEFAULTS = {
   outFile: "./WoWLogsStatsPrio.lua",
@@ -30,54 +29,17 @@ const ALL_SPECS = [
 const ACTIVITIES = [
   {
     slug: "m+",
-    request: {
-      zoneTypeSlug: "mythic-plus",
-      difficultySlug: "10",
-      encounterSlug: "all-dungeons",
-      affixesSlug: "this-week",
-    },
+    overview: "mythic-plus/overview/10/all-dungeons/this-week",
+    talents: "mythic-plus/talents/10/all-dungeons/this-week",
   },
   {
     slug: "raid",
-    request: {
-      zoneTypeSlug: "raid",
-      difficultySlug: "mythic",
-      encounterSlug: "all-bosses",
-      affixesSlug: null,
-    },
-    fallbackRequest: {
-      zoneTypeSlug: "raid",
-      difficultySlug: "heroic",
-      encounterSlug: "all-bosses",
-      affixesSlug: null,
-    },
+    overview: "raid/overview/mythic/all-bosses",
+    talents: "raid/talents/mythic/all-bosses",
+    fallbackOverview: "raid/overview/heroic/all-bosses",
+    fallbackTalents: "raid/talents/heroic/all-bosses",
   },
 ];
-
-const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
-
-const ARCHON_ROOT_QUERY = `
-  query FindArchonViewModels {
-    __type(name: "Query") {
-      fields {
-        name
-        args {
-          name
-          type { kind name ofType { kind name ofType { kind name } } }
-        }
-        type { kind name ofType { kind name ofType { kind name } } }
-      }
-    }
-  }
-`;
-
-class ApiError extends Error {
-  constructor(message, details = {}) {
-    super(message);
-    this.name = "ApiError";
-    Object.assign(this, details);
-  }
-}
 
 function parseInteger(value, name, minimum, maximum) {
   const parsed = Number.parseInt(value, 10);
@@ -112,16 +74,32 @@ function parseArgs(argv) {
   return options;
 }
 
-function requireCredentials() {
-  const clientId = process.env.WCL_CLIENT_ID?.trim();
-  const clientSecret = process.env.WCL_CLIENT_SECRET?.trim();
-  const missing = [];
-  if (!clientId) missing.push("WCL_CLIENT_ID");
-  if (!clientSecret) missing.push("WCL_CLIENT_SECRET");
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(", ")}. Create a Warcraft Logs API client and add both values as GitHub Actions secrets.`);
+function sleep(milliseconds) {
+  return new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
+}
+
+function luaString(value) {
+  return String(value)
+    .replaceAll("\\", "\\\\")
+    .replaceAll('"', '\\"')
+    .replaceAll("\r", "\\r")
+    .replaceAll("\n", "\\n");
+}
+
+function challengeMarker(html) {
+  if (/Human Verification|One Quick Check|I am a human and not a bot/i.test(html)) return "human-verification";
+  if (/cf_chl_opt|Just a moment|Performing security verification|Verify you are human/i.test(html)) return "cloudflare-challenge";
+  return "missing-next-data";
+}
+
+function extractNextData(html) {
+  const match = html.match(/<script[^>]*\bid=(['"])__NEXT_DATA__\1[^>]*>([\s\S]*?)<\/script>/i);
+  if (!match?.[2]) return null;
+  try {
+    return JSON.parse(match[2]);
+  } catch (error) {
+    throw new Error(`Invalid __NEXT_DATA__ JSON: ${error.message}`);
   }
-  return { clientId, clientSecret };
 }
 
 function buildJobs() {
@@ -129,13 +107,15 @@ function buildJobs() {
   for (const activity of ACTIVITIES) {
     for (const [classSlug, specSlug] of ALL_SPECS) {
       for (const type of ["overview", "talents"]) {
+        const title = type === "overview" ? "Overview" : "Talents";
+        const prefix = `${ARCHON_ORIGIN}/wow/builds/${specSlug}/${classSlug}/`;
         jobs.push({
           type,
           classSlug,
           specSlug,
           activity: activity.slug,
-          request: { ...activity.request, categorySlug: type },
-          fallbackRequest: activity.fallbackRequest ? { ...activity.fallbackRequest, categorySlug: type } : null,
+          url: prefix + activity[type],
+          fallbackUrl: activity[`fallback${title}`] ? prefix + activity[`fallback${title}`] : null,
         });
       }
     }
@@ -143,325 +123,169 @@ function buildJobs() {
   return jobs;
 }
 
-function sleep(milliseconds) {
-  return new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
-}
-
-function luaString(value) {
-  return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\r", "\\r").replaceAll("\n", "\\n");
-}
-
-function retryAfterMilliseconds(response) {
-  const value = response.headers.get("retry-after");
-  if (!value) return null;
-  const seconds = Number(value);
-  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
-  const date = Date.parse(value);
-  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : null;
-}
-
-function responseErrorMessage(payload, fallback) {
-  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
-    return payload.errors.map((error) => error.message).filter(Boolean).join("; ").slice(0, 1000);
-  }
-  if (typeof payload?.error_description === "string") return payload.error_description.slice(0, 1000);
-  if (typeof payload?.error === "string") return payload.error.slice(0, 1000);
-  return fallback;
-}
-
-async function fetchJson(url, init, label, options) {
+async function fetchNextData(url, options) {
   for (let attempt = 1; attempt <= options.maxAttempts; attempt += 1) {
-    let response = null;
+    let status = null;
+    let marker = "request-error";
     try {
-      response = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) });
-      const text = await response.text();
-      let payload = null;
-      try {
-        payload = text ? JSON.parse(text) : null;
-      } catch {
-        throw new ApiError(`${label} returned non-JSON data.`, { status: response.status });
-      }
-      if (!response.ok) {
-        throw new ApiError(`${label} failed: ${responseErrorMessage(payload, `HTTP ${response.status}`)}`, {
-          status: response.status,
-          retryAfterMilliseconds: retryAfterMilliseconds(response),
-        });
-      }
-      return payload;
+      const response = await fetch(url, {
+        method: "GET",
+        redirect: "follow",
+        cache: "no-store",
+        signal: AbortSignal.timeout(30_000),
+        headers: {
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+          "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+        },
+      });
+      status = response.status;
+      const html = await response.text();
+      const nextData = extractNextData(html);
+      if (response.ok && nextData) return nextData;
+      marker = challengeMarker(html);
     } catch (error) {
-      const status = error?.status ?? response?.status ?? null;
-      const retryable = status === null || RETRYABLE_STATUS_CODES.has(status);
-      if (!retryable || attempt === options.maxAttempts) {
-        console.warn(`WCL API request label=${label} attempt=${attempt}/${options.maxAttempts} status=${status ?? "none"} action=fail`);
-        throw error;
-      }
-      const delayMilliseconds = error?.retryAfterMilliseconds ?? options.retryBaseDelaySeconds * 1000 * (2 ** (attempt - 1)) + Math.floor(Math.random() * 1000);
-      console.warn(`WCL API request label=${label} attempt=${attempt}/${options.maxAttempts} status=${status ?? "none"} action=retry delay_ms=${delayMilliseconds}`);
-      await sleep(delayMilliseconds);
+      marker = error?.name === "Error" ? error.message : (error?.name ?? "request-error");
     }
-  }
-  throw new Error(`${label} attempts exhausted.`);
-}
 
-async function getAccessToken(credentials, options) {
-  const authorization = Buffer.from(`${credentials.clientId}:${credentials.clientSecret}`, "utf8").toString("base64");
-  const payload = await fetchJson(TOKEN_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${authorization}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({ grant_type: "client_credentials" }),
-  }, "OAuth token", options);
-  if (typeof payload?.access_token !== "string" || payload.access_token.length === 0) {
-    throw new Error("OAuth token response did not contain access_token.");
-  }
-  return payload.access_token;
-}
-
-async function graphqlRequest(accessToken, query, variables, label, options) {
-  const payload = await fetchJson(API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
-  }, label, options);
-  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
-    const message = responseErrorMessage(payload, "GraphQL request failed.");
-    throw new ApiError(`${label} failed: ${message}`, { graphqlErrors: payload.errors });
-  }
-  if (!payload?.data) throw new Error(`${label} response did not contain data.`);
-  return payload.data;
-}
-
-function namedType(type) {
-  let current = type;
-  while (current?.ofType) current = current.ofType;
-  return current?.name ?? null;
-}
-
-function isRequiredType(type) {
-  return type?.kind === "NON_NULL";
-}
-
-async function discoverArchonRootField(accessToken, options) {
-  const data = await graphqlRequest(accessToken, ARCHON_ROOT_QUERY, {}, "schema introspection", options);
-  const fields = data?.__type?.fields;
-  if (!Array.isArray(fields)) {
-    throw new Error("GraphQL introspection did not return Query fields.");
-  }
-  const field = fields.find((candidate) => namedType(candidate.type) === "ArchonViewModels");
-  if (!field) {
-    throw new Error("This Warcraft Logs API client cannot access ArchonViewModels. Contact Warcraft Logs support or use an approved endpoint that exposes buildsSpecPage.");
-  }
-  const requiredArguments = (field.args ?? []).filter((argument) => isRequiredType(argument.type));
-  if (requiredArguments.length > 0) {
-    throw new Error(`Query.${field.name} requires unsupported arguments: ${requiredArguments.map((argument) => argument.name).join(", ")}.`);
-  }
-  if (!/^[_A-Za-z][_0-9A-Za-z]*$/.test(field.name)) {
-    throw new Error(`GraphQL returned an invalid Query field name: ${field.name}`);
-  }
-  console.log(`Using Warcraft Logs GraphQL field Query.${field.name} -> ArchonViewModels.`);
-  return field.name;
-}
-
-function buildsSpecPageQuery(rootField) {
-  return `
-    query BuildsSpecPage(
-      $gameSlug: String,
-      $classSlug: String,
-      $specSlug: String,
-      $zoneTypeSlug: String,
-      $categorySlug: String,
-      $difficultySlug: String,
-      $encounterSlug: String,
-      $affixesSlug: String
-    ) {
-      archon: ${rootField} {
-        page: buildsSpecPage(
-          gameSlug: $gameSlug,
-          classSlug: $classSlug,
-          specSlug: $specSlug,
-          zoneTypeSlug: $zoneTypeSlug,
-          categorySlug: $categorySlug,
-          difficultySlug: $difficultySlug,
-          encounterSlug: $encounterSlug,
-          affixesSlug: $affixesSlug
-        )
-      }
+    if (attempt === options.maxAttempts) {
+      throw new Error(`Request failed after ${attempt} attempts: status=${status ?? "none"}, marker=${marker}, url=${url}`);
     }
-  `;
-}
 
-function normalizePageData(value) {
-  let current = value;
-  if (typeof current === "string") {
-    try {
-      current = JSON.parse(current);
-    } catch {
-      return null;
-    }
+    const delayMilliseconds = options.retryBaseDelaySeconds * 1000 * (2 ** (attempt - 1)) + Math.floor(Math.random() * 1000);
+    console.warn(`Retry ${attempt}/${options.maxAttempts}: status=${status ?? "none"}, marker=${marker}, delay=${delayMilliseconds}ms, url=${url}`);
+    await sleep(delayMilliseconds);
   }
-  const candidates = [
-    current?.props?.pageProps?.page,
-    current?.pageProps?.page,
-    current?.page,
-    current,
-  ];
-  return candidates.find((candidate) => Array.isArray(candidate?.sections)) ?? null;
+  throw new Error(`Request attempts exhausted: ${url}`);
 }
 
-async function fetchBuildsSpecPage(api, jobRequest, label) {
-  const variables = {
-    gameSlug: "wow",
-    classSlug: api.job.classSlug,
-    specSlug: api.job.specSlug,
-    ...jobRequest,
-  };
-  const data = await graphqlRequest(api.accessToken, api.query, variables, label, api.options);
-  return normalizePageData(data?.archon?.page);
-}
-
-function buildOverviewLua(job, pageData, timestamp) {
-  const statSection = pageData.sections?.find((section) => section.component === "BuildsStatPrioritySection");
-  const stats = statSection?.props?.stats;
-  if (!Array.isArray(stats) || stats.length < 2) return { status: "skip:no-stat-data" };
+function buildOverviewLua(job, page, timestamp) {
+  const stats = page.sections?.find((section) => section.component === "BuildsStatPrioritySection")?.props?.stats;
+  if (!Array.isArray(stats) || stats.length < 2) return null;
 
   const primary = stats.find((stat) => stat.order === 1);
-  const primaryName = String(primary?.name ?? "primary").toLowerCase();
-  const statLines = stats
+  const lines = stats
     .filter((stat) => stat.order >= 2)
     .sort((left, right) => left.order - right.order)
     .map((stat) => {
-      const name = String(stat.name).toLowerCase() === "vers" ? "versatility" : String(stat.name).toLowerCase();
+      const rawName = String(stat.name).toLowerCase();
+      const name = rawName === "vers" ? "versatility" : rawName;
       return `        { stat = "${luaString(name)}", rating = ${stat.value}, order = ${stat.order} },`;
     })
     .join("\n");
 
   const key = `${job.classSlug}/${job.specSlug}/${job.activity}`;
-  return {
-    status: "ok",
-    lua: `WoWLogsStatsPrio["${key}"] = {\n    updated = "${timestamp}",\n    activity = "${job.activity}", class = "${job.classSlug}", spec = "${job.specSlug}",\n    primary = "${luaString(primaryName)}",\n    secondary = {\n${statLines}\n    },\n}\n`,
-  };
+  return `WoWLogsStatsPrio["${key}"] = {\n    updated = "${timestamp}",\n    activity = "${job.activity}", class = "${job.classSlug}", spec = "${job.specSlug}",\n    primary = "${luaString(String(primary?.name ?? "primary").toLowerCase())}",\n    secondary = {\n${lines}\n    },\n}\n`;
 }
 
-function buildTalentsLua(job, pageData) {
-  const heroSection = pageData.sections?.find((section) => section.component === "BuildsHeroTalentsSection");
-  const selectedNodes = heroSection?.props?.talentTree?.dehydratedBuild?.selectedNodes;
-  if (!Array.isArray(selectedNodes)) return { status: "skip:no-hero-section" };
+function buildTalentsLua(job, page) {
+  const selectedNodes = page.sections?.find((section) => section.component === "BuildsHeroTalentsSection")
+    ?.props?.talentTree?.dehydratedBuild?.selectedNodes;
+  if (!Array.isArray(selectedNodes)) return null;
 
-  const idToName = new Map();
-  const rootTalentToTree = new Map();
-  for (const blueprint of Object.values(pageData.talentTreeBlueprints ?? {})) {
-    for (const heroTree of blueprint.heroTrees ?? []) idToName.set(Number(heroTree.id), heroTree.name);
+  const names = new Map();
+  const talentTrees = new Map();
+  for (const blueprint of Object.values(page.talentTreeBlueprints ?? {})) {
+    for (const tree of blueprint.heroTrees ?? []) names.set(Number(tree.id), tree.name);
     for (const node of blueprint.changeSet?.allNodes ?? []) {
       if (node.type !== "subtree") continue;
       for (const ability of node.abilities ?? []) {
-        if (ability.heroTreeId != null) rootTalentToTree.set(Number(ability.id), Number(ability.heroTreeId));
+        if (ability.heroTreeId != null) talentTrees.set(Number(ability.id), Number(ability.heroTreeId));
       }
     }
   }
 
-  const usageByTree = new Map();
+  const usage = new Map();
   for (const selection of selectedNodes) {
-    const talentId = Number(selection[0]);
-    const treeId = rootTalentToTree.get(talentId);
-    if (treeId !== undefined) usageByTree.set(treeId, Number(selection[1]));
+    const treeId = talentTrees.get(Number(selection[0]));
+    if (treeId !== undefined) usage.set(treeId, Number(selection[1]));
   }
-  const usageTotal = [...usageByTree.values()].reduce((sum, value) => sum + value, 0);
-  if (usageByTree.size === 0 || usageTotal <= 0) return { status: "skip:no-hero-usage" };
 
-  const heroLines = [...usageByTree.entries()]
+  const total = [...usage.values()].reduce((sum, value) => sum + value, 0);
+  if (usage.size === 0 || total <= 0) return null;
+
+  const lines = [...usage.entries()]
     .sort((left, right) => right[1] - left[1])
-    .map(([treeId, usage], index) => {
-      const name = idToName.get(treeId) ?? `hero_${treeId}`;
+    .map(([treeId, value], index) => {
+      const name = names.get(treeId) ?? `hero_${treeId}`;
       const slug = String(name).toLowerCase().replaceAll(" ", "-");
-      const percentage = Math.round((1000 * usage) / usageTotal) / 10;
-      return `        { hero = "${luaString(slug)}", rank = ${index + 1}, usage_pct = ${percentage} },`;
+      return `        { hero = "${luaString(slug)}", rank = ${index + 1}, usage_pct = ${Math.round(1000 * value / total) / 10} },`;
     })
     .join("\n");
 
   const key = `${job.classSlug}/${job.specSlug}/${job.activity}`;
-  return { status: "ok", lua: `WoWLogsStatsPrio["${key}"].heroes = {\n${heroLines}\n}\n` };
+  return `WoWLogsStatsPrio["${key}"].heroes = {\n${lines}\n}\n`;
 }
 
-async function processJob(api, job, timestamp) {
-  let label = `${job.type} ${job.classSlug}/${job.specSlug}/${job.activity}`;
-  try {
-    let pageData = null;
-    for (const request of [job.request, job.fallbackRequest]) {
-      if (!request) continue;
-      const candidate = await fetchBuildsSpecPage({ ...api, job }, request, label);
-      if (!candidate) continue;
-      if (Object.hasOwn(candidate, "totalParses") && Number(candidate.totalParses) === 0 && request !== job.fallbackRequest) continue;
-      pageData = candidate;
-      if (request === job.fallbackRequest) label += " [heroic fallback]";
-      break;
-    }
-    if (!pageData) return { ...job, label, status: "skip:no-page-data", lua: null };
-    const built = job.type === "overview" ? buildOverviewLua(job, pageData, timestamp) : buildTalentsLua(job, pageData);
-    return { ...job, label, lua: built.lua ?? null, status: built.status };
-  } catch (error) {
-    return { ...job, label, status: `err:${error?.status ?? error?.name ?? "unknown"}`, lua: null, error };
+async function processJob(job, timestamp, options) {
+  let page = null;
+  let usedFallback = false;
+
+  for (const url of [job.url, job.fallbackUrl]) {
+    if (!url) continue;
+    const candidate = (await fetchNextData(url, options))?.props?.pageProps?.page;
+    if (!candidate) continue;
+    if (Object.hasOwn(candidate, "totalParses") && Number(candidate.totalParses) === 0 && url !== job.fallbackUrl) continue;
+    page = candidate;
+    usedFallback = url === job.fallbackUrl;
+    break;
   }
+
+  if (!page) throw new Error(`No page data for ${job.type} ${job.classSlug}/${job.specSlug}/${job.activity}`);
+  const lua = job.type === "overview" ? buildOverviewLua(job, page, timestamp) : buildTalentsLua(job, page);
+  if (!lua) throw new Error(`Missing ${job.type} data for ${job.classSlug}/${job.specSlug}/${job.activity}`);
+  return { ...job, lua, usedFallback };
 }
 
-async function collectJobs(api, jobs, timestamp, options) {
-  const results = [];
+async function collect(jobs, timestamp, options) {
+  const results = new Array(jobs.length);
   let nextIndex = 0;
+  let completed = 0;
 
   async function worker() {
     while (true) {
-      const index = nextIndex;
-      nextIndex += 1;
+      const index = nextIndex++;
       if (index >= jobs.length) return;
-      const result = await processJob(api, jobs[index], timestamp);
-      results.push(result);
-      const info = result.lua ? "OK" : result.status;
-      console.log(`[${String(results.length).padStart(3)}/${jobs.length}] ${result.label.padEnd(55)} ${info}`);
+      const result = await processJob(jobs[index], timestamp, options);
+      results[index] = result;
+      completed += 1;
+      console.log(`[${String(completed).padStart(3)}/${jobs.length}] ${result.type} ${result.classSlug}/${result.specSlug}/${result.activity}${result.usedFallback ? " [heroic fallback]" : ""}`);
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(options.threads, jobs.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(options.threads, jobs.length) }, worker));
   return results;
+}
+
+function buildLua(results, timestamp) {
+  const compare = (left, right) => `${left.classSlug}/${left.specSlug}/${left.activity}`.localeCompare(`${right.classSlug}/${right.specSlug}/${right.activity}`);
+  const overviews = results.filter((result) => result?.type === "overview").sort(compare);
+  const heroes = results.filter((result) => result?.type === "talents").sort(compare);
+  const expected = ALL_SPECS.length * ACTIVITIES.length;
+
+  if (overviews.length !== expected || heroes.length !== expected) {
+    throw new Error(`Incomplete result: expected ${expected}/${expected}, got ${overviews.length}/${heroes.length}.`);
+  }
+
+  const header = `-- Auto-generated by Get-AllStats.mjs\n-- Source: archon.gg (__NEXT_DATA__ via self-hosted runner)\n-- ${timestamp}\n-- Fetched: ${results.length} entries (${overviews.length} stat, ${heroes.length} hero), skipped: 0\n\nWoWLogsStatsPrio = WoWLogsStatsPrio or {}\n\n`;
+  return header + overviews.map((result) => result.lua).join("\n") + "\n" + heroes.map((result) => result.lua).join("\n");
 }
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  const credentials = requireCredentials();
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
   const jobs = buildJobs();
-  console.log(`Authenticating with Warcraft Logs for ${jobs.length} Archon API queries...`);
 
-  const accessToken = await getAccessToken(credentials, options);
-  const rootField = await discoverArchonRootField(accessToken, options);
-  const api = { accessToken, query: buildsSpecPageQuery(rootField), options };
-
-  const preflight = await processJob(api, jobs[0], timestamp);
-  if (!preflight.lua) {
-    const reason = preflight.error?.message ?? preflight.status;
-    throw new Error(`Preflight failed: ${reason}. Remaining queries were not requested.`);
-  }
-  console.log(`[  1/${jobs.length}] ${preflight.label.padEnd(55)} OK (preflight)`);
-
-  const remaining = await collectJobs(api, jobs.slice(1), timestamp, options);
-  const collected = [preflight, ...remaining];
-  const overviews = collected.filter((result) => result.type === "overview" && result.lua).sort((a, b) => `${a.classSlug}/${a.specSlug}/${a.activity}`.localeCompare(`${b.classSlug}/${b.specSlug}/${b.activity}`));
-  const heroes = collected.filter((result) => result.type === "talents" && result.lua).sort((a, b) => `${a.classSlug}/${a.specSlug}/${a.activity}`.localeCompare(`${b.classSlug}/${b.specSlug}/${b.activity}`));
-  const expectedPerType = ALL_SPECS.length * ACTIVITIES.length;
-  if (overviews.length !== expectedPerType || heroes.length !== expectedPerType) {
-    throw new Error(`Incomplete API result: expected ${expectedPerType} stat and ${expectedPerType} hero entries, got ${overviews.length} stat and ${heroes.length} hero. Not writing file.`);
-  }
-
-  const header = `-- Auto-generated by Get-AllStats.mjs\n-- Source: Warcraft Logs GraphQL API (ArchonViewModels)\n-- ${timestamp}\n-- Fetched: ${overviews.length + heroes.length} entries (${overviews.length} stat, ${heroes.length} hero), skipped: 0\n\nWoWLogsStatsPrio = WoWLogsStatsPrio or {}\n\n`;
-  const lua = header + overviews.map((result) => result.lua).join("\n") + "\n" + heroes.map((result) => result.lua).join("\n");
+  console.log(`Collecting ${jobs.length} Archon entries directly from page __NEXT_DATA__ with ${options.threads} workers...`);
+  const results = await collect(jobs, timestamp, options);
+  const lua = buildLua(results, timestamp);
   await writeFile(options.outFile, lua, "utf8");
-  console.log(`Done: ${overviews.length + heroes.length} ok, 0 skipped -> ${options.outFile}`);
+  console.log(`Complete: wrote ${options.outFile} (${results.length} entries).`);
 }
 
 main().catch((error) => {
-  console.error(error.stack || error.message || error);
+  console.error(error?.stack ?? error);
   process.exitCode = 1;
 });
