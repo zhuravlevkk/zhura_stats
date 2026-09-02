@@ -1,5 +1,5 @@
 {
- "version": "12.1.0.69497",
+ "version": "12.1.0.69587",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -84808,6 +84808,23 @@
     },
     {
      "name": "IsInLFGFollowerDungeon",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "result",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsInMatchmadeRaidWithoutRoleRequirements",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],

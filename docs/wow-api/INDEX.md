@@ -1,7 +1,7 @@
-# WoW API Index (build 12.1.0.69497)
+# WoW API Index (build 12.1.0.69587)
 
-Generated from a `wow-ui-source` clone on 2026-09-01 06:57 UTC.
-Systems: 593 | Functions/events: 10245 | Conditionally-secret entries: 300
+Generated from a `wow-ui-source` clone on 2026-09-02 06:36 UTC.
+Systems: 593 | Functions/events: 10246 | Conditionally-secret entries: 300
 
 Regenerate with `python scripts/gen_api_index.py`.
 
@@ -280,7 +280,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **ItemUpgrade** (27) -- `ItemUpgradeDocumentation.lua`
 - **KeyBindings** (21) -- `KeyBindingsDocumentation.lua`
 - **LFGConstants** (10) -- `LFGConstantsDocumentation.lua`
-- **LFGInfo** (55) -- `LFGInfoDocumentation.lua`
+- **LFGInfo** (56) -- `LFGInfoDocumentation.lua`
 - **LFGListInfo** (80) -- 5 secret -- `LFGListInfoDocumentation.lua`
 - **LegendaryCrafting** (25) -- `LegendaryCraftingDocumentation.lua`
 - **LegendaryCraftingTypes** (7) -- `LegendaryCraftingTypesDocumentation.lua`

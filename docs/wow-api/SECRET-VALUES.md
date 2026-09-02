@@ -1,4 +1,4 @@
-# Secret Values -- conditionally-secret API (build 12.1.0.69497)
+# Secret Values -- conditionally-secret API (build 12.1.0.69587)
 
 Functions whose return value becomes a **Secret** under the given condition. In tainted addon code you must call `issecretvalue(v)` before any comparison, arithmetic, or table-index on the result -- otherwise the game raises a Lua error.
 
