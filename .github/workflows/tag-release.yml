@@ -94,10 +94,9 @@ jobs:
           embeds_path="$workspace/embeds.xml"
 
           if [ "${{ steps.release_exists.outputs.exists }}" = "true" ]; then
-            gh release download "${{ steps.version.outputs.tag }}" \\
-              --repo "${{ github.repository }}" \\
-              --pattern "$zip_name" \\
-              --dir "$RUNNER_TEMP"
+            curl -fsSL --retry 3 --retry-all-errors \
+              --output "$zip_path" \
+              "https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/$zip_name"
             if [ ! -s "$zip_path" ]; then
               echo "Existing GitHub release does not contain $zip_name." >&2
               exit 1
