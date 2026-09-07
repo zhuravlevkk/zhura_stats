@@ -5,6 +5,12 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      retry_curseforge:
+        description: Retry only the CurseForge upload for the existing GitHub release
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -65,15 +71,17 @@ jobs:
           fi
 
       - name: Stop because release already exists
-        if: steps.release_exists.outputs.exists == 'true'
+        if: steps.release_exists.outputs.exists == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.retry_curseforge)
         shell: bash
         run: |
-          echo "Release ${{ steps.version.outputs.tag }} already exists. Workflow completed without changes."
+          echo "Release ${{ steps.version.outputs.tag }} already exists. Set retry_curseforge when manually dispatching to retry only its CurseForge upload."
 
       - name: Build release archive
-        if: steps.release_exists.outputs.exists == 'false'
+        if: steps.release_exists.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.retry_curseforge)
         id: archive
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -84,6 +92,20 @@ jobs:
           zip_path="$RUNNER_TEMP/$zip_name"
           toc_path="$workspace/ZhuraStats.toc"
           embeds_path="$workspace/embeds.xml"
+
+          if [ "${{ steps.release_exists.outputs.exists }}" = "true" ]; then
+            gh release download "${{ steps.version.outputs.tag }}" \\
+              --repo "${{ github.repository }}" \\
+              --pattern "$zip_name" \\
+              --dir "$RUNNER_TEMP"
+            if [ ! -s "$zip_path" ]; then
+              echo "Existing GitHub release does not contain $zip_name." >&2
+              exit 1
+            fi
+            echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+            echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           rm -rf "$stage_root"
           rm -f "$zip_path"
@@ -175,7 +197,7 @@ jobs:
           path: ${{ steps.archive.outputs.zip_path }}
 
       - name: Generate release notes
-        if: steps.release_exists.outputs.exists == 'false'
+        if: steps.release_exists.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.retry_curseforge)
         id: notes
         shell: bash
         env:
@@ -199,7 +221,7 @@ jobs:
           body_path: ${{ steps.notes.outputs.path }}
 
       - name: Upload to CurseForge
-        if: steps.release_exists.outputs.exists == 'false'
+        if: steps.release_exists.outputs.exists == 'false' || (github.event_name == 'workflow_dispatch' && inputs.retry_curseforge)
         shell: bash
         env:
           CF_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
