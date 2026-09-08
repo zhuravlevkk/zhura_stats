@@ -29,6 +29,11 @@ jobs:
           getent group docker || true
           echo
 
+          echo "=== DOCKER SOCKET ACCESS ==="
+          ls -l /var/run/docker.sock 2>&1 || true
+          getfacl -p /var/run/docker.sock 2>&1 || true
+          echo
+
           echo "=== CAPACITY ==="
           df -h /
           free -h
