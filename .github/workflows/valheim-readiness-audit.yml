@@ -1,0 +1,73 @@
+name: Valheim Fresh Backup
+
+on:
+  push:
+    branches:
+      - codex/valheim-readiness-20260908
+    paths:
+      - .github/workflows/valheim-readiness-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Replace old backups with one verified current-world backup
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          container=valheim
+          world=ZhuraWorld
+          timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+          backup_name="${world}-pre-1.0-${timestamp}.zip"
+          backup_path="/config/backups/${backup_name}"
+          temp_path="/config/backups/.codex-current-world.zip"
+          server_stopped=0
+
+          restart_server() {
+            if (( server_stopped )); then
+              docker exec "$container" supervisorctl start valheim-server || true
+            fi
+          }
+          trap restart_server EXIT
+
+          docker inspect "$container" >/dev/null
+          docker exec "$container" test -s "/config/worlds_local/${world}.db"
+          docker exec "$container" test -s "/config/worlds_local/${world}.fwl"
+
+          echo "Stopping Valheim for a consistent world snapshot..."
+          docker exec "$container" supervisorctl stop valheim-server
+          server_stopped=1
+
+          docker exec "$container" rm -f "$temp_path"
+          docker exec "$container" sh -lc "cd /config/worlds_local && zip -q '$temp_path' '${world}.db' '${world}.fwl'"
+          docker exec "$container" unzip -t "$temp_path"
+          docker exec "$container" mv "$temp_path" "$backup_path"
+
+          echo "Fresh backup:"
+          docker exec "$container" ls -lh "$backup_path"
+          docker exec "$container" sha256sum "$backup_path"
+
+          echo "Deleting prior ZIP and automatic/old world backups..."
+          docker exec "$container" find /config/backups -maxdepth 1 -type f -name '*.zip' ! -name "$backup_name" -delete
+          docker exec "$container" find /config/worlds_local -maxdepth 1 -type f \( -name "${world}_backup_auto-*" -o -name "${world}.db.old" -o -name "${world}.fwl.old" \) -delete
+
+          docker exec "$container" supervisorctl start valheim-server
+          server_stopped=0
+
+          for attempt in {1..30}; do
+            if docker exec "$container" supervisorctl status valheim-server | grep -q RUNNING; then
+              break
+            fi
+            sleep 2
+          done
+
+          echo "Remaining backups:"
+          docker exec "$container" find /config/backups -maxdepth 1 -type f -printf '%f | %s bytes\n' | sort
+          echo "World files:"
+          docker exec "$container" find /config/worlds_local -maxdepth 1 -type f -name "${world}*" -printf '%f | %s bytes\n' | sort
+          docker exec "$container" supervisorctl status valheim-server
