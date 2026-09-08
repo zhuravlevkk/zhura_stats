@@ -15,10 +15,10 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
-      - name: Audit host and Valheim container
+      - name: Deep audit Valheim readiness
         shell: bash
         run: |
-          set -u
+          set -euo pipefail
 
           echo "=== HOST ==="
           date -u
@@ -26,75 +26,53 @@ jobs:
           uname -srmo
           uptime
           id
-          getent group docker || true
-          echo
-
-          echo "=== DOCKER SOCKET ACCESS ==="
-          ls -l /var/run/docker.sock 2>&1 || true
-          getfacl -p /var/run/docker.sock 2>&1 || true
-          echo
-
-          echo "=== CAPACITY ==="
           df -h /
           free -h
-          echo
 
-          audit_script="$RUNNER_TEMP/valheim-docker-audit.sh"
-          cat > "$audit_script" <<'AUDIT'
-          #!/usr/bin/env bash
-          set -u
+          echo "=== CONTAINERS ==="
+          docker version --format 'server={{.Server.Version}}'
+          docker compose version
+          docker ps --format 'name={{.Names}} | image={{.Image}} | status={{.Status}} | ports={{.Ports}}'
 
-          echo "=== DOCKER ==="
-          systemctl is-active docker 2>/dev/null || true
-          docker version --format 'server={{.Server.Version}}' 2>&1 || true
-          docker compose version 2>&1 || true
-          docker ps --format 'name={{.Names}} | image={{.Image}} | status={{.Status}} | ports={{.Ports}}' 2>&1 || true
-          echo
+          container=valheim
+          docker inspect "$container" >/dev/null
 
-          echo "=== VALHEIM ==="
-          mapfile -t containers < <(docker ps --format '{{.Names}}' 2>/dev/null)
-          valheim_found=0
-          for container in "${containers[@]}"; do
-            image=$(docker inspect --format '{{.Config.Image}}' "$container" 2>/dev/null || true)
-            identity="${container,,} ${image,,}"
-            if [[ "$identity" != *valheim* && "$identity" != *lloesche* ]]; then
-              continue
+          echo "=== VALHEIM CONFIG (NO SECRETS) ==="
+          docker inspect --format 'name={{.Name}} | image={{.Config.Image}} | state={{.State.Status}} | started={{.State.StartedAt}} | restart={{.HostConfig.RestartPolicy.Name}}' "$container"
+          docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$container" |
+            grep -E '^(WORLD_NAME|SERVER_NAME|TZ|BACKUPS|BACKUPS_CRON|BACKUPS_MAX_AGE|BACKUPS_MAX_COUNT|UPDATE_CRON|UPDATE_IF_IDLE|RESTART_CRON|RESTART_IF_IDLE|PUBLIC_TEST|BEPINEX|VALHEIM_PLUS|CROSSPLAY)=' || true
+          docker inspect --format 'project={{index .Config.Labels "com.docker.compose.project"}} | working_dir={{index .Config.Labels "com.docker.compose.project.working_dir"}} | config={{index .Config.Labels "com.docker.compose.project.config_files"}}' "$container"
+
+          echo "=== INTERNAL SERVICES ==="
+          docker exec "$container" sh -lc 'supervisorctl status 2>&1 || true'
+          docker exec "$container" sh -lc 'crontab -l 2>&1 || true'
+          docker exec "$container" sh -lc 'valheim-status 2>&1 || true'
+
+          echo "=== INSTALLED SERVER BUILD ==="
+          docker exec "$container" sh -lc 'grep -E "\"(buildid|LastUpdated|StateFlags)\"" /opt/valheim/server/steamapps/appmanifest_896660.acf 2>/dev/null || find /opt/valheim -name appmanifest_896660.acf -exec grep -E "\"(buildid|LastUpdated|StateFlags)\"" {} \; 2>/dev/null'
+
+          echo "=== WORLD ==="
+          docker exec "$container" sh -lc 'find /config/worlds_local -maxdepth 1 -type f -name "ZhuraWorld*" -printf "%TY-%Tm-%TdT%TH:%TM:%TSZ | %s | %f\n" | sort'
+
+          echo "=== BACKUPS ==="
+          docker exec "$container" sh -lc '
+            set -- /config/backups/*.zip
+            if [ -e "$1" ]; then
+              echo "count=$#"
+              du -sh /config/backups
+              echo "oldest=$(ls -1tr /config/backups/*.zip | head -n1)"
+              echo "latest=$(ls -1t /config/backups/*.zip | head -n1)"
+              unzip -t "$(ls -1t /config/backups/*.zip | head -n1)" | tail -n2
+            else
+              echo "count=0"
             fi
+          '
 
-            valheim_found=1
-            docker inspect --format 'name={{.Name}} | image={{.Config.Image}} | state={{.State.Status}} | started={{.State.StartedAt}} | restart={{.HostConfig.RestartPolicy.Name}} | health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' "$container"
-            echo "published_ports:"
-            docker port "$container" 2>&1 || true
-            echo "mounts:"
-            docker inspect --format '{{range .Mounts}}{{println .Type "|" .Source "|" .Destination}}{{end}}' "$container" 2>/dev/null || true
-            echo "compose:"
-            docker inspect --format 'project={{index .Config.Labels "com.docker.compose.project"}} | working_dir={{index .Config.Labels "com.docker.compose.project.working_dir"}} | config_files={{index .Config.Labels "com.docker.compose.project.config_files"}}' "$container" 2>/dev/null || true
-            echo "safe_config:"
-            docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$container" 2>/dev/null               | grep -E '^(WORLD_NAME|SERVER_NAME|TZ|BACKUPS|BACKUPS_CRON|BACKUPS_MAX_AGE|BACKUPS_MAX_COUNT|AUTO_UPDATE|UPDATE_CRON|UPDATE_IF_IDLE|RESTART_CRON|BEPINEX|VALHEIM_PLUS)='               || true
-            echo "server_build:"
-            docker exec "$container" sh -lc 'find /opt/valheim /config -type f -name appmanifest_896660.acf -exec grep -E "\"buildid\"|\"LastUpdated\"|\"StateFlags\" " {} \; 2>/dev/null | head -n 20' || true
-            echo "world_and_backup_files:"
-            docker exec "$container" sh -lc 'find /config /opt/valheim /backups /home/steam/.config/unity3d/IronGate/Valheim -maxdepth 8 -type f \( -name "*.db" -o -name "*.fwl" -o -name "*.db.old" -o -name "*.fwl.old" -o -name "*.tar.gz" -o -name "*.zip" \) -printf "%TY-%Tm-%TdT%TH:%TM:%TSZ | %s bytes | %p\n" 2>/dev/null | sort -r | head -n 60' || true
-            echo
-          done
+          echo "=== RECENT ERRORS ==="
+          docker logs --since 24h "$container" 2>&1 |
+            grep -Ei 'error|exception|failed|crash|corrupt|disk full|out of memory' |
+            tail -n 80 || true
 
-          if (( valheim_found == 0 )); then
-            echo "No running Valheim container detected."
-          fi
-          AUDIT
-          chmod +x "$audit_script"
-
-          if docker info >/dev/null 2>&1; then
-            "$audit_script"
-          elif getent group docker | grep -Eq "(^|,)$(id -un)(,|$)"; then
-            sg docker -c "$audit_script"
-          else
-            echo "Docker socket is inaccessible and runner is not listed in the docker group."
-          fi
-
-          echo "=== LISTENING UDP PORTS ==="
-          ss -lunp 2>/dev/null | grep -E ':(2456|2457|2458)\b' || true
-
-# access granted 2026-09-08
-
-# verify docker group access
+          echo "=== PORTS ==="
+          docker port "$container"
+          ss -lun | grep -E ':(2456|2457|2458)\b'
