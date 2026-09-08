@@ -1,0 +1,29 @@
+name: Stop Valheim Until 1.0
+
+on:
+  push:
+    branches:
+      - codex/valheim-readiness-20260908
+    paths:
+      - .github/workflows/valheim-readiness-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  stop:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - name: Stop Valheim server
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec valheim supervisorctl stop valheim-server || true
+          sleep 2
+          status=$(docker exec valheim supervisorctl status valheim-server || true)
+          echo "$status"
+          if ! grep -Eq 'STOPPED|EXITED|FATAL' <<<"$status"; then
+            echo "Valheim did not stop cleanly" >&2
+            exit 1
+          fi
