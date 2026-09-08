@@ -1,0 +1,84 @@
+name: Valheim Readiness Audit
+
+on:
+  push:
+    branches:
+      - codex/valheim-readiness-20260908
+    paths:
+      - .github/workflows/valheim-readiness-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Audit host and Valheim container
+        shell: bash
+        run: |
+          set -u
+
+          echo "=== HOST ==="
+          date -u
+          hostname
+          uname -srmo
+          uptime
+          echo
+
+          echo "=== CAPACITY ==="
+          df -h /
+          free -h
+          echo
+
+          docker_cmd=(docker)
+          if ! docker info >/dev/null 2>&1; then
+            docker_cmd=(sudo -n docker)
+          fi
+
+          echo "=== DOCKER ==="
+          systemctl is-active docker 2>/dev/null || true
+          "${docker_cmd[@]}" version --format 'server={{.Server.Version}}' 2>&1 || true
+          "${docker_cmd[@]}" compose version 2>&1 || true
+          "${docker_cmd[@]}" ps --format 'name={{.Names}} | image={{.Image}} | status={{.Status}} | ports={{.Ports}}' 2>&1 || true
+          echo
+
+          echo "=== CONTAINERS ==="
+          mapfile -t containers < <("${docker_cmd[@]}" ps --format '{{.Names}}' 2>/dev/null)
+          if (( ${#containers[@]} == 0 )); then
+            echo "No running containers or Docker is not accessible."
+          fi
+
+          valheim_found=0
+          for container in "${containers[@]}"; do
+            image=$("${docker_cmd[@]}" inspect --format '{{.Config.Image}}' "$container" 2>/dev/null || true)
+            identity="${container,,} ${image,,}"
+            if [[ "$identity" != *valheim* && "$identity" != *lloesche* ]]; then
+              continue
+            fi
+
+            valheim_found=1
+            "${docker_cmd[@]}" inspect --format 'name={{.Name}} | image={{.Config.Image}} | state={{.State.Status}} | started={{.State.StartedAt}} | restart={{.HostConfig.RestartPolicy.Name}} | health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' "$container"
+            echo "published_ports:"
+            "${docker_cmd[@]}" port "$container" 2>&1 || true
+            echo "mounts:"
+            "${docker_cmd[@]}" inspect --format '{{range .Mounts}}{{println .Type "|" .Source "|" .Destination}}{{end}}' "$container" 2>/dev/null || true
+            echo "safe_config:"
+            "${docker_cmd[@]}" inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$container" 2>/dev/null               | grep -E '^(WORLD_NAME|SERVER_NAME|TZ|BACKUPS|BACKUPS_CRON|BACKUPS_MAX_AGE|BACKUPS_MAX_COUNT|AUTO_UPDATE|UPDATE_CRON|UPDATE_IF_IDLE|RESTART_CRON|BEPINEX|VALHEIM_PLUS)='               || true
+
+            echo "world_files:"
+            mapfile -t sources < <("${docker_cmd[@]}" inspect --format '{{range .Mounts}}{{println .Source}}{{end}}' "$container" 2>/dev/null)
+            for source in "${sources[@]}"; do
+              [[ -d "$source" ]] || continue
+              find "$source" -maxdepth 7 -type f \( -name '*.db' -o -name '*.fwl' -o -name '*.db.old' -o -name '*.fwl.old' -o -name '*.tar.gz' -o -name '*.zip' \)                 -printf '%TY-%Tm-%TdT%TH:%TM:%TSZ | %s bytes | %p\n' 2>/dev/null                 | sort -r                 | head -n 40
+            done
+            echo
+          done
+
+          if (( valheim_found == 0 )); then
+            echo "No running Valheim container detected."
+          fi
+
+          echo "=== LISTENING UDP PORTS ==="
+          ss -lunp 2>/dev/null | grep -E ':(2456|2457|2458)\b' || true
