@@ -89,3 +89,5 @@ jobs:
 
           echo "=== LISTENING UDP PORTS ==="
           ss -lunp 2>/dev/null | grep -E ':(2456|2457|2458)\b' || true
+
+# access granted 2026-09-08
