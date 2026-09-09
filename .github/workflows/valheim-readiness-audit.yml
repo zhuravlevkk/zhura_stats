@@ -27,13 +27,16 @@ jobs:
           NEW_WORLD=ZhuraWorld_1_0
           ROLLBACK="${COMPOSE}.pre-final-$(date -u +%Y%m%dT%H%M%SZ)"
           launched=0
+          host_edit() {
+            docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "$1"
+          }
 
           rollback() {
             rc=$?
             trap - ERR
             echo "FINAL_RESULT=FAILED rc=$rc; restoring compose and stopping game"
             if [ -s "$ROLLBACK" ]; then
-              sudo cp -a "$ROLLBACK" "$COMPOSE"
+              host_edit "cp -a '/host/${ROLLBACK##*/}' /host/docker-compose.yml"
             fi
             docker stop valheim >/dev/null 2>&1 || true
             exit "$rc"
@@ -42,7 +45,7 @@ jobs:
 
           test -s "$COMPOSE"
           docker inspect valheim >/dev/null
-          sudo cp -a "$COMPOSE" "$ROLLBACK"
+          host_edit "cp -a /host/docker-compose.yml '/host/${ROLLBACK##*/}'"
           echo "compose_backup=$ROLLBACK"
 
           docker run --rm --volumes-from valheim --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "
@@ -62,11 +65,11 @@ jobs:
           test "$(grep -Ec -- '-modifier raids normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
           test "$(grep -Ec -- '-modifier portals normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
 
-          sudo sed -i -E 's/(WORLD_NAME=)ZhuraWorld([[:space:]]*)$/\1ZhuraWorld_1_0\2/' "$COMPOSE"
-          sudo sed -i -E 's/(WORLD_NAME:[[:space:]]*)"?ZhuraWorld"?([[:space:]]*)$/\1"ZhuraWorld_1_0"\2/' "$COMPOSE"
-          sudo sed -i -E 's/-modifier combat normal([[:space:]]*)$/-modifier combat veryhard\1/' "$COMPOSE"
-          sudo sed -i -E 's/-modifier deathpenalty veryeasy([[:space:]]*)$/-modifier deathpenalty casual\1/' "$COMPOSE"
-          sudo sed -i -E '/-modifier portals normal([[:space:]]*)$/d' "$COMPOSE"
+          host_edit "sed -i -E 's/(WORLD_NAME=)ZhuraWorld([[:space:]]*)$/\\1ZhuraWorld_1_0\\2/' /host/docker-compose.yml"
+          host_edit "sed -i -E 's/(WORLD_NAME:[[:space:]]*)\\"?ZhuraWorld\\"?([[:space:]]*)$/\\1\\"ZhuraWorld_1_0\\"\\2/' /host/docker-compose.yml"
+          host_edit "sed -i -E 's/-modifier combat normal([[:space:]]*)$/-modifier combat veryhard\\1/' /host/docker-compose.yml"
+          host_edit "sed -i -E 's/-modifier deathpenalty veryeasy([[:space:]]*)$/-modifier deathpenalty casual\\1/' /host/docker-compose.yml"
+          host_edit "sed -i -E '/-modifier portals normal([[:space:]]*)$/d' /host/docker-compose.yml"
 
           test "$(grep -Ec 'WORLD_NAME=ZhuraWorld_1_0[[:space:]]*$|WORLD_NAME:[[:space:]]*"?ZhuraWorld_1_0"?[[:space:]]*$' "$COMPOSE" || true)" -eq 1
           test "$(grep -Ec -- '-modifier combat veryhard([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
