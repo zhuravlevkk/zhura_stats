@@ -1,4 +1,4 @@
-name: Temporary Valheim safe compose probe
+name: Temporary Valheim safe args probe
 on:
   push:
     branches:
@@ -12,30 +12,22 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 5
     steps:
-      - name: Inspect safe compose structure
+      - name: Inspect sanitized SERVER_ARGS shape
         shell: bash
         run: |
           set -Eeuo pipefail
-          HELPER=ghcr.io/lloesche/valheim-server
           docker stop valheim >/dev/null 2>&1 || true
-          docker image inspect "$HELPER" >/dev/null
-          docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'PROBE'
+          docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -s <<'PROBE'
           set -e
-          for f in /host/docker-compose.yml.bak /host/docker-compose.yml; do
-            test -s "$f"
-            echo "file=$(basename "$f")"
-            grep -E '^[[:space:]]*WORLD_NAME[=:]' "$f" | sed -E 's/[[:space:]]+/ /g'
-            awk '
-              /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {
-                print "server_args_lines=1"
-                print "server_args_mapping=" ($0 ~ /SERVER_ARGS:/ ? "yes" : "no")
-                print "server_args_list=" ($0 ~ /-[[:space:]]*SERVER_ARGS=/ ? "yes" : "no")
-                print "server_args_ends_double_quote=" ($0 ~ /"[[:space:]]*$/ ? "yes" : "no")
-                print "resources_modifier_count=" gsub(/-modifier resources muchmore/, "")
-                print "combat_modifier_count=" gsub(/-modifier combat [^ ]+/, "")
-                print "death_modifier_count=" gsub(/-modifier deathpenalty [^ ]+/, "")
-              }
-            ' "$f"
-          done
+          f=/host/docker-compose.yml.bak
+          awk '
+            /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {show=3}
+            show>0 {
+              line=$0
+              gsub(/(PASS|PASSWORD|TOKEN|SECRET)[^ ]*/, "[REDACTED]", line)
+              print line
+              show--
+            }
+          ' "$f"
           PROBE
           echo "gameplay=stopped"
