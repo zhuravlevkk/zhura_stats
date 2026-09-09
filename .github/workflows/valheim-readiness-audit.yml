@@ -116,21 +116,12 @@ jobs:
           CONFIGURE
             changed=1
           elif [ "$state" = configured ] || [ "$state" = partial ]; then
-            original_name=$(docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'FIND_BACKUP'
+            BACKUP="${COMPOSE}.pre-launch-20260909T$(date -u +%H%M%SZ).bak"
+            backup_name=$(basename "$BACKUP")
+            docker run --rm -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host               --entrypoint /bin/bash "$HELPER" -s <<'BACKUP_CURRENT'
           set -e
-          for b in $(ls -1t /host/docker-compose.yml.pre-1.0-configured-*.bak 2>/dev/null); do
-            line=$(grep -E '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$b" | tr -d '[:space:]')
-            case "$line" in
-              '-WORLD_NAME=ZhuraWorld'|'WORLD_NAME:ZhuraWorld'|'WORLD_NAME:"ZhuraWorld"')
-                basename "$b"
-                exit 0
-                ;;
-            esac
-          done
-          exit 1
-          FIND_BACKUP
-            )
-            BACKUP="/opt/valheim/$original_name"
+          cp -p /host/docker-compose.yml "/host/$BACKUP_NAME"
+          BACKUP_CURRENT
             changed=1
             if [ "$state" = partial ]; then
               docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'REPAIR'
