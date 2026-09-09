@@ -62,7 +62,9 @@ jobs:
             set -e
             f=/host/docker-compose.yml
             b=/host/'"$(basename "$BACKUP")"'
-            total=$(grep -Ec "^[[:space:]-]*WORLD_NAME([:=])" "$f" || true)
+            grep -n "WORLD_NAME" "$f" | sed -E "s/^([0-9]+:)[[:space:]-]*/world_name_line=\\1/"
+            total=$(grep -Ec "^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]" "$f" || true)
+            echo "world_name_total=$total list=$list map=$map"
             list=$(grep -Ec "^[[:space:]]*-[[:space:]]*WORLD_NAME=ZhuraWorld[[:space:]]*$" "$f" || true)
             map=$(grep -Ec "^[[:space:]]*WORLD_NAME:[[:space:]]*ZhuraWorld[[:space:]]*$" "$f" || true)
             test "$total" -eq 1
