@@ -33,7 +33,7 @@ jobs:
             trap - ERR
             echo "FINAL_RESULT=FAILED rc=$rc; restoring compose and stopping game"
             if [ -s "$ROLLBACK" ]; then
-              cp -a "$ROLLBACK" "$COMPOSE"
+              sudo cp -a "$ROLLBACK" "$COMPOSE"
             fi
             docker stop valheim >/dev/null 2>&1 || true
             exit "$rc"
@@ -42,7 +42,7 @@ jobs:
 
           test -s "$COMPOSE"
           docker inspect valheim >/dev/null
-          cp -a "$COMPOSE" "$ROLLBACK"
+          sudo cp -a "$COMPOSE" "$ROLLBACK"
           echo "compose_backup=$ROLLBACK"
 
           docker run --rm --volumes-from valheim --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "
@@ -62,11 +62,11 @@ jobs:
           test "$(grep -Ec -- '-modifier raids normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
           test "$(grep -Ec -- '-modifier portals normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
 
-          sed -i -E 's/(WORLD_NAME=)ZhuraWorld([[:space:]]*)$/\1ZhuraWorld_1_0\2/' "$COMPOSE"
-          sed -i -E 's/(WORLD_NAME:[[:space:]]*)"?ZhuraWorld"?([[:space:]]*)$/\1"ZhuraWorld_1_0"\2/' "$COMPOSE"
-          sed -i -E 's/-modifier combat normal([[:space:]]*)$/-modifier combat veryhard\1/' "$COMPOSE"
-          sed -i -E 's/-modifier deathpenalty veryeasy([[:space:]]*)$/-modifier deathpenalty casual\1/' "$COMPOSE"
-          sed -i -E '/-modifier portals normal([[:space:]]*)$/d' "$COMPOSE"
+          sudo sed -i -E 's/(WORLD_NAME=)ZhuraWorld([[:space:]]*)$/\1ZhuraWorld_1_0\2/' "$COMPOSE"
+          sudo sed -i -E 's/(WORLD_NAME:[[:space:]]*)"?ZhuraWorld"?([[:space:]]*)$/\1"ZhuraWorld_1_0"\2/' "$COMPOSE"
+          sudo sed -i -E 's/-modifier combat normal([[:space:]]*)$/-modifier combat veryhard\1/' "$COMPOSE"
+          sudo sed -i -E 's/-modifier deathpenalty veryeasy([[:space:]]*)$/-modifier deathpenalty casual\1/' "$COMPOSE"
+          sudo sed -i -E '/-modifier portals normal([[:space:]]*)$/d' "$COMPOSE"
 
           test "$(grep -Ec 'WORLD_NAME=ZhuraWorld_1_0[[:space:]]*$|WORLD_NAME:[[:space:]]*"?ZhuraWorld_1_0"?[[:space:]]*$' "$COMPOSE" || true)" -eq 1
           test "$(grep -Ec -- '-modifier combat veryhard([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
