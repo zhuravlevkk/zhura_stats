@@ -63,10 +63,13 @@ jobs:
             f=/host/docker-compose.yml
             b=/host/'"$(basename "$BACKUP")"'
             total=$(grep -Ec "^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]" "$f" || true)
-            expected=$(grep -Ec "^[[:space:]]*-[[:space:]]*WORLD_NAME=ZhuraWorld[[:space:]]*$|^[[:space:]]*WORLD_NAME:[[:space:]]*[\"'\'']?ZhuraWorld[\"'\'']?[[:space:]]*$" "$f" || true)
+            world_line=$(grep -E "^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]" "$f" | tr -d "[:space:]")
             server_args=$(grep -Ec "^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]" "$f" || true)
             test "$total" -eq 1
-            test "$expected" -eq 1
+            case "$world_line" in
+              -WORLD_NAME=ZhuraWorld|WORLD_NAME:ZhuraWorld|WORLD_NAME:\"ZhuraWorld\") ;;
+              *) exit 44 ;;
+            esac
             test "$server_args" -eq 0
             cp -p "$f" "$b"
             awk '"'"'
