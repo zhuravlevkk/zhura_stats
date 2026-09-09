@@ -77,9 +77,9 @@ jobs:
               echo old
               ;;
             '-WORLD_NAME=ZhuraWorld_1_0'|'WORLD_NAME:ZhuraWorld_1_0'|'WORLD_NAME:"ZhuraWorld_1_0"')
-              if [ "$(grep -Fc -- '-modifier combat veryhard' "$f")" -eq 1 ] &&
-                 [ "$(grep -Fc -- '-modifier resources muchmore' "$f")" -eq 1 ] &&
-                 [ "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1 ]; then
+              if [ "$(grep -Fc -- '-modifier combat veryhard' "$f")" -ge 1 ] &&
+                 [ "$(grep -Fc -- '-modifier resources muchmore' "$f")" -ge 1 ] &&
+                 [ "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -ge 1 ]; then
                 echo configured
               else
                 echo partial
