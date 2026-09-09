@@ -65,6 +65,9 @@ jobs:
             total=$(grep -Ec "^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]" "$f" || true)
             world_line=$(grep -E "^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]" "$f" | tr -d "[:space:]")
             server_args=$(grep -Ec "^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]" "$f" || true)
+            echo "compose_world_line=$world_line"
+            echo "compose_world_count=$total"
+            echo "compose_server_args_count=$server_args"
             test "$total" -eq 1
             case "$world_line" in
               -WORLD_NAME=ZhuraWorld|WORLD_NAME:ZhuraWorld|WORLD_NAME:\"ZhuraWorld\") ;;
