@@ -1,4 +1,4 @@
-name: Temporary Valheim durable save and restart audit
+name: Temporary Valheim final restart audit
 on:
   push:
     branches:
@@ -10,16 +10,15 @@ permissions:
 jobs:
   audit:
     runs-on: self-hosted
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
-      - name: Persist new world, restart, and verify
+      - name: Verify durable save, start, and audit
         shell: bash
         run: |
           set -Eeuo pipefail
           WORLD=ZhuraWorld_1_0
           ARCHIVE=/config/backups/ZhuraWorld-pre-1.0-20260908T103700Z.zip
           ARCHIVE_SHA=c855e7dbd5bbb05269e2bf712af7ce85c180c43e852087d38c54d9b2640753c2
-          stopped=0
           fail() { echo "CHECK_FAILED=$1" >&2; return 1; }
           safe_stop() {
             rc=$?
@@ -31,12 +30,8 @@ jobs:
           trap safe_stop ERR
 
           test "$(docker inspect -f '{{.State.Running}}' valheim)" = true || fail container
-          docker exec valheim supervisorctl status valheim-server | grep -q RUNNING || fail supervisor_initial
-          opened_before=$(docker logs valheim 2>&1 | grep -c 'Opened Steam server' || true)
-
-          docker exec valheim supervisorctl stop valheim-server
-          stopped=1
-          docker exec valheim supervisorctl status valheim-server | grep -q STOPPED || fail graceful_stop
+          initial_status=$(docker exec valheim supervisorctl status valheim-server || true)
+          ! printf '%s\n' "$initial_status" | grep -q RUNNING || fail expected_saved_stop
           docker logs valheim 2>&1 | grep -q 'DB2 writing done' || fail db2_write
           docker logs valheim 2>&1 | grep -q 'FWL writing done' || fail fwl_write
 
@@ -46,6 +41,7 @@ jobs:
           test "$bytes" -gt 1000 || fail world_size
           echo "durable_world_save=verified files=$files bytes=$bytes"
 
+          opened_before=$(docker logs valheim 2>&1 | grep -c 'Opened Steam server' || true)
           docker exec valheim supervisorctl start valheim-server
           ready=0
           for i in $(seq 1 90); do
@@ -64,21 +60,20 @@ jobs:
           build=$(docker exec valheim bash -lc "awk -F '\"' '/\"buildid\"/ {print \$4; exit}' /opt/valheim/dl/server/steamapps/appmanifest_896660.acf")
           test "$build" = 25185644 || fail build
           supervisor=$(docker exec valheim supervisorctl status valheim-server)
-          printf '%s\n' "$supervisor" | grep -q RUNNING || fail supervisor_final
+          printf '%s\n' "$supervisor" | grep -q RUNNING || fail supervisor
           docker exec valheim valheim-status >/dev/null || fail valheim_status
           for port in 2456 2457 2458; do
             docker port valheim "${port}/udp" | grep -q . || fail "udp_port_$port"
           done
           docker logs valheim 2>&1 | tail -300 | grep -q 'isModded: False' || fail mods
           ! docker logs valheim 2>&1 | tail -300 | grep -Eqi 'Could not parse|(^|[^a-z])(FATAL|Segmentation fault|Out of memory|Failed to initialize|failed to load world)([^a-z]|$)' || fail fatal_log
-
           docker run --rm --volumes-from valheim --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "
             test -s '$ARCHIVE' &&
             test \"\$(sha256sum '$ARCHIVE' | awk '{print \$1}')\" = '$ARCHIVE_SHA' &&
             unzip -tqq '$ARCHIVE'
           " || fail archive
-
           version=$(docker logs valheim 2>&1 | sed -n 's/.*Valheim version: //p' | tail -1)
+
           printf 'FINAL_RESULT=SUCCESS\n'
           printf 'world=%s\n' "$WORLD"
           printf 'build_id=%s\n' "$build"
