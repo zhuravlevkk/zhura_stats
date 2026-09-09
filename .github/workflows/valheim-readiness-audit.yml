@@ -87,7 +87,7 @@ jobs:
             '"'"' "$f" > "$f.tmp"
             cat "$f.tmp" > "$f"
             rm -f "$f.tmp"
-            sed -i -E "/^[[:space:]]*-[[:space:]]*WORLD_NAME=ZhuraWorld[[:space:]]*$/s/ZhuraWorld/ZhuraWorld_1_0/; /^[[:space:]]*WORLD_NAME:[[:space:]]*[\"'\'']?ZhuraWorld[\"'\'']?[[:space:]]*$/s/ZhuraWorld/ZhuraWorld_1_0/" "$f"
+            sed -i -E "/WORLD_NAME/ s/ZhuraWorld/ZhuraWorld_1_0/" "$f"
             test "$(grep -Ec "ZhuraWorld_1_0" "$f")" -eq 1
             test "$(grep -Ec "^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]" "$f")" -eq 1
           '
