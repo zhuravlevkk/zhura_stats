@@ -132,29 +132,22 @@ jobs:
               docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'REPAIR'
           set -e
           f=/host/docker-compose.yml
-          add=
-          for spec in "combat veryhard" "resources muchmore" "deathpenalty casual"; do
-            category=${spec%% *}
-            if grep -Eq -- "-modifier[[:space:]]+${category}([[:space:]]|$)" "$f"; then
-              grep -Fq -- "-modifier $spec" "$f" || exit 46
-            else
-              add="$add -modifier $spec"
-            fi
-          done
-          if [ -n "$add" ]; then
-            awk -v add="$add" '
-              /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {
-                if ($0 ~ /"[[:space:]]*$/) {
-                  sub(/"[[:space:]]*$/, add "\"")
-                } else {
-                  $0 = $0 add
-                }
+          awk '
+            /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {
+              gsub(/-modifier[[:space:]]+combat[[:space:]]+[^[:space:]"]+[[:space:]]*/, "")
+              gsub(/-modifier[[:space:]]+resources[[:space:]]+[^[:space:]"]+[[:space:]]*/, "")
+              gsub(/-modifier[[:space:]]+deathpenalty[[:space:]]+[^[:space:]"]+[[:space:]]*/, "")
+              add="-modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual"
+              if ($0 ~ /"[[:space:]]*$/) {
+                sub(/"[[:space:]]*$/, add "\"")
+              } else {
+                $0 = $0 add
               }
-              { print }
-            ' "$f" > "$f.tmp"
-            cat "$f.tmp" > "$f"
-            rm -f "$f.tmp"
-          fi
+            }
+            { print }
+          ' "$f" > "$f.tmp"
+          cat "$f.tmp" > "$f"
+          rm -f "$f.tmp"
           test "$(grep -Fc -- '-modifier combat veryhard' "$f")" -eq 1
           test "$(grep -Fc -- '-modifier resources muchmore' "$f")" -eq 1
           test "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1
