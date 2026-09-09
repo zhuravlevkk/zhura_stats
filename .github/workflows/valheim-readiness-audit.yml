@@ -1,0 +1,23 @@
+name: Temporary Valheim address check
+on:
+  push:
+    branches:
+      - codex/valheim-readiness-20260908
+    paths:
+      - .github/workflows/valheim-readiness-audit.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - name: Report server network address
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ipv4=$(ip -4 route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')
+          test -n "$ipv4"
+          echo "SERVER_IPV4=$ipv4"
+          echo "VALHEIM_PORT=2456"
+          docker exec valheim supervisorctl status valheim-server
