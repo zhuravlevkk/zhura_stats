@@ -35,7 +35,7 @@ jobs:
             echo "failure_line=${BASH_LINENO[0]:-unknown}"
             if [ "$changed" -eq 1 ] && [ -n "$BACKUP" ] && [ -f "$BACKUP" ]; then
               backup_name=$(basename "$BACKUP")
-              docker run --rm -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'RESTORE'
+              docker run --rm -i -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'RESTORE'
           set -e
           cp -f "/host/$BACKUP_NAME" /host/docker-compose.yml
           RESTORE
@@ -52,7 +52,7 @@ jobs:
           docker image inspect "$HELPER" >/dev/null
           test -f "$COMPOSE"
 
-          docker run --rm -e ARCHIVE="$ARCHIVE" -e EXPECTED_SHA="$EXPECTED_SHA"             -v /opt/valheim/config:/config:ro --entrypoint /bin/bash "$HELPER" -s <<'ARCHIVE_CHECK'
+          docker run --rm -i -e ARCHIVE="$ARCHIVE" -e EXPECTED_SHA="$EXPECTED_SHA"             -v /opt/valheim/config:/config:ro --entrypoint /bin/bash "$HELPER" -s <<'ARCHIVE_CHECK'
           set -e
           test -s "$ARCHIVE"
           unzip -tqq "$ARCHIVE"
@@ -61,7 +61,7 @@ jobs:
           ARCHIVE_CHECK
           echo "pre_1_0_archive=verified"
 
-          state=$(docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'STATE_CHECK'
+          state=$(docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'STATE_CHECK'
           set -e
           f=/host/docker-compose.yml
           echo "state_world_count=$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' \"$f\" || true)" >&2
@@ -95,7 +95,7 @@ jobs:
           if [ "$state" = old ]; then
             BACKUP="${COMPOSE}.pre-1.0-configured-20260909T$(date -u +%H%M%SZ).bak"
             backup_name=$(basename "$BACKUP")
-            docker run --rm -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host               --entrypoint /bin/bash "$HELPER" -s <<'CONFIGURE'
+            docker run --rm -i -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host               --entrypoint /bin/bash "$HELPER" -s <<'CONFIGURE'
           set -e
           f=/host/docker-compose.yml
           b="/host/$BACKUP_NAME"
@@ -123,13 +123,13 @@ jobs:
           elif [ "$state" = configured ] || [ "$state" = partial ]; then
             BACKUP="${COMPOSE}.pre-launch-20260909T$(date -u +%H%M%SZ).bak"
             backup_name=$(basename "$BACKUP")
-            docker run --rm -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host               --entrypoint /bin/bash "$HELPER" -s <<'BACKUP_CURRENT'
+            docker run --rm -i -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host               --entrypoint /bin/bash "$HELPER" -s <<'BACKUP_CURRENT'
           set -e
           cp -p /host/docker-compose.yml "/host/$BACKUP_NAME"
           BACKUP_CURRENT
             changed=1
             if [ "$state" = partial ]; then
-              docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'REPAIR'
+              docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'REPAIR'
           set -e
           f=/host/docker-compose.yml
           add=
