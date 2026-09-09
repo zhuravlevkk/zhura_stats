@@ -73,19 +73,19 @@ jobs:
               -WORLD_NAME=ZhuraWorld|WORLD_NAME:ZhuraWorld|WORLD_NAME:\"ZhuraWorld\") ;;
               *) exit 44 ;;
             esac
-            test "$server_args" -eq 0
+            test "$server_args" -eq 1
             cp -p "$f" "$b"
             awk '"'"'
-              { print }
-              /^[[:space:]]*-[[:space:]]*WORLD_NAME=/ {
-                match($0, /^[[:space:]]*-[[:space:]]*/)
-                p=substr($0, RSTART, RLENGTH)
-                print p "SERVER_ARGS=-modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual"
-              }
-              /^[[:space:]]*WORLD_NAME:/ {
-                match($0, /^[[:space:]]*/)
-                p=substr($0, RSTART, RLENGTH)
-                print p "SERVER_ARGS: \"-modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual\""
+              {
+                if ($0 ~ /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/) {
+                  if ($0 ~ /-modifier|-preset/) exit 45
+                  if ($0 ~ /"[[:space:]]*$/) {
+                    sub(/"[[:space:]]*$/, " -modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual\"")
+                  } else {
+                    $0 = $0 " -modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual"
+                  }
+                }
+                print
               }
             '"'"' "$f" > "$f.tmp"
             cat "$f.tmp" > "$f"
@@ -93,6 +93,9 @@ jobs:
             sed -i -E "/WORLD_NAME/ s/ZhuraWorld/ZhuraWorld_1_0/" "$f"
             test "$(grep -Ec "ZhuraWorld_1_0" "$f")" -eq 1
             test "$(grep -Ec "^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]" "$f")" -eq 1
+            test "$(grep -Ec -- "-modifier combat veryhard" "$f")" -eq 1
+            test "$(grep -Ec -- "-modifier resources muchmore" "$f")" -eq 1
+            test "$(grep -Ec -- "-modifier deathpenalty casual" "$f")" -eq 1
           '
           changed=1
           echo "compose_backup=$(basename "$BACKUP")"
