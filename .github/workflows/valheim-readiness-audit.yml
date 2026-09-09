@@ -89,7 +89,7 @@ jobs:
               build=$(docker exec valheim /bin/bash -lc '
                 f=$(find /opt/valheim -name appmanifest_896660.acf -type f -print -quit 2>/dev/null)
                 [ -n "$f" ] || exit 1
-                awk -F\" "/\\"buildid\\"/ {print \\$4; exit}" "$f"
+                grep buildid "$f" | head -1 | tr -d "\\"[:space:]" | cut -d: -f2
               ' 2>/dev/null || true)
               if [ -n "$build" ] && [ "$build" != "$OLD_BUILD" ] &&
                  docker exec valheim test -s "/config/worlds_local/${NEW_WORLD}.db" &&
