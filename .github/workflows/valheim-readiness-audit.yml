@@ -1,4 +1,4 @@
-name: Temporary Valheim Steam build diagnostic
+name: Temporary Valheim direct Steam update
 on:
   push:
     branches:
@@ -8,40 +8,37 @@ on:
 permissions:
   contents: read
 jobs:
-  diagnose:
+  update:
     runs-on: self-hosted
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
-      - name: Diagnose Steam dedicated build safely
+      - name: Update dedicated server without starting gameplay
         shell: bash
         run: |
           set -Eeuo pipefail
+          HELPER=ghcr.io/lloesche/valheim-server
+          ARCHIVE=/config/backups/ZhuraWorld-pre-1.0-20260908T103700Z.zip
+          EXPECTED_SHA=c855e7dbd5bbb05269e2bf712af7ce85c180c43e852087d38c54d9b2640753c2
           docker stop valheim >/dev/null 2>&1 || true
-          echo "container_running=$(docker inspect -f '{{.State.Running}}' valheim 2>/dev/null || echo absent)"
-          manifest=$(docker run --rm --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc 'find /opt/valheim -name appmanifest_896660.acf -type f -print -quit' 2>/dev/null || true)
-          echo "fresh_image_bundled_manifest=${manifest:-none}"
-          echo "safe_container_update_log_begin"
-          docker logs valheim 2>&1 |
-            grep -Eai 'steam|update|build|version|error|fail|supervisor|valheim-server' |
-            grep -Evai 'pass(word)?|token|secret' |
-            tail -n 160 || true
-          echo "safe_container_update_log_end"
-          docker run --rm --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc '
-            set -e
-            steamcmd_path=$(command -v steamcmd || find / -name steamcmd.sh -type f -print -quit 2>/dev/null)
-            echo "steamcmd_found=$([ -n "$steamcmd_path" ] && echo yes || echo no)"
-            test -n "$steamcmd_path"
-            "$steamcmd_path" +login anonymous +app_info_update 1 +app_info_print 896660 +quit 2>&1 |
-              awk '"'"'
-                /"branches"/ {branches=1}
-                branches && /"public"/ {public=1}
-                public && /"buildid"/ {
-                  gsub(/"/,"")
-                  gsub(/^[[:space:]]+|[[:space:]]+$/,"")
-                  print "steam_public_" $0
-                  exit
-                }
-              '"'"'
+          docker run --rm -i -e ARCHIVE="$ARCHIVE" -e EXPECTED_SHA="$EXPECTED_SHA" \
+            -v /opt/valheim/config:/config:ro --entrypoint /bin/bash "$HELPER" -s <<'VERIFY'
+          set -e
+          test -s "$ARCHIVE"
+          unzip -tqq "$ARCHIVE"
+          test "$(sha256sum "$ARCHIVE" | cut -d " " -f1)" = "$EXPECTED_SHA"
+          VERIFY
+          echo "pre_1_0_archive=verified"
+
+          docker run --rm --volumes-from valheim --entrypoint /bin/bash "$HELPER" -lc '
+            set -Eeuo pipefail
+            chown -R valheim:valheim /opt/valheim
+            su valheim -s /bin/bash -c "HOME=/home/valheim /opt/steamcmd/steamcmd.sh +force_install_dir /opt/valheim +login anonymous +app_update 896660 validate +quit"
+            manifest=$(find /opt/valheim -name appmanifest_896660.acf -type f -print -quit)
+            test -n "$manifest"
+            build=$(awk -F "\"" '"'"'/"buildid"/ {print $4; exit}'"'"' "$manifest")
+            echo "installed_build_id=$build"
+            test "$build" = "25185644"
           '
           docker stop valheim >/dev/null 2>&1 || true
           echo "gameplay=stopped"
+          echo "RESULT=STEAM_UPDATE_SUCCESS"
