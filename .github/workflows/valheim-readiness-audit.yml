@@ -1,218 +1,29 @@
-name: Temporary Valheim 1.0 configured launch
-
+name: Temporary Valheim compose backup probe
 on:
   push:
     branches:
       - codex/valheim-readiness-20260908
     paths:
       - .github/workflows/valheim-readiness-audit.yml
-
-permissions:
-  contents: read
-
 jobs:
-  configured-launch:
+  probe:
     runs-on: self-hosted
-    timeout-minutes: 45
+    timeout-minutes: 5
     steps:
-      - name: Configure, launch, and audit Valheim 1.0
+      - name: List sanitized Valheim compose backups
         shell: bash
         run: |
-          set -Eeuo pipefail
-          COMPOSE=/opt/valheim/docker-compose.yml
-          OLD_BUILD=21981590
-          NEW_WORLD=ZhuraWorld_1_0
-          ARCHIVE=/config/backups/ZhuraWorld-pre-1.0-20260908T103700Z.zip
-          EXPECTED_SHA=c855e7dbd5bbb05269e2bf712af7ce85c180c43e852087d38c54d9b2640753c2
+          set -euo pipefail
           HELPER=ghcr.io/lloesche/valheim-server
-          BACKUP=
-          changed=0
-
-          rollback() {
-            rc=$?
-            trap - ERR
-            echo "RESULT=FAILED"
-            echo "failure_line=${BASH_LINENO[0]:-unknown}"
-            if [ "$changed" -eq 1 ] && [ -n "$BACKUP" ] && [ -f "$BACKUP" ]; then
-              backup_name=$(basename "$BACKUP")
-              docker run --rm -i -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'RESTORE'
+          docker stop valheim >/dev/null 2>&1 || true
+          docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'PROBE'
           set -e
-          cp -f "/host/$BACKUP_NAME" /host/docker-compose.yml
-          RESTORE
-              echo "compose_rollback=restored"
-            else
-              echo "compose_rollback=not_needed"
-            fi
-            docker compose -f "$COMPOSE" stop >/dev/null 2>&1 || docker stop valheim >/dev/null 2>&1 || true
-            echo "gameplay=stopped"
-            exit "$rc"
-          }
-          trap rollback ERR
-
-          docker image inspect "$HELPER" >/dev/null
-          test -f "$COMPOSE"
-
-          docker run --rm -i -e ARCHIVE="$ARCHIVE" -e EXPECTED_SHA="$EXPECTED_SHA"             -v /opt/valheim/config:/config:ro --entrypoint /bin/bash "$HELPER" -s <<'ARCHIVE_CHECK'
-          set -e
-          test -s "$ARCHIVE"
-          unzip -tqq "$ARCHIVE"
-          actual=$(sha256sum "$ARCHIVE" | cut -d " " -f1)
-          test "$actual" = "$EXPECTED_SHA"
-          ARCHIVE_CHECK
-          echo "pre_1_0_archive=verified"
-
-          state=$(docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'STATE_CHECK'
-          set -e
-          f=/host/docker-compose.yml
-          echo "state_world_count=$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$f" || true)" >&2
-          echo "state_args_count=$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]' "$f" || true)" >&2
-          echo "state_combat_count=$(grep -Fc -- '-modifier combat veryhard' "$f" || true)" >&2
-          echo "state_resources_count=$(grep -Fc -- '-modifier resources muchmore' "$f" || true)" >&2
-          echo "state_death_count=$(grep -Fc -- '-modifier deathpenalty casual' "$f" || true)" >&2
-          test "$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$f" || true)" -eq 1
-          test "$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]' "$f" || true)" -eq 1
-          world_line=$(grep -E '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$f" | tr -d '[:space:]')
-          case "$world_line" in
-            '-WORLD_NAME=ZhuraWorld'|'WORLD_NAME:ZhuraWorld'|'WORLD_NAME:"ZhuraWorld"')
-              echo old
-              ;;
-            '-WORLD_NAME=ZhuraWorld_1_0'|'WORLD_NAME:ZhuraWorld_1_0'|'WORLD_NAME:"ZhuraWorld_1_0"')
-              if [ "$(grep -Fc -- '-modifier combat veryhard' "$f")" -ge 1 ] &&
-                 [ "$(grep -Fc -- '-modifier resources muchmore' "$f")" -ge 1 ] &&
-                 [ "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -ge 1 ]; then
-                echo configured
-              else
-                echo partial
-              fi
-              ;;
-            *)
-              exit 44
-              ;;
-          esac
-          STATE_CHECK
-          )
-
-          if [ "$state" = old ]; then
-            BACKUP="${COMPOSE}.pre-1.0-configured-20260909T$(date -u +%H%M%SZ).bak"
-            backup_name=$(basename "$BACKUP")
-            docker run --rm -i -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host               --entrypoint /bin/bash "$HELPER" -s <<'CONFIGURE'
-          set -e
-          f=/host/docker-compose.yml
-          b="/host/$BACKUP_NAME"
-          cp -p "$f" "$b"
-          awk '
-            /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {
-              if ($0 ~ /-modifier[[:space:]]+(combat|resources|deathpenalty)/) exit 45
-              if ($0 ~ /"[[:space:]]*$/) {
-                sub(/"[[:space:]]*$/, " -modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual\"")
-              } else {
-                $0 = $0 " -modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual"
-              }
-            }
-            { print }
-          ' "$f" > "$f.tmp"
-          cat "$f.tmp" > "$f"
-          rm -f "$f.tmp"
-          sed -i -E '/WORLD_NAME/ s/ZhuraWorld/ZhuraWorld_1_0/' "$f"
-          test "$(grep -Fc -- 'ZhuraWorld_1_0' "$f")" -eq 1
-          test "$(grep -Fc -- '-modifier combat veryhard' "$f")" -eq 1
-          test "$(grep -Fc -- '-modifier resources muchmore' "$f")" -eq 1
-          test "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1
-          CONFIGURE
-            changed=1
-          elif [ "$state" = configured ] || [ "$state" = partial ]; then
-            BACKUP="${COMPOSE}.pre-launch-20260909T$(date -u +%H%M%SZ).bak"
-            backup_name=$(basename "$BACKUP")
-            docker run --rm -i -e BACKUP_NAME="$backup_name" -v /opt/valheim:/host               --entrypoint /bin/bash "$HELPER" -s <<'BACKUP_CURRENT'
-          set -e
-          cp -p /host/docker-compose.yml "/host/$BACKUP_NAME"
-          BACKUP_CURRENT
-            changed=1
-            if [ "$state" = partial ]; then
-              docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'REPAIR'
-          set -e
-          f=/host/docker-compose.yml
-          awk '
-            /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {
-              gsub(/-modifier[[:space:]]+combat[[:space:]]+[^[:space:]"]+[[:space:]]*/, "")
-              gsub(/-modifier[[:space:]]+resources[[:space:]]+[^[:space:]"]+[[:space:]]*/, "")
-              gsub(/-modifier[[:space:]]+deathpenalty[[:space:]]+[^[:space:]"]+[[:space:]]*/, "")
-              add="-modifier combat veryhard -modifier resources muchmore -modifier deathpenalty casual"
-              if ($0 ~ /"[[:space:]]*$/) {
-                sub(/"[[:space:]]*$/, add "\"")
-              } else {
-                $0 = $0 add
-              }
-            }
-            { print }
-          ' "$f" > "$f.tmp"
-          cat "$f.tmp" > "$f"
-          rm -f "$f.tmp"
-          test "$(grep -Fc -- '-modifier combat veryhard' "$f")" -eq 1
-          test "$(grep -Fc -- '-modifier resources muchmore' "$f")" -eq 1
-          test "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1
-          REPAIR
-            fi
-          else
-            false
-          fi
-
-          echo "compose_backup=$(basename "$BACKUP")"
-          echo "world=$NEW_WORLD"
-          echo "combat=veryhard"
-          echo "resources=2x"
-          echo "death_penalty=casual"
-
-          docker compose -f "$COMPOSE" pull
-          docker compose -f "$COMPOSE" up -d --force-recreate
-
-          ready=0
-          build=
-          for attempt in $(seq 1 120); do
-            if [ "$(docker inspect -f '{{.State.Running}}' valheim 2>/dev/null || true)" = true ]; then
-              manifest=$(docker exec valheim find /opt/valheim -name appmanifest_896660.acf -type f -print -quit 2>/dev/null || true)
-              if [ -n "$manifest" ]; then
-                build=$(docker exec valheim grep buildid "$manifest" 2>/dev/null | head -1 | tr -d '"[:space:]' | cut -d: -f2 || true)
-              fi
-              if [ -n "$build" ] && [ "$build" != "$OLD_BUILD" ] &&
-                 docker exec valheim test -s "/config/worlds_local/${NEW_WORLD}.db" &&
-                 docker exec valheim test -s "/config/worlds_local/${NEW_WORLD}.fwl" &&
-                 docker exec valheim supervisorctl status valheim-server 2>/dev/null | grep -q RUNNING &&
-                 docker exec valheim valheim-status >/dev/null 2>&1; then
-                ready=1
-                break
-              fi
-            fi
-            sleep 15
+          for b in /host/docker-compose.yml*.bak; do
+            [ -f "$b" ] || continue
+            world=$(grep -E '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$b" | tr -d '[:space:]' || true)
+            combat=$(grep -Fc -- '-modifier combat veryhard' "$b" || true)
+            resources=$(grep -Fc -- '-modifier resources muchmore' "$b" || true)
+            death=$(grep -Fc -- '-modifier deathpenalty casual' "$b" || true)
+            echo "backup=$(basename "$b") world=$world combat=$combat resources=$resources death=$death"
           done
-          test "$ready" -eq 1
-
-          for port in 2456 2457 2458; do
-            docker port valheim "${port}/udp" | grep -q .
-          done
-
-          docker exec valheim /bin/bash -lc '
-            test "${BEPINEX:-false}" != "true"
-            test "${VALHEIM_PLUS:-false}" != "true"
-            ! pgrep -af "Bep[I]nEx|Valheim[P]lus" >/dev/null
-          '
-
-          if docker logs --tail 800 valheim 2>&1 |
-             grep -Eai 'segmentation fault|fatal error|failed to start valheim|valheim-server[[:space:]]+FATAL' >/dev/null; then
-            echo "fatal_log_check=failed"
-            false
-          fi
-
-          db_size=$(docker exec valheim stat -c %s "/config/worlds_local/${NEW_WORLD}.db")
-          fwl_size=$(docker exec valheim stat -c %s "/config/worlds_local/${NEW_WORLD}.fwl")
-          supervisor=$(docker exec valheim supervisorctl status valheim-server | awk '{print $2}')
-          echo "RESULT=SUCCESS"
-          echo "build_id=$build"
-          echo "world_db_bytes=$db_size"
-          echo "world_fwl_bytes=$fwl_size"
-          echo "supervisor_valheim_server=$supervisor"
-          echo "valheim_status=ok"
-          echo "udp_ports=2456,2457,2458"
-          echo "mods=disabled"
-          echo "fatal_errors=none"
-          echo "pre_1_0_archive=preserved"
+          PROBE
