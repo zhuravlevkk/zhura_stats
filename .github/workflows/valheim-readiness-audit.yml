@@ -1,4 +1,4 @@
-name: Temporary Valheim direct Steam update
+name: Temporary Valheim manifest diagnostic
 on:
   push:
     branches:
@@ -8,37 +8,27 @@ on:
 permissions:
   contents: read
 jobs:
-  update:
+  diagnose:
     runs-on: self-hosted
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-      - name: Update dedicated server without starting gameplay
+      - name: Inspect all dedicated manifests
         shell: bash
         run: |
           set -Eeuo pipefail
-          HELPER=ghcr.io/lloesche/valheim-server
-          ARCHIVE=/config/backups/ZhuraWorld-pre-1.0-20260908T103700Z.zip
-          EXPECTED_SHA=c855e7dbd5bbb05269e2bf712af7ce85c180c43e852087d38c54d9b2640753c2
           docker stop valheim >/dev/null 2>&1 || true
-          docker run --rm -i -e ARCHIVE="$ARCHIVE" -e EXPECTED_SHA="$EXPECTED_SHA" \
-            -v /opt/valheim/config:/config:ro --entrypoint /bin/bash "$HELPER" -s <<'VERIFY'
-          set -e
-          test -s "$ARCHIVE"
-          unzip -tqq "$ARCHIVE"
-          test "$(sha256sum "$ARCHIVE" | cut -d " " -f1)" = "$EXPECTED_SHA"
-          VERIFY
-          echo "pre_1_0_archive=verified"
-
-          docker run --rm --volumes-from valheim --entrypoint /bin/bash "$HELPER" -lc '
-            set -Eeuo pipefail
-            chown -R valheim:valheim /opt/valheim
-            su valheim -s /bin/bash -c "HOME=/home/valheim /opt/steamcmd/steamcmd.sh +force_install_dir /opt/valheim +login anonymous +app_update 896660 validate +quit"
-            manifest=$(find /opt/valheim -name appmanifest_896660.acf -type f -print -quit)
-            test -n "$manifest"
-            build=$(awk -F "\"" '"'"'/"buildid"/ {print $4; exit}'"'"' "$manifest")
-            echo "installed_build_id=$build"
-            test "$build" = "25185644"
+          docker run --rm --volumes-from valheim --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc '
+            set -e
+            count=0
+            while IFS= read -r f; do
+              count=$((count+1))
+              build=$(awk -F "\"" '"'"'/"buildid"/ {print $4; exit}'"'"' "$f")
+              bytes=$(stat -c %s "$f")
+              modified=$(stat -c %y "$f" | cut -d. -f1)
+              echo "manifest_path=$f build_id=$build bytes=$bytes modified=$modified"
+            done < <(find /opt/valheim -name appmanifest_896660.acf -type f -print | sort)
+            echo "manifest_count=$count"
+            find /opt/valheim -maxdepth 3 -type f \( -name valheim_server.x86_64 -o -name valheim_server.x86 \) -printf "server_binary=%p bytes=%s modified=%TY-%Tm-%TdT%TH:%TM:%TS\n" | sort
           '
           docker stop valheim >/dev/null 2>&1 || true
           echo "gameplay=stopped"
-          echo "RESULT=STEAM_UPDATE_SUCCESS"
