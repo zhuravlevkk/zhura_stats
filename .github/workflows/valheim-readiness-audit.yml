@@ -1,4 +1,4 @@
-name: Temporary Valheim 1.0 final launch
+name: Temporary Valheim safe config preflight
 on:
   push:
     branches:
@@ -7,148 +7,18 @@ on:
       - .github/workflows/valheim-readiness-audit.yml
 permissions:
   contents: read
-concurrency:
-  group: valheim-1-0-final-launch
-  cancel-in-progress: false
 jobs:
-  launch:
+  inspect:
     runs-on: self-hosted
-    timeout-minutes: 25
+    timeout-minutes: 5
     steps:
-      - name: Verify backup, configure, launch, and audit
+      - name: Print non-secret world configuration
         shell: bash
         run: |
           set -Eeuo pipefail
-
           COMPOSE=/opt/valheim/docker-compose.yml
-          ARCHIVE=/config/backups/ZhuraWorld-pre-1.0-20260908T103700Z.zip
-          ARCHIVE_SHA=c855e7dbd5bbb05269e2bf712af7ce85c180c43e852087d38c54d9b2640753c2
-          OLD_BUILD=21981590
-          NEW_WORLD=ZhuraWorld_1_0
-          ROLLBACK="${COMPOSE}.pre-final-$(date -u +%Y%m%dT%H%M%SZ)"
-          launched=0
-          host_edit() {
-            docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "$1"
-          }
-
-          rollback() {
-            rc=$?
-            trap - ERR
-            echo "FINAL_RESULT=FAILED rc=$rc; restoring compose and stopping game"
-            if [ -s "$ROLLBACK" ]; then
-              host_edit "cp -a '/host/${ROLLBACK##*/}' /host/docker-compose.yml"
-            fi
-            docker stop valheim >/dev/null 2>&1 || true
-            exit "$rc"
-          }
-          trap rollback ERR
-
           test -s "$COMPOSE"
-          docker inspect valheim >/dev/null
-          host_edit "cp -a /host/docker-compose.yml '/host/${ROLLBACK##*/}'"
-          echo "compose_backup=$ROLLBACK"
-
-          docker run --rm --volumes-from valheim --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "
-            set -Eeuo pipefail
-            test -s '$ARCHIVE'
-            actual=\$(sha256sum '$ARCHIVE' | awk '{print \$1}')
-            test \"\$actual\" = '$ARCHIVE_SHA'
-            unzip -tqq '$ARCHIVE'
-          "
-          echo "pre_1_0_archive=verified"
-
-          world_count=$(grep -Ec 'WORLD_NAME=ZhuraWorld[[:space:]]*$|WORLD_NAME:[[:space:]]*"?ZhuraWorld"?[[:space:]]*$' "$COMPOSE" || true)
-          test "$world_count" -eq 1
-          test "$(grep -Ec -- '-modifier combat normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier deathpenalty veryeasy([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier resources muchmore([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier raids normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier portals normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-
-          host_edit "sed -i -E 's/(WORLD_NAME=)ZhuraWorld([[:space:]]*)$/\\1ZhuraWorld_1_0\\2/' /host/docker-compose.yml"
-          host_edit "sed -i -E 's/(WORLD_NAME:[[:space:]]*)\\"?ZhuraWorld\\"?([[:space:]]*)$/\\1\\"ZhuraWorld_1_0\\"\\2/' /host/docker-compose.yml"
-          host_edit "sed -i -E 's/-modifier combat normal([[:space:]]*)$/-modifier combat veryhard\\1/' /host/docker-compose.yml"
-          host_edit "sed -i -E 's/-modifier deathpenalty veryeasy([[:space:]]*)$/-modifier deathpenalty casual\\1/' /host/docker-compose.yml"
-          host_edit "sed -i -E '/-modifier portals normal([[:space:]]*)$/d' /host/docker-compose.yml"
-
-          test "$(grep -Ec 'WORLD_NAME=ZhuraWorld_1_0[[:space:]]*$|WORLD_NAME:[[:space:]]*"?ZhuraWorld_1_0"?[[:space:]]*$' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier combat veryhard([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier deathpenalty casual([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier resources muchmore([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          test "$(grep -Ec -- '-modifier raids normal([[:space:]]|$)' "$COMPOSE" || true)" -eq 1
-          ! grep -Eq -- '-modifier portals([[:space:]]|$)' "$COMPOSE"
-          docker compose -f "$COMPOSE" config -q
-          echo "compose_configuration=validated"
-
-          docker run --rm --volumes-from valheim --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "
-            set -Eeuo pipefail
-            rm -rf '/config/worlds_local/$NEW_WORLD'
-            rm -f '/config/worlds_local/$NEW_WORLD.db' '/config/worlds_local/$NEW_WORLD.fwl'
-          "
-          echo "new_world_previous_attempt=cleared"
-
-          docker compose -f "$COMPOSE" pull
-          docker compose -f "$COMPOSE" up -d --force-recreate
-          launched=1
-
-          ready=0
-          for i in $(seq 1 120); do
-            running=$(docker inspect -f '{{.State.Running}}' valheim 2>/dev/null || true)
-            if [ "$running" != true ]; then
-              sleep 5
-              continue
-            fi
-
-            build=$(docker exec valheim bash -lc "awk -F '\"' '/\"buildid\"/ {print \$4; exit}' /opt/valheim/dl/server/steamapps/appmanifest_896660.acf" 2>/dev/null || true)
-            files=$(docker exec valheim bash -lc "find '/config/worlds_local/$NEW_WORLD' -type f -size +0c 2>/dev/null | wc -l" 2>/dev/null || echo 0)
-            if [ -n "$build" ] && [ "$build" != "$OLD_BUILD" ] &&
-               docker logs valheim 2>&1 | grep -q 'Valheim version' &&
-               docker logs valheim 2>&1 | grep -q 'Opened Steam server' &&
-               docker logs valheim 2>&1 | grep -q 'Loading: Done' &&
-               [ "${files:-0}" -gt 0 ]; then
-              ready=1
-              break
-            fi
-            sleep 5
-          done
-          test "$ready" -eq 1
-
-          build=$(docker exec valheim bash -lc "awk -F '\"' '/\"buildid\"/ {print \$4; exit}' /opt/valheim/dl/server/steamapps/appmanifest_896660.acf")
-          test -n "$build"
-          test "$build" != "$OLD_BUILD"
-
-          supervisor=$(docker exec valheim supervisorctl status valheim-server)
-          printf '%s\n' "$supervisor" | grep -q RUNNING
-          docker exec valheim valheim-status >/dev/null
-
-          for port in 2456 2457 2458; do
-            docker port valheim "${port}/udp" | grep -q .
-          done
-
-          docker logs valheim 2>&1 | grep -q 'isModded False'
-          ! docker logs valheim 2>&1 | grep -Eqi 'Could not parse|(^|[^a-z])(FATAL|Segmentation fault|Out of memory|Failed to initialize|failed to load world)([^a-z]|$)'
-
-          world_files=$(docker exec valheim bash -lc "find '/config/worlds_local/$NEW_WORLD' -type f -size +0c | wc -l")
-          world_bytes=$(docker exec valheim bash -lc "find '/config/worlds_local/$NEW_WORLD' -type f -printf '%s\n' | awk '{s+=\$1} END {print s+0}'")
-          test "$world_files" -gt 0
-          test "$world_bytes" -gt 0
-
-          docker run --rm --volumes-from valheim --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -lc "
-            set -Eeuo pipefail
-            test -s '$ARCHIVE'
-            test \"\$(sha256sum '$ARCHIVE' | awk '{print \$1}')\" = '$ARCHIVE_SHA'
-          "
-
-          version=$(docker logs valheim 2>&1 | sed -n 's/.*Valheim version: //p' | tail -1)
-          printf 'FINAL_RESULT=SUCCESS\n'
-          printf 'world=%s\n' "$NEW_WORLD"
-          printf 'build_id=%s\n' "$build"
-          printf 'version=%s\n' "$version"
-          printf 'world_files=%s\n' "$world_files"
-          printf 'world_bytes=%s\n' "$world_bytes"
-          printf 'supervisor=%s\n' "$supervisor"
-          printf 'ports=2456-2458/udp published\n'
-          printf 'mods=isModded False\n'
-          printf 'settings=combat:veryhard resources:muchmore deathpenalty:casual raids:normal portals:default\n'
-          printf 'archive=verified-preserved\n'
-          trap - ERR
+          echo "container_running=$(docker inspect -f '{{.State.Running}}' valheim 2>/dev/null || echo absent)"
+          echo "world_config_begin"
+          grep -E 'WORLD_NAME|SERVER_ARGS|^[[:space:]]*-modifier ' "$COMPOSE" || true
+          echo "world_config_end"
