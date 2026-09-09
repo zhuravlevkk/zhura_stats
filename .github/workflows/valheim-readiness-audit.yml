@@ -64,11 +64,11 @@ jobs:
           state=$(docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'STATE_CHECK'
           set -e
           f=/host/docker-compose.yml
-          echo "state_world_count=$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' \"$f\" || true)" >&2
-          echo "state_args_count=$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]' \"$f\" || true)" >&2
-          echo "state_combat_count=$(grep -Fc -- '-modifier combat veryhard' \"$f\" || true)" >&2
-          echo "state_resources_count=$(grep -Fc -- '-modifier resources muchmore' \"$f\" || true)" >&2
-          echo "state_death_count=$(grep -Fc -- '-modifier deathpenalty casual' \"$f\" || true)" >&2
+          echo "state_world_count=$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$f" || true)" >&2
+          echo "state_args_count=$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]' "$f" || true)" >&2
+          echo "state_combat_count=$(grep -Fc -- '-modifier combat veryhard' "$f" || true)" >&2
+          echo "state_resources_count=$(grep -Fc -- '-modifier resources muchmore' "$f" || true)" >&2
+          echo "state_death_count=$(grep -Fc -- '-modifier deathpenalty casual' "$f" || true)" >&2
           test "$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$f" || true)" -eq 1
           test "$(grep -Ec '^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]' "$f" || true)" -eq 1
           world_line=$(grep -E '^[[:space:]]*(-[[:space:]]*)?WORLD_NAME[=:]' "$f" | tr -d '[:space:]')
