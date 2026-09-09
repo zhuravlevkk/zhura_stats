@@ -12,22 +12,21 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 5
     steps:
-      - name: Inspect sanitized SERVER_ARGS shape
+      - name: Inspect sanitized SERVER_ARGS block
         shell: bash
         run: |
           set -Eeuo pipefail
           docker stop valheim >/dev/null 2>&1 || true
           docker run --rm -i -v /opt/valheim:/host --entrypoint /bin/bash ghcr.io/lloesche/valheim-server -s <<'PROBE'
           set -e
-          f=/host/docker-compose.yml.bak
           awk '
-            /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {show=3}
+            /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {show=8}
             show>0 {
               line=$0
               gsub(/(PASS|PASSWORD|TOKEN|SECRET)[^ ]*/, "[REDACTED]", line)
               print line
               show--
             }
-          ' "$f"
+          ' /host/docker-compose.yml.bak
           PROBE
           echo "gameplay=stopped"
