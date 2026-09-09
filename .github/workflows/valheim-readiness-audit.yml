@@ -72,10 +72,13 @@ jobs:
               echo old
               ;;
             '-WORLD_NAME=ZhuraWorld_1_0'|'WORLD_NAME:ZhuraWorld_1_0'|'WORLD_NAME:"ZhuraWorld_1_0"')
-              test "$(grep -Fc -- '-modifier combat veryhard' "$f")" -eq 1
-              test "$(grep -Fc -- '-modifier resources muchmore' "$f")" -eq 1
-              test "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1
-              echo configured
+              if [ "$(grep -Fc -- '-modifier combat veryhard' "$f")" -eq 1 ] &&
+                 [ "$(grep -Fc -- '-modifier resources muchmore' "$f")" -eq 1 ] &&
+                 [ "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1 ]; then
+                echo configured
+              else
+                echo partial
+              fi
               ;;
             *)
               exit 44
@@ -112,7 +115,7 @@ jobs:
           test "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1
           CONFIGURE
             changed=1
-          elif [ "$state" = configured ]; then
+          elif [ "$state" = configured ] || [ "$state" = partial ]; then
             original_name=$(docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'FIND_BACKUP'
           set -e
           for b in $(ls -1t /host/docker-compose.yml.pre-1.0-configured-*.bak 2>/dev/null); do
@@ -129,6 +132,38 @@ jobs:
             )
             BACKUP="/opt/valheim/$original_name"
             changed=1
+            if [ "$state" = partial ]; then
+              docker run --rm -v /opt/valheim:/host --entrypoint /bin/bash "$HELPER" -s <<'REPAIR'
+          set -e
+          f=/host/docker-compose.yml
+          add=
+          for spec in "combat veryhard" "resources muchmore" "deathpenalty casual"; do
+            category=${spec%% *}
+            if grep -Eq -- "-modifier[[:space:]]+${category}([[:space:]]|$)" "$f"; then
+              grep -Fq -- "-modifier $spec" "$f" || exit 46
+            else
+              add="$add -modifier $spec"
+            fi
+          done
+          if [ -n "$add" ]; then
+            awk -v add="$add" '
+              /^[[:space:]]*(-[[:space:]]*)?SERVER_ARGS[=:]/ {
+                if ($0 ~ /"[[:space:]]*$/) {
+                  sub(/"[[:space:]]*$/, add "\"")
+                } else {
+                  $0 = $0 add
+                }
+              }
+              { print }
+            ' "$f" > "$f.tmp"
+            cat "$f.tmp" > "$f"
+            rm -f "$f.tmp"
+          fi
+          test "$(grep -Fc -- '-modifier combat veryhard' "$f")" -eq 1
+          test "$(grep -Fc -- '-modifier resources muchmore' "$f")" -eq 1
+          test "$(grep -Fc -- '-modifier deathpenalty casual' "$f")" -eq 1
+          REPAIR
+            fi
           else
             false
           fi
