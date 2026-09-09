@@ -69,10 +69,11 @@ jobs:
             echo "compose_world_count=$total"
             echo "compose_server_args_count=$server_args"
             test "$total" -eq 1
-            case "$world_line" in
-              -WORLD_NAME=ZhuraWorld|WORLD_NAME:ZhuraWorld|WORLD_NAME:\"ZhuraWorld\") ;;
-              *) exit 44 ;;
-            esac
+            if [ "$world_line" != "-WORLD_NAME=ZhuraWorld" ] &&
+               [ "$world_line" != "WORLD_NAME:ZhuraWorld" ] &&
+               [ "$world_line" != "WORLD_NAME:\"ZhuraWorld\"" ]; then
+              exit 44
+            fi
             test "$server_args" -eq 1
             cp -p "$f" "$b"
             awk '"'"'
