@@ -1,10 +1,10 @@
-# Secret Values -- conditionally-secret API (build 12.1.0.69875)
+# Secret Values -- conditionally-secret API (build 12.1.0.69933)
 
 Functions whose return value becomes a **Secret** under the given condition. In tainted addon code you must call `issecretvalue(v)` before any comparison, arithmetic, or table-index on the result -- otherwise the game raises a Lua error.
 
 Predicate descriptions come from `SecretPredicatesDocumentation.lua`. See also `ADDON-RESTRICTIONS.md` for restriction types such as Challenge Mode (Mythic+).
 
-Total: 300 entries across 23 conditions.
+Total: 301 entries across 23 conditions.
 
 ## `SecretInActivePvPMatch` (2)
 
@@ -13,7 +13,7 @@ Total: 300 entries across 23 conditions.
 - `GetScoreInfo` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
 - `GetScoreInfoByPlayerGuid` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
 
-## `SecretInChatMessagingLockdown` (98)
+## `SecretInChatMessagingLockdown` (99)
 
 > Guarded APIs and events produce secret values when encounter, challenge mode, or PvP match addon restrictions are in effect, and when the player is on a communication-restricted map such as a dungeon or raid.
 
@@ -91,6 +91,7 @@ Total: 300 entries across 23 conditions.
 - `GetSearchResultLeaderInfo` -- LFGListInfo (`SecretArguments`: AllowedWhenUntainted)
 - `GetSearchResultPlayerInfo` -- LFGListInfo (`SecretArguments`: AllowedWhenUntainted)
 - `ReadyCheck` -- PartyInfo
+- `IsRaidMarkerActive` -- RaidMarkers (`SecretArguments`: AllowedWhenUntainted)
 - `UnitIsAFK` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `UnitIsDND` -- Unit (`SecretArguments`: AllowedWhenUntainted)
 - `GetChannel` -- VoiceChat (`SecretArguments`: AllowedWhenUntainted)

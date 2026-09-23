@@ -1,5 +1,5 @@
 {
- "version": "12.1.0.69875",
+ "version": "12.1.0.69933",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -118259,7 +118259,9 @@
      "name": "IsRaidMarkerActive",
      "type": "Function",
      "literal_name": null,
-     "secret_flags": [],
+     "secret_flags": [
+      "SecretInChatMessagingLockdown"
+     ],
      "secret_args": "AllowedWhenUntainted",
      "documentation": null,
      "arguments": [
