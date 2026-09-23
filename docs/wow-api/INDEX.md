@@ -1,7 +1,7 @@
-# WoW API Index (build 12.1.0.69875)
+# WoW API Index (build 12.1.0.69933)
 
-Generated from a `wow-ui-source` clone on 2026-09-22 07:01 UTC.
-Systems: 593 | Functions/events: 10246 | Conditionally-secret entries: 300
+Generated from a `wow-ui-source` clone on 2026-09-23 06:56 UTC.
+Systems: 593 | Functions/events: 10246 | Conditionally-secret entries: 301
 
 Regenerate with `python scripts/gen_api_index.py`.
 
@@ -401,7 +401,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **QuestTaskInfo** (13) -- `QuestTaskInfoDocumentation.lua`
 - **QueueSpecific** (1) -- `QueueSpecificDocumentation.lua`
 - **RaidLocks** (4) -- `RaidLocksDocumentation.lua`
-- **RaidMarkers** (9) -- `RaidMarkersDocumentation.lua`
+- **RaidMarkers** (9) -- 1 secret -- `RaidMarkersDocumentation.lua`
 - **RecentAllies** (28) -- `RecentAlliesDocumentation.lua`
 - **RecentAlliesConstants** (3) -- `RecentAlliesConstantsDocumentation.lua`
 - **RecruitAFriend** (39) -- `RecruitAFriendDocumentation.lua`
