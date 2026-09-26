@@ -22,6 +22,14 @@ local STALE_DIM_COLUMNS = {
 }
 local lastRefreshErrorAt = 0
 local lastRefreshErrorMessage = ""
+local renderState = {
+    signature = nil,
+    measuredStats = nil,
+    layout = nil,
+    fontPath = nil,
+    fontSize = nil,
+    fontFlags = nil,
+}
 
 -- Sub-columns that the rating band is composed of (left-to-right). The
 -- non-rating "value" cell is right-aligned to this same band zone, and the
@@ -96,10 +104,34 @@ local function GetStringWidth(fontString)
     return fontString.GetUnboundedStringWidth and fontString:GetUnboundedStringWidth() or fontString:GetStringWidth()
 end
 
+local TEXT_MEASUREMENT_CACHE_LIMIT = 256
+local textMeasurementCache = {}
+local textMeasurementCacheSize = 0
+
+local function MeasureText(measureLine, measurementKey, value)
+    local text = tostring(value or "")
+    local key = measurementKey .. "\031" .. text
+    local cached = textMeasurementCache[key]
+    if cached then
+        return cached.width, cached.height
+    end
+    measureLine:SetText(text)
+    local width = GetStringWidth(measureLine)
+    local height = measureLine:GetStringHeight()
+    if textMeasurementCacheSize >= TEXT_MEASUREMENT_CACHE_LIMIT then
+        wipe(textMeasurementCache)
+        textMeasurementCacheSize = 0
+    end
+    textMeasurementCache[key] = { width = width, height = height }
+    textMeasurementCacheSize = textMeasurementCacheSize + 1
+    return width, height
+end
+
 local function BuildLayoutSignature(addon, profile, defaults, fontSize, textAlign, visibleStats)
-    return table.concat({
+    local parts = {
         tostring(profile.fontKey or ""),
         tostring(fontSize),
+        tostring(select(2, addon:GetFontInfo(profile.fontKey)) or ""),
         tostring(profile.showLabels),
         tostring(profile.showValues),
         tostring(profile.showStatIcons),
@@ -114,13 +146,19 @@ local function BuildLayoutSignature(addon, profile, defaults, fontSize, textAlig
         tostring(profile.compactValueColumns == true),
         tostring(profile.frameControlsPosition or defaults.frameControlsPosition),
         tostring(profile.frameControlsDirection or defaults.frameControlsDirection),
+        tostring(profile.showFrameControls ~= false),
         tostring(#visibleStats),
         tostring(profile.referenceDisplay or defaults.referenceDisplay or "inline"),
         tostring(addon:NormalizeStatPriorityMode(profile.statPriorityMode or defaults.statPriorityMode or "manual")),
         tostring(profile.showReferenceRanges ~= false),
         tostring(profile.showReferenceSource ~= false),
         tostring(profile.showDiminishingReturnHint ~= false),
-    }, "|")
+    }
+    for _, entry in ipairs(visibleStats) do
+        table.insert(parts, tostring(entry.key))
+        table.insert(parts, tostring(addon:GetStatLabel(entry.key, profile, addon.StatDefinitions and addon.StatDefinitions[entry.key]) or ""))
+    end
+    return table.concat(parts, "|")
 end
 
 local function ResetRenderWidgets(addon, lines, lineOverlays, renderRows)
@@ -169,7 +207,7 @@ end
 -- it stripped down: [icon] [label] [value], pushing the raw Secret into the
 -- FontString via SetFormattedText at draw time. No rating split, DR, reference
 -- arrows or value-based coloring — all of those require reading the value.
-local function BuildSecretMeasuredStat(addon, entry, def, profile, defaults, measureLine, secretValue)
+local function BuildSecretMeasuredStat(addon, entry, def, profile, defaults, measureLine, measurementKey, secretValue)
     local resolvedDef = def or (addon.StatDefinitions and addon.StatDefinitions[entry.key])
     if not resolvedDef then
         return nil
@@ -187,13 +225,13 @@ local function BuildSecretMeasuredStat(addon, entry, def, profile, defaults, mea
 
     local statLabel = addon:GetStatLabel(entry.key, profile, resolvedDef)
     if profile.showLabels and statLabel and statLabel ~= "" then
-        measureLine:SetText(statLabel)
-        textHeight = math.max(textHeight, measureLine:GetStringHeight())
+        local width, height = MeasureText(measureLine, measurementKey, statLabel)
+        textHeight = math.max(textHeight, height)
         table.insert(segments, {
             col = "label",
             text = statLabel,
             justify = "LEFT",
-            width = GetStringWidth(measureLine),
+            width = width,
         })
     end
 
@@ -205,8 +243,8 @@ local function BuildSecretMeasuredStat(addon, entry, def, profile, defaults, mea
         -- line shares measureLine with all other rows). The real Secret is
         -- written straight to the row FontString via SetFormattedText at draw
         -- time and is never measured.
-        measureLine:SetText(placeholder)
-        textHeight = math.max(textHeight, measureLine:GetStringHeight())
+        local width, height = MeasureText(measureLine, measurementKey, placeholder)
+        textHeight = math.max(textHeight, height)
 
         table.insert(segments, {
             col = "value",
@@ -214,7 +252,7 @@ local function BuildSecretMeasuredStat(addon, entry, def, profile, defaults, mea
             secretFormat = valueFormat,
             secretValue = secretValue,
             justify = "RIGHT",
-            width = GetStringWidth(measureLine),
+            width = width,
         })
     end
 
@@ -223,8 +261,8 @@ local function BuildSecretMeasuredStat(addon, entry, def, profile, defaults, mea
     end
 
     if textHeight <= 0 then
-        measureLine:SetText("0")
-        textHeight = measureLine:GetStringHeight()
+        local _, height = MeasureText(measureLine, measurementKey, "0")
+        textHeight = height
     end
 
     local iconSize = 0
@@ -251,84 +289,89 @@ end
 --   iconSize,                 -- icon px (0 if none)
 --   segments = { {col,text,color,justify,width}, ... },
 -- }
-local function BuildMeasuredStats(addon, statsReader, statDefinitions, visibleStats, profile, defaults, measureLine)
+local function BuildMeasuredStats(addon, statsReader, statDefinitions, visibleStats, profile, defaults, measureLine, measurementKey,
+    previousStats, statKeys)
     local measuredStats = {}
     local maxLineHeight = 0
 
-    for _, entry in ipairs(visibleStats) do
-        local def = statDefinitions[entry.key]
-
-        -- In combat / M+ / encounter / PvP the live stat value is a Secret we
-        -- cannot read or format in Lua. Render it live but stripped down (label
-        -- + raw number via SetFormattedText) instead of the stale snapshot.
-        -- Stats that never go Secret (durability / ilvl / gold) report no secret
-        -- here and fall through to the full formatted path.
-        local hasSecret, secretValue = false, nil
-        if statsReader and statsReader.ReadSecretPassthrough then
-            local okSecret, isSecretLive, rawSecret = pcall(statsReader.ReadSecretPassthrough, entry.key)
-            if okSecret and isSecretLive then
-                hasSecret, secretValue = true, rawSecret
-            end
-        end
-
-        if hasSecret then
-            local measured = BuildSecretMeasuredStat(addon, entry, def, profile, defaults, measureLine, secretValue)
-            if measured then
-                table.insert(measuredStats, measured)
-                maxLineHeight = math.max(maxLineHeight, math.ceil(measured.textHeight))
-            end
+    for visibleIndex, entry in ipairs(visibleStats) do
+        if statKeys and not statKeys[entry.key] and previousStats and previousStats[visibleIndex] then
+            local previous = previousStats[visibleIndex]
+            table.insert(measuredStats, previous)
+            maxLineHeight = math.max(maxLineHeight, math.ceil(previous.textHeight or 0))
         else
-            local readOk, statResult = pcall(function()
-                return statsReader and statsReader.ReadStat and statsReader.ReadStat(entry.key)
-            end)
-            if readOk and statResult and statResult.value ~= nil then
-                local segOk, segments = pcall(function()
-                    return addon:BuildStatSegments(entry.key, statResult, profile, def)
+            local def = statDefinitions[entry.key]
+
+            -- In combat / M+ / encounter / PvP the live stat value is a Secret we
+            -- cannot read or format in Lua. Render it live but stripped down.
+            local hasSecret, secretValue = false, nil
+            if statsReader and statsReader.ReadSecretPassthrough then
+                local okSecret, isSecretLive, rawSecret = pcall(statsReader.ReadSecretPassthrough, entry.key)
+                if okSecret and isSecretLive then
+                    hasSecret, secretValue = true, rawSecret
+                end
+            end
+
+            if hasSecret then
+                local measured = BuildSecretMeasuredStat(
+                    addon, entry, def, profile, defaults, measureLine, measurementKey, secretValue)
+                if measured then
+                    table.insert(measuredStats, measured)
+                    maxLineHeight = math.max(maxLineHeight, math.ceil(measured.textHeight))
+                end
+            else
+                local readOk, statResult = pcall(function()
+                    return statsReader and statsReader.ReadStat and statsReader.ReadStat(entry.key)
                 end)
-                if segOk and segments and #segments > 0 then
-                    local measuredSegments = {}
-                    local textHeight = 0
-                    for _, seg in ipairs(segments) do
-                        local width
-                        if seg.col == "ref_arrow" then
-                            width = RefArrowSegmentWidth(seg)
-                            textHeight = math.max(textHeight, width)
-                        else
-                            measureLine:SetText(seg.text or "")
-                            textHeight = math.max(textHeight, measureLine:GetStringHeight())
-                            width = GetStringWidth(measureLine)
+                if readOk and statResult and statResult.value ~= nil then
+                    local segOk, segments = pcall(function()
+                        return addon:BuildStatSegments(entry.key, statResult, profile, def)
+                    end)
+                    if segOk and segments and #segments > 0 then
+                        local measuredSegments = {}
+                        local textHeight = 0
+                        for _, seg in ipairs(segments) do
+                            local width
+                            if seg.col == "ref_arrow" then
+                                width = RefArrowSegmentWidth(seg)
+                                textHeight = math.max(textHeight, width)
+                            else
+                                local height
+                                width, height = MeasureText(measureLine, measurementKey, seg.text or "")
+                                textHeight = math.max(textHeight, height)
+                            end
+                            table.insert(measuredSegments, {
+                                col = seg.col,
+                                text = seg.text or "",
+                                texture = seg.texture,
+                                textureSize = seg.textureSize,
+                                color = seg.color,
+                                justify = seg.justify or "LEFT",
+                                drFlag = seg.drFlag,
+                                width = width,
+                            })
                         end
-                        table.insert(measuredSegments, {
-                            col = seg.col,
-                            text = seg.text or "",
-                            texture = seg.texture,
-                            textureSize = seg.textureSize,
-                            color = seg.color,
-                            justify = seg.justify or "LEFT",
-                            drFlag = seg.drFlag,
-                            width = width,
+                        if textHeight <= 0 then
+                            local _, height = MeasureText(measureLine, measurementKey, "0")
+                            textHeight = height
+                        end
+
+                        local iconSize = 0
+                        if profile.showStatIcons == true and def and def.icon then
+                            iconSize = math.max(MIN_DYNAMIC_FONT_SIZE, math.ceil(textHeight))
+                        end
+
+                        table.insert(measuredStats, {
+                            entry = entry,
+                            def = def,
+                            statResult = statResult,
+                            drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
+                            textHeight = textHeight,
+                            iconSize = iconSize,
+                            segments = measuredSegments,
                         })
+                        maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
                     end
-                    if textHeight <= 0 then
-                        measureLine:SetText("0")
-                        textHeight = measureLine:GetStringHeight()
-                    end
-
-                    local iconSize = 0
-                    if profile.showStatIcons == true and def and def.icon then
-                        iconSize = math.max(MIN_DYNAMIC_FONT_SIZE, math.ceil(textHeight))
-                    end
-
-                    table.insert(measuredStats, {
-                        entry = entry,
-                        def = def,
-                        statResult = statResult,
-                        drPenalty = statResult and statResult.dr and statResult.dr.penalty or nil,
-                        textHeight = textHeight,
-                        iconSize = iconSize,
-                        segments = measuredSegments,
-                    })
-                    maxLineHeight = math.max(maxLineHeight, math.ceil(textHeight))
                 end
             end
         end
@@ -729,6 +772,83 @@ local function ApplyRenderRows(addon, statsFrame, lines, renderRows, lineOverlay
     end
 end
 
+local function HasCompatibleGeometry(previous, current)
+    if not previous or not current or previous.entry.key ~= current.entry.key
+        or previous.iconSize ~= current.iconSize or previous.textHeight ~= current.textHeight
+        or #previous.segments ~= #current.segments then
+        return false
+    end
+    for index, segment in ipairs(current.segments) do
+        local old = previous.segments[index]
+        if not old or old.col ~= segment.col or old.width ~= segment.width
+            or old.justify ~= segment.justify or old.textureSize ~= segment.textureSize then
+            return false
+        end
+    end
+    return true
+end
+
+-- Update text, colors and tooltip state in-place. This deliberately performs no
+-- anchoring, sizing, font changes or pool resets.
+local function ApplyRenderedValues(addon, renderRows, lineOverlays, previousStats, measuredStats, profile, classColor, statKeys)
+    if not previousStats or #previousStats ~= #measuredStats then
+        return false
+    end
+
+    for index, measured in ipairs(measuredStats) do
+        local previous = previousStats[index]
+        if (not statKeys or statKeys[measured.entry.key]) and not HasCompatibleGeometry(previous, measured) then
+            return false
+        end
+    end
+
+    for index, measured in ipairs(measuredStats) do
+        if not statKeys or statKeys[measured.entry.key] then
+            local row = renderRows and renderRows[index]
+            if not row then
+                return false
+            end
+            local segmentIndex = 0
+            local arrowIndex = 0
+            local pendingArrow
+            for _, segment in ipairs(measured.segments) do
+                local r, g, b = ResolveSegmentColor(addon, measured, segment, profile, classColor)
+                if segment.col == "ref_arrow" and segment.texture then
+                    pendingArrow = segment
+                else
+                    segmentIndex = segmentIndex + 1
+                    local fontString = row.segments and row.segments[segmentIndex]
+                    if not fontString then
+                        return false
+                    end
+                    fontString:SetTextColor(r, g, b, 1)
+                    if segment.secret then
+                        if not pcall(fontString.SetFormattedText, fontString, segment.secretFormat, segment.secretValue) then
+                            fontString:SetText("")
+                        end
+                    else
+                        fontString:SetText(segment.text)
+                    end
+                    if segment.col == "ref" and pendingArrow then
+                        arrowIndex = arrowIndex + 1
+                        local texture = row.refArrows and row.refArrows[arrowIndex]
+                        if texture then
+                            texture:SetTexture(pendingArrow.texture)
+                            texture:SetVertexColor(r, g, b, 1)
+                        end
+                        pendingArrow = nil
+                    end
+                end
+            end
+            local overlay = lineOverlays[index]
+            if overlay then
+                overlay.statResult = measured.statResult
+            end
+        end
+    end
+    return true
+end
+
 local function ResizeStatsFrame(addon, statsFrame, statsAnchor, profile, defaults, layout)
     statsFrame:SetSize(layout.frameWidth, layout.frameHeight)
     addon:LayoutFrameControls(layout.controlsX, layout.controlsY)
@@ -818,11 +938,36 @@ end
 -- to the profile textAlign just re-runs a full layout pass.
 function Addon:ApplyTextAlignmentToVisibleLines()
     if self.initialized then
-        self:RefreshStats()
+        self:RequestRefresh("TEXT_ALIGNMENT", { layout = true })
     end
 end
 
-function Addon:RefreshStatsImpl()
+local function HandleRefreshError(addon, callback)
+    local handledError
+    local ok, err = xpcall(callback, function(message)
+        handledError = tostring(message or "unknown error")
+        local errorHandler = geterrorhandler and geterrorhandler()
+        if type(errorHandler) == "function" then
+            errorHandler(handledError)
+        end
+        return handledError
+    end)
+
+    if not ok then
+        local displayError = tostring(err or handledError or "")
+        if displayError ~= "" and displayError ~= "nil" then
+            local now = (GetTime and GetTime()) or 0
+            if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 30 then
+                print(addon:S("NE_STATS_REFRESH_FAILED", displayError))
+                lastRefreshErrorMessage = displayError
+                lastRefreshErrorAt = now
+            end
+        end
+    end
+    return ok
+end
+
+function Addon:RebuildLayoutImpl()
     self:EnsureStatsFrame()
 
     local profile = self:GetProfile()
@@ -837,48 +982,129 @@ function Addon:RefreshStatsImpl()
     local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
     local classColor = profile.useClassColor and self:GetPlayerClassColor() or nil
     local controlsWidth, controlsHeight, controlsGap = self:GetFrameControlsSize()
-    -- Signature kept for potential future caching; layout itself is now fully
-    -- deterministic from measured widths, so no reserved-width memo is needed.
-    BuildLayoutSignature(self, profile, defaults, fontSize, textAlign, visibleStats)
+    local signature = BuildLayoutSignature(self, profile, defaults, fontSize, textAlign, visibleStats)
 
     ResetRenderWidgets(self, lines, lineOverlays, renderRows)
 
     measureLine:SetFont(fontPath, fontSize, fontFlags)
-    local measuredStats, maxLineHeight = BuildMeasuredStats(self, ns.Stats, self.StatDefinitions, visibleStats, profile, defaults, measureLine)
-    local layout = BuildRenderLayout(self, profile, defaults, measuredStats, maxLineHeight, fontSize, controlsWidth, controlsHeight, controlsGap)
-    ApplyRenderRows(self, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile, classColor)
-    ResizeStatsFrame(self, statsFrame, statsAnchor, profile, defaults, layout)
+    local measurementKey = table.concat({ tostring(fontPath), tostring(fontSize), tostring(fontFlags or "") }, "|")
+    local measuredStats, maxLineHeight = self:ProfileRefreshOperation("ReadStatsBuildSegmentsMeasureText", function()
+        return BuildMeasuredStats(self, ns.Stats, self.StatDefinitions, visibleStats, profile, defaults, measureLine, measurementKey)
+    end)
+    local layout = self:ProfileRefreshOperation("BuildRenderLayout", function()
+        return BuildRenderLayout(self, profile, defaults, measuredStats, maxLineHeight, fontSize, controlsWidth, controlsHeight, controlsGap)
+    end)
+    self:ProfileRefreshOperation("ApplyLayout", function()
+        ApplyRenderRows(self, statsFrame, lines, renderRows, lineOverlays, layout, fontPath, fontSize, fontFlags, profile, classColor)
+        ResizeStatsFrame(self, statsFrame, statsAnchor, profile, defaults, layout)
+    end)
+
+    renderState.signature = signature
+    renderState.measuredStats = measuredStats
+    renderState.layout = layout
+    renderState.fontPath = fontPath
+    renderState.fontSize = fontSize
+    renderState.fontFlags = fontFlags
 
     self:UpdateTooltipOverlayVisibility()
 end
 
-function Addon:RefreshStats()
-    local handledError
-    local ok, err = xpcall(function()
-        self:RefreshStatsImpl()
-    end, function(message)
-        handledError = tostring(message or "unknown error")
-        local errorHandler = geterrorhandler and geterrorhandler()
-        if type(errorHandler) == "function" then
-            errorHandler(handledError)
-        end
-        return handledError
-    end)
-
-    if not ok then
-        local displayError = tostring(err or handledError or "")
-        if displayError ~= "" and displayError ~= "nil" then
-            local now = (GetTime and GetTime()) or 0
-            if displayError ~= lastRefreshErrorMessage or (now - lastRefreshErrorAt) > 30 then
-                print(self:S("NE_STATS_REFRESH_FAILED", displayError))
-                lastRefreshErrorMessage = displayError
-                lastRefreshErrorAt = now
+function Addon:RebuildLayout(force)
+    HandleRefreshError(self, function()
+        self:ProfileRefreshOperation("RebuildLayout", function()
+            if not force and renderState.layout then
+                local profile = self:GetProfile()
+                local defaults = self.Defaults.profile
+                local visibleStats = self:GetVisibleStats()
+                local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
+                local signature = BuildLayoutSignature(
+                    self, profile, defaults, fontSize, profile.textAlign or defaults.textAlign, visibleStats)
+                if signature == renderState.signature then
+                    self:RefreshStatsValues()
+                    return
+                end
             end
-        end
-    end
-
+            self:RebuildLayoutImpl()
+        end)
+    end)
     if self.RefreshPriorityModeButtons then
         self:RefreshPriorityModeButtons()
+    end
+end
+
+function Addon:FullRebuild()
+    renderState.signature = nil
+    renderState.measuredStats = nil
+    renderState.layout = nil
+    self:RebuildLayout(true)
+end
+
+function Addon:RefreshStatsValues(statKeys)
+    HandleRefreshError(self, function()
+        self:ProfileRefreshOperation("RefreshValues", function()
+            self:EnsureStatsFrame()
+            local profile = self:GetProfile()
+            local defaults = self.Defaults.profile
+            local _, measureLine = self:GetRenderWidgets()
+            local renderRows = self.GetRenderRows and self:GetRenderRows() or nil
+            local lineOverlays = self:GetLineOverlays()
+            local visibleStats = self:GetVisibleStats()
+            local fontPath, fontFlags = self:GetFontInfo(profile.fontKey)
+            local fontSize = math.max(MIN_DYNAMIC_FONT_SIZE, profile.fontSize or defaults.fontSize)
+            local signature = BuildLayoutSignature(self, profile, defaults, fontSize, profile.textAlign or defaults.textAlign, visibleStats)
+
+            if not renderState.layout or renderState.signature ~= signature
+                or renderState.fontPath ~= fontPath or renderState.fontSize ~= fontSize or renderState.fontFlags ~= fontFlags then
+                self:RebuildLayoutImpl()
+                return
+            end
+
+            measureLine:SetFont(fontPath, fontSize, fontFlags)
+            local measurementKey = table.concat({ tostring(fontPath), tostring(fontSize), tostring(fontFlags or "") }, "|")
+            local measuredStats = self:ProfileRefreshOperation("ReadStatsBuildSegmentsMeasureText", function()
+                return BuildMeasuredStats(self, ns.Stats, self.StatDefinitions, visibleStats, profile, defaults, measureLine,
+                    measurementKey, renderState.measuredStats, statKeys)
+            end)
+            local classColor = profile.useClassColor and self:GetPlayerClassColor() or nil
+            local applied = self:ProfileRefreshOperation("ApplyValues", function()
+                return ApplyRenderedValues(self, renderRows, lineOverlays, renderState.measuredStats, measuredStats, profile, classColor, statKeys)
+            end)
+            if not applied then
+                self:RebuildLayoutImpl()
+                return
+            end
+            for index, rowLayout in ipairs(renderState.layout.rows) do
+                local measured = measuredStats[index]
+                if not statKeys or statKeys[measured.entry.key] then
+                    renderState.measuredStats[index] = measured
+                    rowLayout.measured = measured
+                end
+            end
+            self:UpdateTooltipOverlayVisibility()
+        end)
+    end)
+end
+
+function Addon:RefreshStat(statKey)
+    self:RefreshStatsValues({ [statKey] = true })
+end
+
+function Addon:IsStatRendered(statKey)
+    for _, measured in ipairs(renderState.measuredStats or {}) do
+        if measured.entry.key == statKey then
+            return true
+        end
+    end
+    return false
+end
+
+-- Compatibility entry point for older internal callers and third-party code.
+-- It now requests a coalesced layout refresh instead of rendering immediately.
+function Addon:RefreshStats()
+    if self.RequestRefresh then
+        self:RequestRefresh("LEGACY_REFRESH", { layout = true })
+    else
+        self:RebuildLayout()
     end
 end
 
@@ -890,7 +1116,8 @@ function Addon:StopCombatStatRefresh()
 end
 
 function Addon:StartCombatStatRefresh()
-    if combatStatRefreshHandle or not (C_Timer and C_Timer.NewTicker) then
+    if (self.IsRestrictedRefreshContext and self:IsRestrictedRefreshContext())
+        or combatStatRefreshHandle or not (C_Timer and C_Timer.NewTicker) then
         return
     end
 
@@ -900,7 +1127,7 @@ function Addon:StartCombatStatRefresh()
             return
         end
         if Addon.initialized then
-            Addon:RefreshStats()
+            Addon:RequestRefresh("COMBAT_TICKER", { values = true })
         end
     end)
 end
