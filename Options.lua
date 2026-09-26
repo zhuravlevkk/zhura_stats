@@ -274,14 +274,7 @@ local function OpenColorPicker(entry)
 end
 
 local function RefreshStatsDeferred()
-    Addon:RefreshStats()
-    if C_Timer and C_Timer.After then
-        C_Timer.After(0, function()
-            if Addon.initialized then
-                Addon:RefreshStats()
-            end
-        end)
-    end
+    Addon:RequestRefresh("OPTIONS_DEFERRED", { layout = true, delay = 0.075 })
 end
 
 local ARCHON_LOCKED_ORDER_STATS = {
