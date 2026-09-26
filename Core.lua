@@ -5,6 +5,7 @@ ns.ZhuraStats = ns.ZhuraStats or {}
 
 local Addon = ns.ZhuraStats
 Addon.name = Addon.name or ADDON_NAME
+local debugProfileStop = _G.debugprofilestop
 
 local addonFrame = CreateFrame("Frame")
 
@@ -41,12 +42,12 @@ function Addon:IsRefreshProfilingEnabled()
 end
 
 function Addon:ProfileRefreshOperation(name, callback)
-    if not refreshProfile.enabled or not debugprofilestop then
+    if not refreshProfile.enabled or not debugProfileStop then
         return callback()
     end
-    local startedAt = debugprofilestop()
+    local startedAt = debugProfileStop()
     local results = { callback() }
-    local elapsed = debugprofilestop() - startedAt
+    local elapsed = debugProfileStop() - startedAt
     local metric = refreshProfile.operations[name]
     if not metric then
         metric = { calls = 0, total = 0, max = 0 }
