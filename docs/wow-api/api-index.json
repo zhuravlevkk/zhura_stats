@@ -1,5 +1,5 @@
 {
- "version": "12.1.0.69933",
+ "version": "12.1.5.70391",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -2607,6 +2607,29 @@
      "payload": []
     },
     {
+     "name": "IsMacroActionWithShowTooltip",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns whether the given action button contains a macro with an explicit #showtooltip directive.",
+     "arguments": [
+      {
+       "name": "actionID",
+       "type": "luaIndex",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isMacroActionWithShowTooltip",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "IsOnBarOrSpecialBar",
      "type": "Function",
      "literal_name": null,
@@ -4319,6 +4342,57 @@
       {
        "name": "adventureMapTextureKit",
        "type": "textureKit",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetNumMapInsets",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "numMapInsets",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetNumQuestOffers",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "numQuestOffers",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetNumZoneChoices",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "numZoneChoices",
+       "type": "number",
        "nilable": false
       }
      ],
@@ -9910,6 +9984,29 @@
      "payload": []
     },
     {
+     "name": "ProcessCustomAuraButtonCasterNameOptions",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "options",
+       "type": "CustomAuraButtonCasterNameOptions",
+       "nilable": true
+      }
+     ],
+     "returns": [
+      {
+       "name": "result",
+       "type": "CustomAuraButtonCasterNameOptions",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "ProcessCustomAuraButtonDispelTypeTextOptions",
      "type": "Function",
      "literal_name": null,
@@ -10085,6 +10182,17 @@
      "secret_flags": [],
      "secret_args": null,
      "documentation": "Optional formatter used to display aura application counts.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CustomAuraButtonCasterNameOptions",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "If true, append realm names to the displayed string.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -31640,6 +31748,17 @@
      "payload": []
     },
     {
+     "name": "CombatAudioAlertPulsePercentValues",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "CombatAudioAlertSayIfTargetedType",
      "type": "Enumeration",
      "literal_name": null,
@@ -49689,7 +49808,7 @@
      "returns": [
       {
        "name": "loopTimerDuration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -49785,7 +49904,7 @@
      "returns": [
       {
        "name": "currentTime",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -49849,7 +49968,7 @@
      "returns": [
       {
        "name": "highlightTime",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -49931,7 +50050,7 @@
      "returns": [
       {
        "name": "timeElapsed",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -49954,7 +50073,7 @@
      "returns": [
       {
        "name": "timeRemaining",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -50073,7 +50192,7 @@
      "returns": [
       {
        "name": "maxEventDuration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -53806,7 +53925,7 @@
      "returns": [
       {
        "name": "seconds",
-       "type": "DurationSecondsPrimitive",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -53857,7 +53976,7 @@
      "returns": [
       {
        "name": "seconds",
-       "type": "DurationSecondsPrimitive",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -53959,7 +54078,7 @@
      "returns": [
       {
        "name": "milliseconds",
-       "type": "DurationMillisecondsPrimitive",
+       "type": "Milliseconds",
        "nilable": false
       }
      ],
@@ -54102,12 +54221,12 @@
      "arguments": [
       {
        "name": "start",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       },
       {
        "name": "duration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -54124,7 +54243,7 @@
      "arguments": [
       {
        "name": "duration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -54158,12 +54277,12 @@
      "arguments": [
       {
        "name": "expirationTime",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       },
       {
        "name": "duration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -54388,7 +54507,7 @@
      "arguments": [
       {
        "name": "milliseconds",
-       "type": "DurationMillisecondsPrimitive",
+       "type": "Milliseconds",
        "nilable": false
       }
      ],
@@ -58894,6 +59013,29 @@
      "payload": []
     },
     {
+     "name": "CreateFrameWithOptions",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "options",
+       "type": "CreateFrameOptions",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "frame",
+       "type": "SimpleFrame",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "CreateFromMixins",
      "type": "Function",
      "literal_name": null,
@@ -59079,6 +59221,23 @@
       {
        "name": "forbiddenTable",
        "type": "FrameScriptObject",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetScriptBucketThrottleLimits",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "limits",
+       "type": "ScriptBucketThrottleLimits",
        "nilable": false
       }
      ],
@@ -59455,6 +59614,28 @@
     {
      "name": "TableSecurityOption",
      "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CreateFrameOptions",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ScriptBucketThrottleLimits",
+     "type": "Structure",
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
@@ -79190,6 +79371,445 @@
     }
    ]
   },
+  "Intl": {
+   "file": "IntlDocumentation.lua",
+   "entries": [
+    {
+     "name": "Intl",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CompareStrings",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Compares two UTF-8 strings using the options specified on a collator.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CreateLocaleContext",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Creates a locale context object for locale-scoped internationalization operations.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FindBreaks",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Opens a break iterator for locating text boundaries in a specified locale.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FindStringMatches",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Creates a string search iterator using a collator and returns every match position.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FoldCase",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Case-folds the characters in a string; case-folding is locale-independent and not context-sensitive.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatCurrency",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats a double as a localized currency value using the provided ISO 4217 currency code.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatDate",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats Unix time as localized date text using locale date patterns, symbols, style, and optional time zone.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatDateTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats Unix time as localized date and time text using locale patterns, symbols, styles, and optional time zone.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatNumber",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats a double with locale number formatting using locale symbols, grouping, and the selected non-currency style.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats Unix time as localized time text using locale time patterns, symbols, style, and optional time zone.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetCharacterProperties",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns Unicode property values for the first code point in a string.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetCurrencyFractionDigits",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns the number of fraction digits that should be displayed for the given currency.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetCurrencyName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns the display name for a currency in the given locale.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetCurrentLocale",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Gets the current locale used by C_Intl.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetDisplayName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Gets a display name suitable for the specified locale.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetSortKey",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Transforms a string into a collation sort key.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "IsNormalized",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Tests if the string is normalized according to the specified normalization form.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "Length",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Counts character break boundaries in UTF-8 text.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "Normalize",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Writes the normalized form of the source string to the destination string.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ParseCurrency",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Parses an entire localized currency string into a double amount and ISO 4217 currency code.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ParseNumber",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Parses an entire localized number string into a double using the selected non-currency number formatter.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SelectPlural",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns the keyword of the first plural rule that applies to a number.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ToLower",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Lowercases the characters in a string; casing is locale-dependent and context-sensitive.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ToTitle",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Titlecases a string using titlecase positions determined by the default Unicode algorithm.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ToUpper",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Uppercases the characters in a string; casing is locale-dependent and context-sensitive.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "TransformLocale",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Applies a locale transform to the current locale and returns the transformed locale string.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "Transliterate",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Opens a system transliterator by ID and transliterates the text in place.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "TransliteratorAllowed",
+     "type": "Precondition",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Prevents Remove and Null transliterators when used with secret text arguments.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "IntlSharedTypes": {
+   "file": "IntlSharedTypesDocumentation.lua",
+   "entries": [
+    {
+     "name": "BreakType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Locate extended grapheme cluster boundaries, which are treated as user-perceived character units.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CollationStrength",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Compare base-character differences and ignore accents, case, and later collation levels.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CurrencyNameStyle",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "A symbolic name for a currency, such as '$' for USD.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "DateTimeStyle",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Do not include this date or time portion in the formatter.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "LocaleTransform",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Canonicalizes the locale identifier into ICU's canonical locale ID form.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "NormalizationForm",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Canonical decomposition followed by canonical composition.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "NumberStyle",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Use normal decimal number format for the locale.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "PluralType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Use plural rules for counted quantities, such as 1 file vs. 2 files.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CharacterProperties",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Unicode property values for the first code point in a string.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CurrencyParseResult",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "A parsed numeric amount and currency from a localized currency string.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
   "InvasionInfo": {
    "file": "InvasionInfoDocumentation.lua",
    "entries": [
@@ -84666,6 +85286,23 @@
       {
        "name": "doesCrossFactionQueueRequireFullPremade",
        "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetActiveLFGDungeonName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "name",
+       "type": "string",
        "nilable": false
       }
      ],
@@ -90668,7 +91305,7 @@
      "arguments": [
       {
        "name": "delta",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -90696,7 +91333,7 @@
      "arguments": [
       {
        "name": "delta",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -91009,7 +91646,7 @@
      "returns": [
       {
        "name": "elapsedDuration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -91077,7 +91714,7 @@
      "returns": [
       {
        "name": "remainingDuration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -91128,7 +91765,7 @@
      "returns": [
       {
        "name": "totalDuration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -91256,7 +91893,7 @@
       },
       {
        "name": "duration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -91278,7 +91915,7 @@
       },
       {
        "name": "duration",
-       "type": "DurationSeconds",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -91336,11 +91973,269 @@
     }
    ]
   },
-  "LuaTableUtil": {
-   "file": "LuaTableUtilDocumentation.lua",
+  "LuaLocaleContext": {
+   "file": "LuaLocaleContextAPIDocumentation.lua",
    "entries": [
     {
-     "name": "LuaTableUtil",
+     "name": "LuaLocaleContextAPI",
+     "type": "ScriptObject",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CompareStrings",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Compares two UTF-8 strings using the options specified on a collator.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FindBreaks",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Opens a break iterator for locating text boundaries in the context locale.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FindStringMatches",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Creates a string search iterator using a collator and returns every match position.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FoldCase",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Case-folds the characters in a string; case-folding is locale-independent and not context-sensitive.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatCurrency",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats a double as a localized currency value using the provided ISO 4217 currency code.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatDate",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats Unix time as localized date text using locale date patterns, symbols, style, and optional time zone.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatDateTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats Unix time as localized date and time text using locale patterns, symbols, styles, and optional time zone.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatNumber",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats a double with locale number formatting using locale symbols, grouping, and the selected non-currency style.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "FormatTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Formats Unix time as localized time text using locale time patterns, symbols, style, and optional time zone.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetCurrencyName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns the display name for a currency in the context locale.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetDisplayName",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Gets a display name suitable for the specified locale.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetLocale",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Gets the locale used by this locale context.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetSortKey",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Transforms a string into a collation sort key.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "Length",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Counts character break boundaries in UTF-8 text.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ParseCurrency",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Parses an entire localized currency string into a double amount and ISO 4217 currency code.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ParseNumber",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Parses an entire localized number string into a double using the selected non-currency number formatter.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SelectPlural",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns the keyword of the first plural rule that applies to a number.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetLocale",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Sets the locale used by this locale context.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ToLower",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Lowercases the characters in a string; casing is locale-dependent and context-sensitive.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ToTitle",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Titlecases a string using titlecase positions determined by the default Unicode algorithm.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ToUpper",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Uppercases the characters in a string; casing is locale-dependent and context-sensitive.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "TransformLocale",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Applies a locale transform to the context locale and returns the transformed locale string.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "LuaMathExtensions": {
+   "file": "LuaMathExtensionsDocumentation.lua",
+   "entries": [
+    {
+     "name": "LuaMathExtensions",
      "type": "System",
      "literal_name": null,
      "secret_flags": [],
@@ -91351,19 +92246,245 @@
      "payload": []
     },
     {
-     "name": "count",
+     "name": "clamp",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
      "secret_args": "AllowedWhenUntainted",
-     "documentation": "Total number of elements within the table",
-     "arguments": [
-      {
-       "name": "table",
-       "type": "LuaValueReference",
-       "nilable": false
-      }
+     "documentation": "Clamps a value to the inclusive range defined by the minimum and maximum values.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "isfinite",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns whether a value is finite.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "isinf",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns whether a value is positive or negative infinity.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "isnan",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns whether a value is NaN.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "lerp",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Linearly interpolates between two values.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "normalize",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns the relative position of a value within a range, where the minimum maps to 0 and the maximum maps to 1.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "remap",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Maps a value from one range to the corresponding position in another range.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "round",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Rounds a value to the specified number of decimal places, with halfway values rounded away from zero.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "saturate",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Clamps a value to the inclusive range [0, 1].",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "sign",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns -1 for negative values, 0 for zero, and 1 for positive values.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "wrap",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Wraps a value into the half-open range [minimum, maximum).",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "LuaStringExtensions": {
+   "file": "LuaStringExtensionsDocumentation.lua",
+   "entries": [
+    {
+     "name": "LuaStringExtensions",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "ltrim",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns a string with all bytes in the specified character set removed from the start.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "rtrim",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns a string with all bytes in the specified character set removed from the end.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "contains",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true if a string contains the specified literal substring.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "endswith",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true if a string ends with the specified suffix.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "startswith",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true if a string starts with the specified prefix.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "trim",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns a string with all bytes in the specified character set removed from both ends.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "LuaTableExtensions": {
+   "file": "LuaTableExtensionsDocumentation.lua",
+   "entries": [
+    {
+     "name": "LuaTableExtensions",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "contains",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true if any value in the table compares equal to the specified value.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "count",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [
+      "SecretWhenLuaTableHasSecretKeys"
      ],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns the number of entries in the table.",
+     "arguments": [],
      "returns": [],
      "payload": []
     },
@@ -91373,49 +92494,26 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
-     "arguments": [
-      {
-       "name": "arraySizeHint",
-       "type": "number",
-       "nilable": false
-      }
-     ],
+     "documentation": "Creates an empty table with storage preallocated for the specified number of array and non-array entries.",
+     "arguments": [],
      "returns": [
       {
        "name": "table",
-       "type": "LuaValueReference",
+       "type": "table",
        "nilable": false
       }
      ],
      "payload": []
     },
     {
-     "name": "FindIndexedMismatch",
+     "name": "indexof",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
      "secret_args": "AllowedWhenUntainted",
-     "documentation": "Given two tables, finds the first index in the range (1, #t1) and (1, #t2) where two elements compare as inequal, or nil if no such elements are found.",
-     "arguments": [
-      {
-       "name": "t1",
-       "type": "LuaValueReference",
-       "nilable": false
-      },
-      {
-       "name": "t2",
-       "type": "LuaValueReference",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "index",
-       "type": "number",
-       "nilable": true
-      }
-     ],
+     "documentation": "Returns the first integer index whose value compares equal to the specified value, searching consecutively from index 1 until the first nil value.",
+     "arguments": [],
+     "returns": [],
      "payload": []
     },
     {
@@ -91425,10 +92523,58 @@
      "secret_flags": [],
      "secret_args": "AllowedWhenUntainted",
      "documentation": "Marks a supplied table as frozen, preventing any modifications to its contents, or replacement of its metatable. If the table has a pre-existing metatable with a '__newindex' table or function, assignments will pass through without raising errors. For tainted code, only tables created by the same addon making this function call are permitted to be frozen.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "keys",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns an array containing the keys of the specified table.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "getcountinfo",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [
+      "SecretWhenLuaTableHasSecretKeys"
+     ],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns detailed information about the number and distribution of entries in the table.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "values",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns an array containing the values of the specified table.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "isempty",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [
+      "SecretWhenLuaTableHasSecretKeys"
+     ],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns true if the table contains no entries.",
      "arguments": [
       {
        "name": "table",
-       "type": "LuaValueReference",
+       "type": "table",
        "nilable": false
       }
      ],
@@ -91442,20 +92588,46 @@
      "secret_flags": [],
      "secret_args": "AllowedWhenUntainted",
      "documentation": "Returns true if a table has been marked as frozen.",
-     "arguments": [
-      {
-       "name": "table",
-       "type": "LuaValueReference",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "frozen",
-       "type": "bool",
-       "nilable": false
-      }
-     ],
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "removeunordered",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Removes the value at the specified integer index by replacing it with the last value in the array and shortening the array by one element. The order of values in the array is not preserved.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "removevalue",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Removes all values equal to the specified value from the array portion of a table.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "LuaValuePredicates": {
+   "file": "LuaValuePredicatesDocumentation.lua",
+   "entries": [
+    {
+     "name": "SecretWhenLuaTableHasSecretKeys",
+     "type": "Secret",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Guarded APIs produce secret values if the subject Lua table contains any secret keys.",
+     "arguments": [],
+     "returns": [],
      "payload": []
     }
    ]
@@ -105214,6 +106386,28 @@
    "file": "PlayerDataConstantsDocumentation.lua",
    "entries": [
     {
+     "name": "PlayerDataElementAccountFlags",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "PlayerDataElementCharacterFlags",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "PlayerDataElementType",
      "type": "Enumeration",
      "literal_name": null,
@@ -108158,6 +109352,11 @@
        "name": "realmName",
        "type": "cstring",
        "nilable": false
+      },
+      {
+       "name": "level",
+       "type": "number",
+       "nilable": true
       }
      ],
      "payload": []
@@ -109920,7 +111119,7 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
-     "documentation": "A pony is not simply a small horse., Time to pony up some documentation., See? Pony.",
+     "documentation": "A pony is not simply a small horse. Time to pony up some documentation. See? Pony.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -111371,6 +112570,34 @@
      "payload": []
     },
     {
+     "name": "GetArenaOpponentSpec",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "index",
+       "type": "luaIndex",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "specializationID",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "gender",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "GetArenaRewards",
      "type": "Function",
      "literal_name": null,
@@ -112049,7 +113276,34 @@
      "payload": []
     },
     {
-     "name": "GetRandomTrainingGroundRewards",
+     "name": "GetRandomTrainingGroundArenaRewards",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "honor",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "experience",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "roleShortageBonus",
+       "type": "RoleShortageReward",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetRandomTrainingGroundBGRewards",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
@@ -112509,7 +113763,7 @@
      "payload": []
     },
     {
-     "name": "HasRandomTrainingGroundWinToday",
+     "name": "HasRandomTrainingGroundArenaWinToday",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
@@ -112518,7 +113772,24 @@
      "arguments": [],
      "returns": [
       {
-       "name": "hasRandomTrainingGroundWinToday",
+       "name": "hasRandomTrainingGroundArenaWinToday",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "HasRandomTrainingGroundBGWinToday",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "hasRandomTrainingGroundBGWinToday",
        "type": "bool",
        "nilable": false
       }
@@ -112905,6 +114176,52 @@
      "payload": []
     },
     {
+     "name": "IsTrainingGroundsArena",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "lfgDungeonsID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isTrainingGroundsArena",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsTrainingGroundsBG",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "lfgDungeonsID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "isTrainingGroundsBG",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "IsWarModeActive",
      "type": "Function",
      "literal_name": null,
@@ -112995,7 +114312,7 @@
      "payload": []
     },
     {
-     "name": "JoinRandomTrainingGroundBattleground",
+     "name": "JoinRandomTrainingGroundBG",
      "type": "Function",
      "literal_name": null,
      "secret_flags": [],
@@ -122231,7 +123548,7 @@
      "arguments": [
       {
        "name": "seconds",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122288,7 +123605,7 @@
      "arguments": [
       {
        "name": "seconds",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122311,7 +123628,7 @@
      "arguments": [
       {
        "name": "seconds",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122334,7 +123651,7 @@
      "arguments": [
       {
        "name": "seconds",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122357,7 +123674,7 @@
      "arguments": [
       {
        "name": "seconds",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122398,7 +123715,7 @@
      "returns": [
       {
        "name": "approximationSeconds",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122493,7 +123810,7 @@
      "returns": [
       {
        "name": "threshold",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122570,7 +123887,7 @@
      "arguments": [
       {
        "name": "seconds",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -122723,7 +124040,7 @@
      "arguments": [
       {
        "name": "threshold",
-       "type": "DurationSecondsDouble",
+       "type": "Seconds",
        "nilable": false
       }
      ],
@@ -134836,6 +136153,17 @@
      "payload": []
     },
     {
+     "name": "CreateRegionParams",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "FrameEventCallbackType",
      "type": "CallbackType",
      "literal_name": null,
@@ -139263,6 +140591,23 @@
      "payload": []
     },
     {
+     "name": "GetRoundLayoutToNearestPixel",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [
+      {
+       "name": "enabled",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
      "name": "GetScaledRect",
      "type": "Function",
      "literal_name": null,
@@ -139824,6 +141169,23 @@
      "arguments": [
       {
        "name": "propagate",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SetRoundLayoutToNearestPixel",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "NotAllowed",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "enabled",
        "type": "bool",
        "nilable": false
       }
@@ -142900,6 +144262,17 @@
      "payload": []
     },
     {
+     "name": "AcknowledgeAgeVerificationRestriction",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "AcknowledgeRegionalChatDisabled",
      "type": "Function",
      "literal_name": null,
@@ -142938,6 +144311,40 @@
      "returns": [
       {
        "name": "canSendChat",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsAgeVerificationRestricted",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns true if the account is restricted by the Age Verification feature.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "restricted",
+       "type": "bool",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "IsAgeVerificationRestrictedMinor",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns true if the Age Verification restriction is because the account belongs to a minor, as opposed to an adult who has not yet verified their age.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "isMinor",
        "type": "bool",
        "nilable": false
       }
@@ -143043,6 +144450,17 @@
        "nilable": false
       }
      ],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "AlertAgeVerificationRestricted",
+     "type": "Event",
+     "literal_name": "ALERT_AGE_VERIFICATION_RESTRICTED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
      "returns": [],
      "payload": []
     },
@@ -150161,29 +151579,6 @@
      "payload": []
     },
     {
-     "name": "trim",
-     "type": "Function",
-     "literal_name": null,
-     "secret_flags": [],
-     "secret_args": "AllowedWhenUntainted",
-     "documentation": "Returns a string with all bytes in the 'characters' set removed from the start and end.",
-     "arguments": [
-      {
-       "name": "str",
-       "type": "stringView",
-       "nilable": false
-      }
-     ],
-     "returns": [
-      {
-       "name": "trimmed",
-       "type": "stringView",
-       "nilable": false
-      }
-     ],
-     "payload": []
-    },
-    {
      "name": "TruncateWhenZero",
      "type": "Function",
      "literal_name": null,
@@ -152690,6 +154085,148 @@
      "secret_flags": [],
      "secret_args": null,
      "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "TimedSignalMap": {
+   "file": "TimedSignalMapAPIDocumentation.lua",
+   "entries": [
+    {
+     "name": "TimedSignalMapAPI",
+     "type": "ScriptObject",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "An object that manages a collection of integer keys, each scheduled to signal at a specific time. When a key's time arrives it is removed from the map and passed to the map's callback, letting you track many keyed deadlines through a single callback rather than scheduling each one individually.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CancelAllSignals",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Cancels all scheduled signals.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "CancelSignal",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Cancels the scheduled signal for the specified key, if one exists.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetNextSignal",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the next key due to signal along with its scheduled time.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetSignalCount",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Returns the number of keys currently scheduled to signal.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetSignalTime",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns the absolute time at which the specified key is scheduled to signal.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "HasSignal",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Returns whether the specified key is currently scheduled to signal.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SignalAfter",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Schedules the specified key to signal after a delay from the current time, replacing any existing schedule for that key.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "SignalAt",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Schedules the specified key to signal at an absolute time, replacing any existing schedule for that key.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "TimedSignalMapShared": {
+   "file": "TimedSignalMapSharedDocumentation.lua",
+   "entries": [
+    {
+     "name": "TimedSignalMapEntry",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Structure associating a key with a scheduled time.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "TimedSignalMapCallback",
+     "type": "CallbackType",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Invoked by a timed signal map when a scheduled time has arrived.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "RequiresTimedSignalMapAccess",
+     "type": "Precondition",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Guarded APIs on a timed signal map raise an error when the map holds secret values and is accessed from a tainted execution context.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -165632,6 +167169,17 @@
      "payload": []
     },
     {
+     "name": "NewTimedSignalMap",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": "AllowedWhenUntainted",
+     "documentation": "Creates a new timed signal map that invokes the supplied callback with each key as it becomes due.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
      "name": "NewTimer",
      "type": "Function",
      "literal_name": null,
@@ -167879,7 +169427,7 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": "AllowedWhenUntainted",
-     "documentation": null,
+     "documentation": "Registers a sound for an aura event. The sound is stopped after five seconds of playback. The throttleSeconds value must be between 0 and 5 seconds, inclusive.",
      "arguments": [
       {
        "name": "trigger",
@@ -168116,6 +169664,36 @@
       {
        "name": "newDuration",
        "type": "number",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetAuraCasterGUID",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [
+      "SecretWhenUnitAuraRestricted"
+     ],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": null,
+     "arguments": [
+      {
+       "name": "auraInstanceUnit",
+       "type": "UnitToken",
+       "nilable": false
+      },
+      {
+       "name": "auraInstanceID",
+       "type": "number",
+       "nilable": false
+      }
+     ],
+     "returns": [
+      {
+       "name": "casterGUID",
+       "type": "WOWGUID",
        "nilable": true
       }
      ],
@@ -168467,6 +170045,41 @@
       {
        "name": "aura",
        "type": "AuraData",
+       "nilable": true
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "GetRefreshCarryOverDuration",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [
+      "SecretWhenUnitAuraRestricted"
+     ],
+     "secret_args": "AllowedWhenTainted",
+     "documentation": "Returns the client-predicted amount of time that a new spellcast of the same spell would carry over to the new application of that aura. Takes an optional spellID to use as the new duration if that cannot be derived from the aura, if that value isn't supplied the aura's spellID will be used",
+     "arguments": [
+      {
+       "name": "auraInstanceUnit",
+       "type": "UnitToken",
+       "nilable": false
+      },
+      {
+       "name": "auraInstanceID",
+       "type": "number",
+       "nilable": false
+      },
+      {
+       "name": "spellID",
+       "type": "SpellIdentifier",
+       "nilable": true
+      }
+     ],
+     "returns": [
+      {
+       "name": "newDuration",
+       "type": "number",
        "nilable": true
       }
      ],
@@ -168911,7 +170524,7 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": null,
-     "documentation": null,
+     "documentation": "Sound file to play. Playback stops after five seconds.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -181929,6 +183542,77 @@
     },
     {
      "name": "WarbandSceneSearchInfo",
+     "type": "Structure",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "WeatherConstants": {
+   "file": "WeatherConstantsDocumentation.lua",
+   "entries": [
+    {
+     "name": "WeatherType",
+     "type": "Enumeration",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": null,
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    }
+   ]
+  },
+  "WeatherScript": {
+   "file": "WeatherScriptDocumentation.lua",
+   "entries": [
+    {
+     "name": "WeatherScript",
+     "type": "System",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "Cloudy, with a chance of documentation.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "GetCurrentWeather",
+     "type": "Function",
+     "literal_name": null,
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "C_Weather the outlook is favorable.",
+     "arguments": [],
+     "returns": [
+      {
+       "name": "info",
+       "type": "WeatherInfo",
+       "nilable": false
+      }
+     ],
+     "payload": []
+    },
+    {
+     "name": "WeatherChanged",
+     "type": "Event",
+     "literal_name": "WEATHER_CHANGED",
+     "secret_flags": [],
+     "secret_args": null,
+     "documentation": "The weather has taken a turn.",
+     "arguments": [],
+     "returns": [],
+     "payload": []
+    },
+    {
+     "name": "WeatherInfo",
      "type": "Structure",
      "literal_name": null,
      "secret_flags": [],

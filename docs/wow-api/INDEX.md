@@ -1,7 +1,7 @@
-# WoW API Index (build 12.1.0.69933)
+# WoW API Index (build 12.1.5.70391)
 
-Generated from a `wow-ui-source` clone on 2026-10-13 08:41 UTC.
-Systems: 593 | Functions/events: 10246 | Conditionally-secret entries: 301
+Generated from a `wow-ui-source` clone on 2026-10-14 06:52 UTC.
+Systems: 603 | Functions/events: 10380 | Conditionally-secret entries: 306
 
 Regenerate with `python scripts/gen_api_index.py`.
 
@@ -25,13 +25,13 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **AchievementInfo** (18) -- `AchievementInfoDocumentation.lua`
 - **AchievementTelemetry** (4) -- `AchievementTelemetryDocumentation.lua`
 - **Action** (1) -- `ActionDocumentation.lua`
-- **ActionBarFrame** (86) -- 5 secret -- `ActionBarFrameDocumentation.lua`
+- **ActionBarFrame** (87) -- 5 secret -- `ActionBarFrameDocumentation.lua`
 - **ActionBarShared** (2) -- `ActionBarSharedDocumentation.lua`
 - **AddOnProfiler** (15) -- `AddOnProfilerDocumentation.lua`
 - **AddOnProfilerConstants** (2) -- `AddOnProfilerConstantsDocumentation.lua`
 - **AddOns** (37) -- `AddOnsDocumentation.lua`
 - **AdventureJournal** (15) -- `AdventureJournalDocumentation.lua`
-- **AdventureMap** (9) -- `AdventureMapDocumentation.lua`
+- **AdventureMap** (12) -- `AdventureMapDocumentation.lua`
 - **AlliedRacesFrame** (7) -- `AlliedRacesFrameDocumentation.lua`
 - **AnimaDiversionUI** (15) -- `AnimaDiversionUIDocumentation.lua`
 - **AppearanceSource** (1) -- `AppearanceSourceDocumentation.lua`
@@ -45,7 +45,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **AuctionHouseConstants** (1) -- `AuctionHouseConstantsDocumentation.lua`
 - **AuctionHouseEnums** (8) -- `AuctionHouseEnumsDocumentation.lua`
 - **AuraContainerShared** (3) -- `AuraContainerSharedDocumentation.lua`
-- **AuraContainerUtil** (24) -- `AuraContainerUtilDocumentation.lua`
+- **AuraContainerUtil** (26) -- `AuraContainerUtilDocumentation.lua`
 - **AutoComplete** (6) -- `AutoCompleteDocumentation.lua`
 - **AutoCompleteShared** (2) -- `AutoCompleteSharedDocumentation.lua`
 - **AzeriteConstants** (1) -- `AzeriteConstantsDocumentation.lua`
@@ -105,7 +105,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **ColorUtil** (8) -- `ColorUtilDocumentation.lua`
 - **CombatAudioAlert** (17) -- `CombatAudioAlertDocumentation.lua`
 - **CombatAudioAlertConstants** (1) -- `CombatAudioAlertConstantsDocumentation.lua`
-- **CombatAudioAlertShared** (17) -- `CombatAudioAlertSharedDocumentation.lua`
+- **CombatAudioAlertShared** (18) -- `CombatAudioAlertSharedDocumentation.lua`
 - **CombatLog** (16) -- `CombatLogDocumentation.lua`
 - **CombatLogConstants** (5) -- `CombatLogConstantsDocumentation.lua`
 - **CombatLogInternal** (3) -- `CombatLogInternalDocumentation.lua`
@@ -211,7 +211,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **FrameAPITabardModelBase** (8) -- `FrameAPITabardModelBaseDocumentation.lua`
 - **FrameAPITooltip** (10) -- `FrameAPITooltipDocumentation.lua`
 - **FrameAPIUnitPositionFrame** (13) -- `FrameAPIUnitPositionFrameDocumentation.lua`
-- **FrameScript** (41) -- `FrameScriptDocumentation.lua`
+- **FrameScript** (45) -- `FrameScriptDocumentation.lua`
 - **FriendList** (62) -- `FriendListDocumentation.lua`
 - **GARRISON_FOLLOWER_TYPEConstants** (1) -- `GARRISON_FOLLOWER_TYPEConstantsDocumentation.lua`
 - **GARRISON_TYPEConstants** (1) -- `GARRISON_TYPEConstantsDocumentation.lua`
@@ -267,6 +267,8 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **InstanceEncounter** (11) -- `InstanceEncounterDocumentation.lua`
 - **InstanceLeaverInfo** (3) -- `InstanceLeaverInfoDocumentation.lua`
 - **InterfaceFileManifest** (2) -- `InterfaceFileManifestDocumentation.lua`
+- **Intl** (29) -- `IntlDocumentation.lua`
+- **IntlSharedTypes** (10) -- `IntlSharedTypesDocumentation.lua`
 - **InvasionInfo** (6) -- `InvasionInfoDocumentation.lua`
 - **IslandsInfo** (2) -- `IslandsInfoDocumentation.lua`
 - **IslandsQueueUI** (10) -- `IslandsQueueUIDocumentation.lua`
@@ -280,7 +282,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **ItemUpgrade** (27) -- `ItemUpgradeDocumentation.lua`
 - **KeyBindings** (21) -- `KeyBindingsDocumentation.lua`
 - **LFGConstants** (10) -- `LFGConstantsDocumentation.lua`
-- **LFGInfo** (56) -- `LFGInfoDocumentation.lua`
+- **LFGInfo** (57) -- `LFGInfoDocumentation.lua`
 - **LFGListInfo** (80) -- 5 secret -- `LFGListInfoDocumentation.lua`
 - **LegendaryCrafting** (25) -- `LegendaryCraftingDocumentation.lua`
 - **LegendaryCraftingTypes** (7) -- `LegendaryCraftingTypesDocumentation.lua`
@@ -312,7 +314,11 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **LuaDurationManualClock** (5) -- `LuaDurationManualClockAPIDocumentation.lua`
 - **LuaDurationObject** (32) -- 8 secret -- `LuaDurationObjectAPIDocumentation.lua`
 - **LuaDurationObjectShared** (1) -- `LuaDurationObjectSharedDocumentation.lua`
-- **LuaTableUtil** (6) -- `LuaTableUtilDocumentation.lua`
+- **LuaLocaleContext** (23) -- `LuaLocaleContextAPIDocumentation.lua`
+- **LuaMathExtensions** (12) -- `LuaMathExtensionsDocumentation.lua`
+- **LuaStringExtensions** (7) -- `LuaStringExtensionsDocumentation.lua`
+- **LuaTableExtensions** (13) -- 3 secret -- `LuaTableExtensionsDocumentation.lua`
+- **LuaValuePredicates** (1) -- `LuaValuePredicatesDocumentation.lua`
 - **MacOptions** (11) -- `MacOptionsDocumentation.lua`
 - **MacroConstants** (1) -- `MacroConstantsDocumentation.lua`
 - **MailInfo** (19) -- `MailInfoDocumentation.lua`
@@ -368,7 +374,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **Platform** (2) -- `PlatformDocumentation.lua`
 - **PlayerChoice** (18) -- `PlayerChoiceDocumentation.lua`
 - **PlayerChoiceConstants** (3) -- `PlayerChoiceConstantsDocumentation.lua`
-- **PlayerDataConstants** (1) -- `PlayerDataConstantsDocumentation.lua`
+- **PlayerDataConstants** (3) -- `PlayerDataConstantsDocumentation.lua`
 - **PlayerHousingConstants** (36) -- `PlayerHousingConstantsDocumentation.lua`
 - **PlayerInfo** (35) -- `PlayerInfoDocumentation.lua`
 - **PlayerInfoShared** (2) -- `PlayerInfoSharedDocumentation.lua`
@@ -385,7 +391,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **ProfessionSpecConstants** (9) -- `ProfessionSpecConstantsDocumentation.lua`
 - **ProfessionSpecUI** (30) -- `ProfessionSpecUIDocumentation.lua`
 - **PvPFactionConstants** (1) -- `PvPFactionConstantsDocumentation.lua`
-- **PvpInfo** (180) -- 3 secret -- `PvpInfoDocumentation.lua`
+- **PvpInfo** (185) -- 3 secret -- `PvpInfoDocumentation.lua`
 - **PvpInfoConstants** (2) -- `PvpInfoConstantsDocumentation.lua`
 - **QuestConstants** (9) -- `QuestConstantsDocumentation.lua`
 - **QuestHubInfo** (3) -- `QuestHubInfoDocumentation.lua`
@@ -457,7 +463,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **SimpleEditBox** (80) -- `SimpleEditBoxAPIDocumentation.lua`
 - **SimpleFont** (25) -- `SimpleFontAPIDocumentation.lua`
 - **SimpleFontString** (58) -- 9 secret -- `SimpleFontStringAPIDocumentation.lua`
-- **SimpleFrame** (128) -- `SimpleFrameAPIDocumentation.lua`
+- **SimpleFrame** (129) -- `SimpleFrameAPIDocumentation.lua`
 - **SimpleFrameScriptObject** (22) -- `SimpleFrameScriptObjectAPIDocumentation.lua`
 - **SimpleFrameScriptObjectConstants** (8) -- `SimpleFrameScriptObjectConstantsDocumentation.lua`
 - **SimpleHTML** (24) -- `SimpleHTMLAPIDocumentation.lua`
@@ -472,7 +478,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **SimpleObject** (6) -- `SimpleObjectAPIDocumentation.lua`
 - **SimpleOffScreenFrame** (9) -- `SimpleOffScreenFrameAPIDocumentation.lua`
 - **SimpleRegion** (17) -- `SimpleRegionAPIDocumentation.lua`
-- **SimpleScriptRegion** (50) -- 12 secret -- `SimpleScriptRegionAPIDocumentation.lua`
+- **SimpleScriptRegion** (52) -- 12 secret -- `SimpleScriptRegionAPIDocumentation.lua`
 - **SimpleScriptRegionResizing** (14) -- 2 secret -- `SimpleScriptRegionResizingAPIDocumentation.lua`
 - **SimpleScrollFrame** (10) -- `SimpleScrollFrameAPIDocumentation.lua`
 - **SimpleSlider** (20) -- `SimpleSliderAPIDocumentation.lua`
@@ -486,7 +492,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **SocialConstants** (1) -- `SocialConstantsDocumentation.lua`
 - **SocialQueue** (15) -- `SocialQueueDocumentation.lua`
 - **SocialQueueSystemStatus** (4) -- `SocialQueueSystemStatusDocumentation.lua`
-- **SocialRestrictions** (13) -- `SocialRestrictionsDocumentation.lua`
+- **SocialRestrictions** (17) -- `SocialRestrictionsDocumentation.lua`
 - **SocialUI** (6) -- `SocialUIDocumentation.lua`
 - **SoftTargetConstants** (1) -- `SoftTargetConstantsDocumentation.lua`
 - **Soulbinds** (59) -- `SoulbindsDocumentation.lua`
@@ -508,7 +514,7 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **StableInfo** (22) -- `StableInfoDocumentation.lua`
 - **StorePublicUI** (4) -- `StorePublicUIDocumentation.lua`
 - **Streaming** (5) -- `StreamingDocumentation.lua`
-- **StringUtil** (17) -- `StringUtilDocumentation.lua`
+- **StringUtil** (16) -- `StringUtilDocumentation.lua`
 - **SummonConstants** (1) -- `SummonConstantsDocumentation.lua`
 - **SummonInfo** (8) -- `SummonInfoDocumentation.lua`
 - **SuperTrackManager** (23) -- `SuperTrackManagerDocumentation.lua`
@@ -524,6 +530,8 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **TextureUtils** (17) -- `TextureUtilsDocumentation.lua`
 - **Threat** (3) -- `ThreatDocumentation.lua`
 - **Time** (1) -- `TimeDocumentation.lua`
+- **TimedSignalMap** (9) -- `TimedSignalMapAPIDocumentation.lua`
+- **TimedSignalMapShared** (3) -- `TimedSignalMapSharedDocumentation.lua`
 - **TimerConstants** (1) -- `TimerConstantsDocumentation.lua`
 - **TimerunningConstants** (1) -- `TimerunningConstantsDocumentation.lua`
 - **TimerunningUI** (3) -- `TimerunningUIDocumentation.lua`
@@ -570,13 +578,13 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **UIShared** (4) -- `UISharedDocumentation.lua`
 - **UISystemVisibilityManager** (4) -- `UISystemVisibilityManagerDocumentation.lua`
 - **UITextureConstants** (3) -- `UITextureConstantsDocumentation.lua`
-- **UITimer** (6) -- `UITimerDocumentation.lua`
+- **UITimer** (7) -- `UITimerDocumentation.lua`
 - **UIWidgetManager** (136) -- `UIWidgetManagerDocumentation.lua`
 - **UIWidgetManagerShared** (9) -- `UIWidgetManagerSharedDocumentation.lua`
 - **URL** (3) -- `URLDocumentation.lua`
 - **UiModelSceneConstants** (2) -- `UiModelSceneConstantsDocumentation.lua`
 - **Unit** (359) -- 81 secret -- `UnitDocumentation.lua`
-- **UnitAura** (43) -- 14 secret -- `UnitAuraDocumentation.lua`
+- **UnitAura** (45) -- 16 secret -- `UnitAuraDocumentation.lua`
 - **UnitAuraConstants** (2) -- `UnitAuraConstantsDocumentation.lua`
 - **UnitAuraShared** (3) -- `UnitAuraSharedDocumentation.lua`
 - **UnitConstants** (6) -- `UnitConstantsDocumentation.lua`
@@ -596,6 +604,8 @@ Regenerate with `python scripts/gen_api_index.py`.
 - **WarCampaign** (15) -- `WarCampaignDocumentation.lua`
 - **WarbandSceneInfo** (11) -- `WarbandSceneInfoDocumentation.lua`
 - **WarbandSceneInfoConstants** (1) -- `WarbandSceneInfoConstantsDocumentation.lua`
+- **WeatherConstants** (1) -- `WeatherConstantsDocumentation.lua`
+- **WeatherScript** (4) -- `WeatherScriptDocumentation.lua`
 - **WeeklyRewards** (30) -- `WeeklyRewardsDocumentation.lua`
 - **WorldElapsedTimerConstants** (1) -- `WorldElapsedTimerConstantsDocumentation.lua`
 - **WorldLootObject** (11) -- `WorldLootObjectDocumentation.lua`
