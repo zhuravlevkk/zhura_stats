@@ -1,10 +1,10 @@
-# Secret Values -- conditionally-secret API (build 12.1.0.69933)
+# Secret Values -- conditionally-secret API (build 12.1.5.70391)
 
 Functions whose return value becomes a **Secret** under the given condition. In tainted addon code you must call `issecretvalue(v)` before any comparison, arithmetic, or table-index on the result -- otherwise the game raises a Lua error.
 
 Predicate descriptions come from `SecretPredicatesDocumentation.lua`. See also `ADDON-RESTRICTIONS.md` for restriction types such as Challenge Mode (Mythic+).
 
-Total: 301 entries across 23 conditions.
+Total: 306 entries across 24 conditions.
 
 ## `SecretInActivePvPMatch` (2)
 
@@ -205,6 +205,12 @@ Total: 301 entries across 23 conditions.
 - `GetArenaCrowdControlInfo` -- PvpInfo (`SecretArguments`: AllowedWhenUntainted)
 - `ArenaCrowdControlSpellUpdate` -- Unit
 
+## `SecretWhenLuaTableHasSecretKeys` (3)
+
+- `count` -- LuaTableExtensions (`SecretArguments`: AllowedWhenUntainted)
+- `getcountinfo` -- LuaTableExtensions (`SecretArguments`: AllowedWhenUntainted)
+- `isempty` -- LuaTableExtensions (`SecretArguments`: AllowedWhenUntainted)
+
 ## `SecretWhenNumericFormatterSecret` (3)
 
 - `FormatElapsedDuration` -- LuaDurationObject (`SecretArguments`: AllowedWhenUntainted)
@@ -218,7 +224,7 @@ Total: 301 entries across 23 conditions.
 - `GetTotemInfo` -- Totem (`SecretArguments`: AllowedWhenUntainted)
 - `GetTotemTimeLeft` -- Totem (`SecretArguments`: AllowedWhenUntainted)
 
-## `SecretWhenUnitAuraRestricted` (20)
+## `SecretWhenUnitAuraRestricted` (22)
 
 > Guarded APIs and events produce secret values when combat, encounter, challenge mode, or PvP match addon restrictions are in effect. Individual spells may be flagged as never or always secret, which takes priority over restrictions.
 
@@ -232,6 +238,7 @@ Total: 301 entries across 23 conditions.
 - `DoesAuraHaveExpirationTime` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 - `GetAuraApplicationDisplayCount` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 - `GetAuraBaseDuration` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
+- `GetAuraCasterGUID` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
 - `GetAuraDataByAuraInstanceID` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 - `GetAuraDataByIndex` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 - `GetAuraDataBySlot` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
@@ -240,6 +247,7 @@ Total: 301 entries across 23 conditions.
 - `GetBuffDataByIndex` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 - `GetDebuffDataByIndex` -- UnitAura (`SecretArguments`: AllowedWhenUntainted)
 - `GetPlayerAuraBySpellID` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
+- `GetRefreshCarryOverDuration` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
 - `GetRefreshExtendedDuration` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
 - `GetUnitAuraBySpellID` -- UnitAura (`SecretArguments`: AllowedWhenTainted)
 
