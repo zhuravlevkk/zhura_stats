@@ -1,6 +1,6 @@
 # WoW API Index (build 12.1.5.70448)
 
-Generated from a `wow-ui-source` clone on 2026-10-19 07:05 UTC.
+Generated from a `wow-ui-source` clone on 2026-10-20 06:50 UTC.
 Systems: 603 | Functions/events: 10380 | Conditionally-secret entries: 306
 
 Regenerate with `python scripts/gen_api_index.py`.
