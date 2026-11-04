@@ -1,5 +1,5 @@
 {
- "version": "12.1.5.70688",
+ "version": "12.1.5.70783",
  "secret_predicates": {
   "RequiresComparableUnitTokens": {
    "type": "Precondition",
@@ -122449,7 +122449,7 @@
      "literal_name": null,
      "secret_flags": [],
      "secret_args": "AllowedWhenUntainted",
-     "documentation": "Sets or clears both blocklist and allowlist filters atomically with a single visibility reevaluation. Pass an empty table to clear the corresponding filter.",
+     "documentation": "Sets or clears both blocklist and allowlist filters atomically with a single visibility reevaluation. Pass an empty table to clear the corresponding filter. Blocked for tainted callers while in combat lockdown.",
      "arguments": [],
      "returns": [],
      "payload": []
@@ -153848,6 +153848,11 @@
        "name": "callback",
        "type": "GetTitleIconTextureCallback",
        "nilable": false
+      },
+      {
+       "name": "subIcon",
+       "type": "string",
+       "nilable": true
       }
      ],
      "returns": [],
@@ -153870,6 +153875,11 @@
        "name": "version",
        "type": "TitleIconVersion",
        "nilable": false
+      },
+      {
+       "name": "subIcon",
+       "type": "string",
+       "nilable": true
       }
      ],
      "returns": [
@@ -153903,6 +153913,11 @@
        "name": "version",
        "type": "TitleIconVersion",
        "nilable": false
+      },
+      {
+       "name": "subIcon",
+       "type": "string",
+       "nilable": true
       }
      ],
      "returns": [],
@@ -177380,11 +177395,6 @@
       {
        "name": "flagText",
        "type": "cstring",
-       "nilable": false
-      },
-      {
-       "name": "amount",
-       "type": "number",
        "nilable": false
       },
       {
