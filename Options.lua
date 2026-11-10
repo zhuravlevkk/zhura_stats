@@ -1055,19 +1055,21 @@ local function BuildDisplayPage(content, addonName, defaults, statKeys)
     generalCard:AddDropdownRow("NE_STATS_ADDON_LANGUAGE", languageDropDown, 220)
     controlRefs.languageDropDown = languageDropDown
 
-    local drModeDropDown = CreateDropDown(generalCard, addonName .. "DRModeDropDown", 220, function()
-        return {
-            { value = "off", text = Addon:S("NE_STATS_OFF") },
-            { value = "penalty", text = Addon:S("NE_STATS_DR_PENALTY") },
-            { value = "loss", text = Addon:S("NE_STATS_RATING_LOST_TO_DR") },
-            { value = "full", text = Addon:S("NE_STATS_FULL_DR_INFO") },
-        }
-    end, function(mode)
-        SetValue("drDisplayMode", mode)
-        Addon:RefreshStats()
-    end)
-    generalCard:AddDropdownRow("NE_STATS_DIMINISHING_RETURNS", drModeDropDown, 220)
-    controlRefs.drModeDropDown = drModeDropDown
+    if not ns.isForever then
+        local drModeDropDown = CreateDropDown(generalCard, addonName .. "DRModeDropDown", 220, function()
+            return {
+                { value = "off", text = Addon:S("NE_STATS_OFF") },
+                { value = "penalty", text = Addon:S("NE_STATS_DR_PENALTY") },
+                { value = "loss", text = Addon:S("NE_STATS_RATING_LOST_TO_DR") },
+                { value = "full", text = Addon:S("NE_STATS_FULL_DR_INFO") },
+            }
+        end, function(mode)
+            SetValue("drDisplayMode", mode)
+            Addon:RefreshStats()
+        end)
+        generalCard:AddDropdownRow("NE_STATS_DIMINISHING_RETURNS", drModeDropDown, 220)
+        controlRefs.drModeDropDown = drModeDropDown
+    end
 
     local textAlignDropDown = CreateDropDown(generalCard, addonName .. "TextAlignDropDown", 160, function()
         local items = {}
@@ -1328,47 +1330,49 @@ local function BuildStatsPage(content, addonName, statKeys)
 
     local hintWidth = PAGE_WIDTH - (FORM_X * 2) - (LABEL_X * 2)
 
-    local combatRestrictionHint = CreateLabel(card, Addon:S("NE_STATS_COMBAT_RESTRICTION_HINT"), "GameFontDisableSmall")
-    BindLocalizedText(combatRestrictionHint, "NE_STATS_COMBAT_RESTRICTION_HINT")
-    combatRestrictionHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
-    combatRestrictionHint:SetWidth(hintWidth)
-    combatRestrictionHint:SetJustifyH("LEFT")
-    controlRefs.combatRestrictionHint = combatRestrictionHint
-    card:Advance(FORM_ROW_H)
+    if not ns.isForever then
+        local combatRestrictionHint = CreateLabel(card, Addon:S("NE_STATS_COMBAT_RESTRICTION_HINT"), "GameFontDisableSmall")
+        BindLocalizedText(combatRestrictionHint, "NE_STATS_COMBAT_RESTRICTION_HINT")
+        combatRestrictionHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+        combatRestrictionHint:SetWidth(hintWidth)
+        combatRestrictionHint:SetJustifyH("LEFT")
+        controlRefs.combatRestrictionHint = combatRestrictionHint
+        card:Advance(FORM_ROW_H)
 
-    local priorityDropDown = CreateDropDown(card, addonName .. "PriorityModeDropDown", 220, function()
-        local items = {}
-        for _, option in ipairs(PRIORITY_MODE_OPTIONS) do
-            table.insert(items, { value = option.value, text = Addon:S(option.label) })
-        end
-        return items
-    end, function(mode)
-        Addon:SetStatPriorityMode(mode)
-    end)
-    card:AddDropdownRow("NE_STATS_DISPLAY_ORDER", priorityDropDown, 220)
-    controlRefs.priorityModeDropDown = priorityDropDown
+        local priorityDropDown = CreateDropDown(card, addonName .. "PriorityModeDropDown", 220, function()
+            local items = {}
+            for _, option in ipairs(PRIORITY_MODE_OPTIONS) do
+                table.insert(items, { value = option.value, text = Addon:S(option.label) })
+            end
+            return items
+        end, function(mode)
+            Addon:SetStatPriorityMode(mode)
+        end)
+        card:AddDropdownRow("NE_STATS_DISPLAY_ORDER", priorityDropDown, 220)
+        controlRefs.priorityModeDropDown = priorityDropDown
 
-    local referenceDropDown = CreateDropDown(card, addonName .. "ReferenceDisplayDropDown", 220, function()
-        local items = {}
-        for _, option in ipairs(REFERENCE_DISPLAY_OPTIONS) do
-            table.insert(items, { value = option.value, text = Addon:S(option.label) })
-        end
-        return items
-    end, function(value)
-        SetValue("referenceDisplay", value)
-        Addon:RefreshStats()
-    end)
-    card:AddDropdownRow("NE_STATS_REFERENCE_DISPLAY", referenceDropDown, 220)
-    controlRefs.referenceDisplayDropDown = referenceDropDown
+        local referenceDropDown = CreateDropDown(card, addonName .. "ReferenceDisplayDropDown", 220, function()
+            local items = {}
+            for _, option in ipairs(REFERENCE_DISPLAY_OPTIONS) do
+                table.insert(items, { value = option.value, text = Addon:S(option.label) })
+            end
+            return items
+        end, function(value)
+            SetValue("referenceDisplay", value)
+            Addon:RefreshStats()
+        end)
+        card:AddDropdownRow("NE_STATS_REFERENCE_DISPLAY", referenceDropDown, 220)
+        controlRefs.referenceDisplayDropDown = referenceDropDown
 
-    local preferCurrentSpecMainStatCheckbox = CreateCheckbox(card, "NE_STATS_ALWAYS_SHOW_CURRENT_SPECIALIZATION_MAIN_STAT_FIRST", "NE_STATS_PREFER_MAIN_STAT_HINT", function(self)
-        SetValue("preferCurrentSpecMainStat", self:GetChecked())
-        Addon:RefreshStats()
-    end)
-    card:AddCheckboxRow(preferCurrentSpecMainStatCheckbox)
-    controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
+        local preferCurrentSpecMainStatCheckbox = CreateCheckbox(card, "NE_STATS_ALWAYS_SHOW_CURRENT_SPECIALIZATION_MAIN_STAT_FIRST", "NE_STATS_PREFER_MAIN_STAT_HINT", function(self)
+            SetValue("preferCurrentSpecMainStat", self:GetChecked())
+            Addon:RefreshStats()
+        end)
+        card:AddCheckboxRow(preferCurrentSpecMainStatCheckbox)
+        controlRefs.preferCurrentSpecMainStatCheckbox = preferCurrentSpecMainStatCheckbox
 
-    preferCurrentSpecMainStatCheckbox.label:SetWidth(hintWidth - 30)
+        preferCurrentSpecMainStatCheckbox.label:SetWidth(hintWidth - 30)
+    end
 
     local useClassColorCheckbox = CreateCheckbox(card, "NE_STATS_USE_CLASS_COLOR", nil, function(self)
         SetValue("useClassColor", self:GetChecked())
@@ -1377,28 +1381,30 @@ local function BuildStatsPage(content, addonName, statKeys)
     card:AddCheckboxRow(useClassColorCheckbox)
     controlRefs.useClassColorCheckbox = useClassColorCheckbox
 
-    local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontDisableSmall")
-    BindLocalizedText(hint, "NE_STATS_ARCHON_LOCK_ORDER_HINT")
-    hint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
-    hint:SetWidth(hintWidth)
-    hint:SetJustifyH("LEFT")
-    controlRefs.priorityHint = hint
-    card:Advance(FORM_ROW_H)
+    if not ns.isForever then
+        local hint = CreateLabel(card, Addon:S("NE_STATS_ARCHON_LOCK_ORDER_HINT"), "GameFontDisableSmall")
+        BindLocalizedText(hint, "NE_STATS_ARCHON_LOCK_ORDER_HINT")
+        hint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+        hint:SetWidth(hintWidth)
+        hint:SetJustifyH("LEFT")
+        controlRefs.priorityHint = hint
+        card:Advance(FORM_ROW_H)
 
-    local archonHint = CreateLabel(card, "", "GameFontDisableSmall")
-    archonHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
-    archonHint:SetWidth(hintWidth)
-    archonHint:SetJustifyH("LEFT")
-    controlRefs.archonHint = archonHint
-    card:Advance(FORM_ROW_H)
+        local archonHint = CreateLabel(card, "", "GameFontDisableSmall")
+        archonHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+        archonHint:SetWidth(hintWidth)
+        archonHint:SetJustifyH("LEFT")
+        controlRefs.archonHint = archonHint
+        card:Advance(FORM_ROW_H)
 
-    local referenceModeHint = CreateLabel(card, Addon:S("NE_STATS_REFERENCE_MODE_HINT"), "GameFontDisableSmall")
-    BindLocalizedText(referenceModeHint, "NE_STATS_REFERENCE_MODE_HINT")
-    referenceModeHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
-    referenceModeHint:SetWidth(hintWidth)
-    referenceModeHint:SetJustifyH("LEFT")
-    controlRefs.referenceDisplayHint = referenceModeHint
-    card:Advance(FORM_ROW_H)
+        local referenceModeHint = CreateLabel(card, Addon:S("NE_STATS_REFERENCE_MODE_HINT"), "GameFontDisableSmall")
+        BindLocalizedText(referenceModeHint, "NE_STATS_REFERENCE_MODE_HINT")
+        referenceModeHint:SetPoint("TOPLEFT", card, "TOPLEFT", LABEL_X, card:GetCurrentY() + 4)
+        referenceModeHint:SetWidth(hintWidth)
+        referenceModeHint:SetJustifyH("LEFT")
+        controlRefs.referenceDisplayHint = referenceModeHint
+        card:Advance(FORM_ROW_H)
+    end
 
     local header = CreateLabel(card, Addon:S("NE_STATS_REORDER_HINT"), "GameFontNormalSmall")
     BindLocalizedText(header, "NE_STATS_REORDER_HINT")

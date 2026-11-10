@@ -236,20 +236,30 @@ jobs:
             exit 1
           fi
 
-          versions=$(curl -s -H "X-Api-Token: $CF_TOKEN" "https://wow.curseforge.com/api/game/versions")
+          versions=$(curl -fsS -H "X-Api-Token: $CF_TOKEN" "https://wow.curseforge.com/api/game/versions")
 
-          game_version_id=$(echo "$versions" | jq -r '
-            [.[] | select(.gameVersionTypeID == 517 and (.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")))]
-            | sort_by(.name | split(".") | map(tonumber))
-            | last
+          toc_interfaces=$(sed -n 's/^## Interface:[[:space:]]*//p' ZhuraStats.toc | tr -d '\r' | jq -R 'split(",") | map(tonumber)')
+          game_version_id=$(jq -r --argjson interfaces "$toc_interfaces" '
+            [.[] | select(.gameVersionTypeID == 517 and (.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")))
+            | (.name | split(".") | map(tonumber)) as $version
+            | ($version[0] * 10000 + $version[1] * 100 + $version[2]) as $interface
+            | select($interfaces | index($interface))
+            | {id, interface: $interface}]
+            | max_by(.interface)
             | .id
-          ')
+          ' <<< "$versions")
 
           if [ -z "$game_version_id" ] || [ "$game_version_id" = "null" ]; then
-            echo "Could not determine CurseForge retail game version ID." >&2
+            echo "Could not determine a CurseForge retail game version ID supported by ZhuraStats.toc." >&2
             exit 1
           fi
           echo "Selected CurseForge game version id=$game_version_id."
+
+          if ! forever_version_id=$(jq -er '.[] | select(.id == 17053 and .name == "1.60.1") | .id' <<< "$versions"); then
+            echo "Could not determine CurseForge WoW Forever 1.60.1 game version ID." >&2
+            exit 1
+          fi
+          echo "Selected CurseForge Forever game version id=$forever_version_id."
 
           # Write metadata to a file and have curl read the field value from it
           # (-F "name=<file"). Passing it inline as -F "metadata=$json" makes
@@ -259,7 +269,7 @@ jobs:
           jq -n \
             --rawfile changelog "$RELEASE_NOTES_PATH" \
             --arg displayName "NE Stats v${RELEASE_VERSION}" \
-            --argjson gameVersions "[${game_version_id}]" \
+            --argjson gameVersions "[${game_version_id},${forever_version_id}]" \
             '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, releaseType: "release", gameVersions: $gameVersions}' \
             > "$metadata_file"
 

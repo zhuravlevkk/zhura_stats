@@ -295,6 +295,9 @@ function Addon:GetFrameControlsSize()
     if self:GetProfileValue("showFrameControls") == false then
         return 0, 0, 0
     end
+    if ns.isForever then
+        return LOCK_BUTTON_SIZE, LOCK_BUTTON_SIZE, FRAME_CONTROLS_GAP
+    end
 
     local direction = self:GetProfileValue("frameControlsDirection") or self.Defaults.profile.frameControlsDirection
     local priorityCount = 3
@@ -308,7 +311,15 @@ function Addon:GetFrameControlsSize()
 end
 
 function Addon:LayoutFrameControls(xOffset, yOffset)
-    if not lockButton or not priorityModeControls then
+    if not lockButton then
+        return
+    end
+    if ns.isForever then
+        lockButton:ClearAllPoints()
+        lockButton:SetPoint("TOPLEFT", statsFrame, "TOPLEFT", xOffset, -yOffset)
+        return
+    end
+    if not priorityModeControls then
         return
     end
 
@@ -395,7 +406,7 @@ function Addon:UpdateFrameLockState()
     end
 
     if priorityModeControls then
-        priorityModeControls:SetShown(controlsVisible)
+        priorityModeControls:SetShown(controlsVisible and not ns.isForever)
     end
 end
 
@@ -550,71 +561,73 @@ function Addon:EnsureStatsFrame()
         Addon:ToggleLockState()
     end)
 
-    priorityModeControls = CreateFrame("Frame", nil, statsFrame)
-    priorityModeControls:SetSize(62, 20)
-    priorityModeControls:SetFrameLevel(statsAnchor:GetFrameLevel() + 10)
-    priorityModeControls:SetScript("OnEnter", function()
-        isPriorityModeHovered = true
-        Addon:UpdateFrameLockState()
-    end)
-    priorityModeControls:SetScript("OnLeave", function()
-        isPriorityModeHovered = false
-        GameTooltip:Hide()
-        Addon:UpdateFrameLockState()
-    end)
-
-    local modeButtons = {
-        {
-            id = "manual",
-            text = "U",
-            title = "NE_STATS_USER_PRIORITY",
-            body = "NE_STATS_MANUAL_PRIORITY_HINT",
-        },
-        {
-            id = "archon_raid",
-            text = "R",
-            title = "NE_STATS_ARCHON_RAID",
-            body = "NE_STATS_ARCHON_RAID_PRIORITY_HINT",
-        },
-        {
-            id = "archon_mplus",
-            text = "M",
-            title = "NE_STATS_ARCHON_MYTHIC",
-            body = "NE_STATS_ARCHON_MPLUS_PRIORITY_HINT",
-        },
-    }
-
-    for index, config in ipairs(modeButtons) do
-        local button = CreateFrame("Button", nil, priorityModeControls, "UIPanelButtonTemplate")
-        button:SetSize(PRIORITY_BUTTON_SIZE, PRIORITY_BUTTON_SIZE)
-        button:SetPoint("LEFT", priorityModeControls, "LEFT", (index - 1) * (PRIORITY_BUTTON_SIZE + PRIORITY_BUTTON_GAP), 0)
-        button:SetText(config.text)
-        button.mode = config.id
-        button.tooltipTitle = config.title
-        button.tooltipBody = config.body
-        button:SetScript("OnEnter", function(btn)
+    if not ns.isForever then
+        priorityModeControls = CreateFrame("Frame", nil, statsFrame)
+        priorityModeControls:SetSize(62, 20)
+        priorityModeControls:SetFrameLevel(statsAnchor:GetFrameLevel() + 10)
+        priorityModeControls:SetScript("OnEnter", function()
             isPriorityModeHovered = true
             Addon:UpdateFrameLockState()
-            GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
-            GameTooltip:SetText(Addon:S(btn.tooltipTitle), 1, 0.82, 0)
-            GameTooltip:AddLine(Addon:S(btn.tooltipBody), 1, 1, 1, true)
-            GameTooltip:Show()
         end)
-        button:SetScript("OnLeave", function()
+        priorityModeControls:SetScript("OnLeave", function()
             isPriorityModeHovered = false
             GameTooltip:Hide()
             Addon:UpdateFrameLockState()
         end)
-        button:SetScript("OnClick", function(btn)
-            if btn.isActiveMode then
-                return
-            end
-            Addon:SetStatPriorityMode(btn.mode)
-        end)
-        priorityModeButtons[config.id] = button
+
+        local modeButtons = {
+            {
+                id = "manual",
+                text = "U",
+                title = "NE_STATS_USER_PRIORITY",
+                body = "NE_STATS_MANUAL_PRIORITY_HINT",
+            },
+            {
+                id = "archon_raid",
+                text = "R",
+                title = "NE_STATS_ARCHON_RAID",
+                body = "NE_STATS_ARCHON_RAID_PRIORITY_HINT",
+            },
+            {
+                id = "archon_mplus",
+                text = "M",
+                title = "NE_STATS_ARCHON_MYTHIC",
+                body = "NE_STATS_ARCHON_MPLUS_PRIORITY_HINT",
+            },
+        }
+
+        for index, config in ipairs(modeButtons) do
+            local button = CreateFrame("Button", nil, priorityModeControls, "UIPanelButtonTemplate")
+            button:SetSize(PRIORITY_BUTTON_SIZE, PRIORITY_BUTTON_SIZE)
+            button:SetPoint("LEFT", priorityModeControls, "LEFT", (index - 1) * (PRIORITY_BUTTON_SIZE + PRIORITY_BUTTON_GAP), 0)
+            button:SetText(config.text)
+            button.mode = config.id
+            button.tooltipTitle = config.title
+            button.tooltipBody = config.body
+            button:SetScript("OnEnter", function(btn)
+                isPriorityModeHovered = true
+                Addon:UpdateFrameLockState()
+                GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
+                GameTooltip:SetText(Addon:S(btn.tooltipTitle), 1, 0.82, 0)
+                GameTooltip:AddLine(Addon:S(btn.tooltipBody), 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            button:SetScript("OnLeave", function()
+                isPriorityModeHovered = false
+                GameTooltip:Hide()
+                Addon:UpdateFrameLockState()
+            end)
+            button:SetScript("OnClick", function(btn)
+                if btn.isActiveMode then
+                    return
+                end
+                Addon:SetStatPriorityMode(btn.mode)
+            end)
+            priorityModeButtons[config.id] = button
+        end
+        self:RefreshPriorityModeButtons()
+        self:UpdateFrameLockState()
     end
-    self:RefreshPriorityModeButtons()
-    self:UpdateFrameLockState()
 
     local statKeys = Addon.Constants.STAT_KEYS
     for index = 1, #statKeys + 1 do
