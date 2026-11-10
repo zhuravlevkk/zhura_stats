@@ -238,7 +238,7 @@ jobs:
 
           versions=$(curl -fsS -H "X-Api-Token: $CF_TOKEN" "https://wow.curseforge.com/api/game/versions")
 
-          toc_interfaces=$(sed -n 's/^## Interface:[[:space:]]*//p' ZhuraStats.toc | tr -d '\r' | jq -R 'split(",") | map(tonumber)')
+          toc_interfaces=$(sed -n 's/^## Interface:[[:space:]]*//p' ZhuraStats.toc | tr -d '[:space:]' | jq -R 'split(",") | map(tonumber)')
           game_version_id=$(jq -r --argjson interfaces "$toc_interfaces" '
             [.[] | select(.gameVersionTypeID == 517 and (.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")))
             | (.name | split(".") | map(tonumber)) as $version
