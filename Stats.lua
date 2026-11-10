@@ -13,7 +13,9 @@ local DR_THRESHOLDS = { 30, 39, 47, 54, 66 }
 local STAT_IDS = {
     STR = 1,
     AGI = 2,
+    STA = 3,
     INT = 4,
+    SPI = 5,
 }
 
 local cache = {}
@@ -272,24 +274,61 @@ local function ReadPrimary(key)
     return MakeResult(key, value)
 end
 
+local function ReadForeverHaste()
+    local ok, ranged, ammo = pcall(GetRangedHaste)
+    local melee = CallNumber(GetMeleeHaste)
+    local spell = CallNumber(function() return UnitSpellHaste("player") end)
+    if ok then
+        ranged, ammo = AsNumber(ranged), AsNumber(ammo)
+        if melee and spell and ranged and ammo then
+            return math.max(melee, spell, ranged + ammo)
+        end
+    end
+end
+
+local function ReadForeverCrit()
+    local melee = CallNumber(GetCritChance)
+    local ranged = CallNumber(GetRangedCritChance)
+    local spell = CallNumber(GetSpellCritChance)
+    if melee and ranged and spell then
+        return math.max(melee, ranged, spell)
+    end
+end
+
+local function ReadHit()
+    local meleeBonus = CallNumber(function() return GetCombatRatingBonus(CR_HIT_MELEE) end)
+    local rangedBonus = CallNumber(function() return GetCombatRatingBonus(CR_HIT_RANGED) end)
+    local spellBonus = CallNumber(function() return GetCombatRatingBonus(CR_HIT_SPELL) end)
+    local melee = CallNumber(GetHitModifier)
+    local offhand = CallNumber(GetOffhandHitModifier)
+    local ranged = CallNumber(GetRangedHitModifier)
+    local spell = CallNumber(GetSpellHitModifier)
+    local value
+    if meleeBonus and rangedBonus and spellBonus and melee and offhand and ranged and spell then
+        value = math.max(meleeBonus + melee, meleeBonus + offhand, rangedBonus + ranged, spellBonus + spell)
+    end
+    local rating = CallNumber(function() return GetCombatRating(CR_HIT_MELEE) end)
+    return MakeResult("HIT", value, rating, meleeBonus)
+end
+
 local function ReadHaste()
     local ratingId = CR_HASTE_MELEE or CR_HASTE_SPELL or CR_HASTE
-    local value = CallNumber(GetHaste)
+    local value = CallNumber(ns.isForever and ReadForeverHaste or GetHaste)
     local rating = ratingId and CallNumber(function() return GetCombatRating(ratingId) end)
     local ratingBonus = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
     return MakeResult("HASTE", value, rating, ratingBonus, {
-        dr = Stats.GetDRInfo(ratingBonus),
+        dr = not ns.isForever and Stats.GetDRInfo(ratingBonus) or nil,
     })
 end
 
 local function ReadCrit()
-    local value = CallNumber(GetCritChance)
+    local value = CallNumber(ns.isForever and ReadForeverCrit or GetCritChance)
     local ratingId = CR_CRIT_MELEE or CR_CRIT_SPELL or CR_CRIT_RANGED or CR_CRIT
     local rating = ratingId and CallNumber(function() return GetCombatRating(ratingId) end)
     local ratingBonus = ratingId and CallNumber(function() return GetCombatRatingBonus(ratingId) end)
 
     return MakeResult("CRIT", value, rating, ratingBonus, {
-        dr = Stats.GetDRInfo(ratingBonus),
+        dr = not ns.isForever and Stats.GetDRInfo(ratingBonus) or nil,
     })
 end
 
@@ -421,13 +460,18 @@ local function ReadItemLevel()
 end
 
 local function ReadGold()
-    return MakeResult("GOLD", math.floor((GetMoney() or 0) / 10000))
+    local copper = GetMoney() or 0
+    local value = ns.isForever and copper or math.floor(copper / 10000)
+    return MakeResult("GOLD", value)
 end
 
 local readers = {
     STR = ReadPrimary,
     AGI = ReadPrimary,
+    STA = ReadPrimary,
     INT = ReadPrimary,
+    SPI = ReadPrimary,
+    HIT = ReadHit,
     HASTE = ReadHaste,
     CRIT = ReadCrit,
     VERS = ReadVersatility,
@@ -480,7 +524,9 @@ end
 local SECRET_LIVE_GETTERS = {
     STR = function() return (select(2, UnitStat("player", STAT_IDS.STR))) end,
     AGI = function() return (select(2, UnitStat("player", STAT_IDS.AGI))) end,
+    STA = function() return (select(2, UnitStat("player", STAT_IDS.STA))) end,
     INT = function() return (select(2, UnitStat("player", STAT_IDS.INT))) end,
+    SPI = function() return (select(2, UnitStat("player", STAT_IDS.SPI))) end,
     HASTE = function() return GetHaste and GetHaste() end,
     CRIT = function() return GetCritChance and GetCritChance() end,
     MASTERY = function() return GetMasteryEffect and (GetMasteryEffect()) end,
@@ -502,6 +548,10 @@ local SECRET_LIVE_GETTERS = {
 -- use the normal formatted path) or the stat has no clean single-call value.
 -- Never inspects the raw value beyond issecretvalue.
 function Stats.ReadSecretPassthrough(key)
+    -- These Forever rows aggregate several API results, so fall back to the snapshot.
+    if ns.isForever and (key == "HASTE" or key == "CRIT") then
+        return false
+    end
     local getter = SECRET_LIVE_GETTERS[key]
     if not getter then
         return false

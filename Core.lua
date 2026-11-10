@@ -464,6 +464,12 @@ local function OnEvent(_, event, arg1, ...)
     Addon:RequestRefresh(event, { values = true, options = true })
 end
 
+local function RegisterOptionalEvent(event)
+    if not C_EventUtils or not C_EventUtils.IsEventValid or C_EventUtils.IsEventValid(event) then
+        addonFrame:RegisterEvent(event)
+    end
+end
+
 local function RegisterAllEvents()
     addonFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     addonFrame:RegisterEvent("COMBAT_RATING_UPDATE")
@@ -478,18 +484,20 @@ local function RegisterAllEvents()
         addonFrame:RegisterEvent("UNIT_AURA")
         addonFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
     end
-    addonFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
-    addonFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-    addonFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
+    RegisterOptionalEvent("ACTIVE_TALENT_GROUP_CHANGED")
+    RegisterOptionalEvent("PLAYER_SPECIALIZATION_CHANGED")
+    RegisterOptionalEvent("TRAIT_CONFIG_UPDATED")
     addonFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
     addonFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     addonFrame:RegisterEvent("ADDON_RESTRICTION_STATE_CHANGED")
-    addonFrame:RegisterEvent("CHALLENGE_MODE_START")
-    addonFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+    if not ns.isForever then
+        addonFrame:RegisterEvent("CHALLENGE_MODE_START")
+        addonFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+        addonFrame:RegisterEvent("MASTERY_UPDATE")
+    end
     addonFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
     addonFrame:RegisterEvent("PLAYER_MONEY")
     addonFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
-    addonFrame:RegisterEvent("MASTERY_UPDATE")
     addonFrame:RegisterEvent("PLAYER_LEVEL_UP")
     addonFrame:RegisterEvent("PLAYER_STARTED_MOVING")
     addonFrame:RegisterEvent("PLAYER_STOPPED_MOVING")

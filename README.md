@@ -51,6 +51,9 @@ World of Warcraft\_retail_\Interface\AddOns\
 World of Warcraft\_retail_\Interface\AddOns\ZhuraStats\ZhuraStats.toc
 ```
 
+For WoW Forever 1.60.1, extract the same archive into `World of Warcraft\_forever_\Interface\AddOns\`.
+Forever uses manual stat ordering, includes Hit Chance, Stamina, and Spirit, and displays money in gold, silver, and copper. Archon priorities and Midnight's diminishing-return indicators are available in Retail.
+
 ### CurseForge Package Structure
 
 The release archive must contain a single top-level addon folder:
@@ -146,13 +149,9 @@ Core addon modules are split by responsibility:
 
 GitHub Actions can build and publish release artifacts automatically.
 
-- After merge to `master`, updating `## Version` in `ZhuraStats.toc` triggers `Tag Release Version`
-- The created tag triggers `Release Build` workflow
-- `Release Build` packages a CurseForge-ready zip and publishes GitHub Release notes
-- You can also push a manual tag (for example `v0.3.0`)
-- Or run `Release Build` manually to produce an artifact without publishing a tagged release
+The `Release On Master Push` workflow reads the version from `ZhuraStats.toc`. For a new version, it creates a tag and a GitHub release, then uploads the same archive to CurseForge for Retail and Forever.
 
-The workflow always reads addon version from `ZhuraStats.toc`.
+If the GitHub release exists and the CurseForge upload failed, run the workflow on `master` with `retry_curseforge` enabled to upload the existing release archive.
 
 ## License
 

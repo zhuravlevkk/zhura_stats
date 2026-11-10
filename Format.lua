@@ -92,7 +92,13 @@ function Addon:GetDRColor(baseColor, drPenalty)
 end
 
 function Addon:FormatGoldValue(value, profile)
-    return FormatGoldValue(value, profile, self.Defaults.profile)
+    local defaults = self.Defaults.profile
+    if ns.isForever then
+        local copper = value or 0
+        local gold = FormatGoldValue(math.floor(copper / 10000), profile, defaults)
+        return self:S("NE_STATS_MONEY_FORMAT", gold, math.floor(copper / 100) % 100, copper % 100)
+    end
+    return FormatGoldValue(value, profile, defaults)
 end
 
 -- Reference proximity gradient: red (far from Archon) -> green (on target).

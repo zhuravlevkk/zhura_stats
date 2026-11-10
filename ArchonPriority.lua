@@ -84,7 +84,7 @@ local ALLOWED_ARCHON_STATS = {
 }
 
 function Addon:NormalizeStatPriorityMode(mode)
-    if VALID_PRIORITY_MODES[mode] then
+    if not ns.isForever and VALID_PRIORITY_MODES[mode] then
         return mode
     end
     return "manual"

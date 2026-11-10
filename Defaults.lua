@@ -3,6 +3,9 @@ local _, ns = ...
 ns = ns or {}
 ns.ZhuraStats = ns.ZhuraStats or {}
 local Addon = ns.ZhuraStats
+local interfaceVersion = GetBuildInfo and select(4, GetBuildInfo())
+-- Forever shares WOW_PROJECT_MAINLINE with Retail.
+ns.isForever = type(interfaceVersion) == "number" and math.floor(interfaceVersion / 100) == 160
 
 local function DeepCopy(source)
     if type(source) ~= "table" then
@@ -20,11 +23,6 @@ local PRIMARY_STAT_KEY_BY_ID = {
     [1] = "STR",
     [2] = "AGI",
     [4] = "INT",
-}
-
-local STAT_KEYS = {
-    "STR", "AGI", "INT", "HASTE", "CRIT", "VERS", "MASTERY",
-    "BLOCK", "LEECH", "SPEED", "DURA", "ILVL", "GOLD", "MOVEMENT_SPEED",
 }
 
 local TEXT_ALIGN_OPTIONS = { "LEFT", "CENTER", "RIGHT" }
@@ -91,7 +89,6 @@ local aceDefaults = {
 
 Addon.Constants = Addon.Constants or {}
 Addon.Constants.PRIMARY_STAT_KEY_BY_ID = PRIMARY_STAT_KEY_BY_ID
-Addon.Constants.STAT_KEYS = STAT_KEYS
 Addon.Constants.TEXT_ALIGN_OPTIONS = TEXT_ALIGN_OPTIONS
 Addon.Constants.GOLD_SEPARATOR_OPTIONS = GOLD_SEPARATOR_OPTIONS
 Addon.Constants.FRAME_CONTROLS_POSITION_OPTIONS = FRAME_CONTROLS_POSITION_OPTIONS

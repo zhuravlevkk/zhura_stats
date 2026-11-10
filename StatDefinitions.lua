@@ -104,30 +104,40 @@ local statDefinitions = {
     },
     DURA = { label = "NE_STATS_STAT_DURA", color = { 0.42, 1.00, 0.42 }, icon = "Interface\\Icons\\INV_Hammer_20", suffix = "%", value = function() local totalCurrent = 0 local totalMaximum = 0 for slot = 1, 17 do local current, maximum = GetInventoryItemDurability(slot) if current and maximum and maximum > 0 then totalCurrent = totalCurrent + current totalMaximum = totalMaximum + maximum end end if totalMaximum <= 0 then return 0 end return (totalCurrent / totalMaximum) * 100 end },
     ILVL = { label = "NE_STATS_STAT_ILVL", color = { 0.60, 0.82, 1.00 }, icon = "Interface\\Icons\\INV_Chest_Chain_15", suffix = "", value = function() local _, equippedLevel = GetAverageItemLevel() return equippedLevel or 0 end },
-    GOLD = { label = "NE_STATS_STAT_GOLD", color = { 1.00, 0.84, 0.00 }, icon = "Interface\\Icons\\INV_Misc_Coin_01", suffix = "", value = function() return math.floor((GetMoney() or 0) / 10000) end },
+    GOLD = { label = ns.isForever and "NE_STATS_STAT_MONEY" or "NE_STATS_STAT_GOLD", color = { 1.00, 0.84, 0.00 }, icon = "Interface\\Icons\\INV_Misc_Coin_01", suffix = "" },
 }
 
-defaults.stats = {
-    { key = "STR", enabled = false, color = DeepCopy(statDefinitions.STR.color) },
-    { key = "AGI", enabled = false, color = DeepCopy(statDefinitions.AGI.color) },
-    { key = "INT", enabled = false, color = DeepCopy(statDefinitions.INT.color) },
-    { key = "HASTE", enabled = true, color = DeepCopy(statDefinitions.HASTE.color) },
-    { key = "CRIT", enabled = true, color = DeepCopy(statDefinitions.CRIT.color) },
-    { key = "VERS", enabled = true, color = DeepCopy(statDefinitions.VERS.color) },
-    { key = "MASTERY", enabled = true, color = DeepCopy(statDefinitions.MASTERY.color) },
-    { key = "BLOCK", enabled = false, color = DeepCopy(statDefinitions.BLOCK.color) },
-    { key = "LEECH", enabled = false, color = DeepCopy(statDefinitions.LEECH.color) },
-    { key = "SPEED", enabled = false, color = DeepCopy(statDefinitions.SPEED.color) },
-    { key = "DURA", enabled = true, color = DeepCopy(statDefinitions.DURA.color) },
-    { key = "ILVL", enabled = true, color = DeepCopy(statDefinitions.ILVL.color) },
-    { key = "GOLD", enabled = true, color = DeepCopy(statDefinitions.GOLD.color) },
-    { key = "MOVEMENT_SPEED", enabled = false, color = DeepCopy(statDefinitions.MOVEMENT_SPEED.color) },
+local statKeys = {
+    "STR", "AGI", "INT", "HASTE", "CRIT", "VERS", "MASTERY", "BLOCK", "LEECH",
+    "SPEED", "DURA", "ILVL", "GOLD", "MOVEMENT_SPEED",
+}
+local enabledByDefault = {
+    HASTE = true, CRIT = true, VERS = true, MASTERY = true, DURA = true, ILVL = true, GOLD = true,
 }
 
-local defaultStatsByKey = {}
-for _, entry in ipairs(defaults.stats) do
-    defaultStatsByKey[entry.key] = entry
+if ns.isForever then
+    statDefinitions.STA = { label = "NE_STATS_STAT_STA", color = { 1.00, 0.60, 0.35 }, suffix = "" }
+    statDefinitions.SPI = { label = "NE_STATS_STAT_SPI", color = { 0.85, 0.74, 1.00 }, suffix = "" }
+    statDefinitions.HIT = { label = "NE_STATS_STAT_HIT", color = { 1.00, 0.80, 0.40 }, suffix = "%", rating = true }
+
+    statKeys = {
+        "STR", "AGI", "STA", "INT", "SPI", "HIT", "CRIT", "HASTE", "DODGE", "PARRY",
+        "BLOCK", "DURA", "ILVL", "GOLD", "MOVEMENT_SPEED",
+    }
+    enabledByDefault.HIT = true
+    for _, key in ipairs({ "VERS", "MASTERY", "AVOIDANCE", "LEECH", "SPEED" }) do
+        statDefinitions[key] = nil
+    end
 end
 
+defaults.stats = {}
+local defaultStatsByKey = {}
+for index, key in ipairs(statKeys) do
+    local entry = { key = key, enabled = enabledByDefault[key] == true, color = DeepCopy(statDefinitions[key].color) }
+    defaults.stats[index] = entry
+    defaultStatsByKey[key] = entry
+end
+
+Addon.Constants.STAT_KEYS = statKeys
 Addon.StatDefinitions = statDefinitions
 Addon.DefaultStatsByKey = defaultStatsByKey
